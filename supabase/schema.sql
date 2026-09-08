@@ -308,24 +308,39 @@ ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 -- ------------------------------------------------------------------------------
 -- RLS POLICIES
 -- ------------------------------------------------------------------------------
+-- RLS POLICIES (Idempotent: with DROP POLICY IF EXISTS)
+-- ------------------------------------------------------------------------------
 -- Profiles
+DROP POLICY IF EXISTS "Public profiles viewable by everyone" ON public.profiles;
 CREATE POLICY "Public profiles viewable by everyone" ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Studios
+DROP POLICY IF EXISTS "Studios viewable by everyone" ON public.studios;
 CREATE POLICY "Studios viewable by everyone" ON public.studios FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Studio owners can update studio" ON public.studios;
 CREATE POLICY "Studio owners can update studio" ON public.studios FOR UPDATE USING (auth.uid() = owner_id);
 
 -- Artists
+DROP POLICY IF EXISTS "Artists viewable by everyone" ON public.artists;
 CREATE POLICY "Artists viewable by everyone" ON public.artists FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Artists can update own record" ON public.artists;
 CREATE POLICY "Artists can update own record" ON public.artists FOR UPDATE USING (
     profile_id = auth.uid() OR 
     studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Studio owners can insert artists" ON public.artists;
 CREATE POLICY "Studio owners can insert artists" ON public.artists FOR INSERT WITH CHECK (
     studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid()) OR
     profile_id = auth.uid()
 );
+
+DROP POLICY IF EXISTS "Studio owners can delete artists" ON public.artists;
 CREATE POLICY "Studio owners can delete artists" ON public.artists FOR DELETE USING (
     studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
 );
@@ -381,22 +396,32 @@ AS $$
 $$;
 
 -- Clients
+DROP POLICY IF EXISTS "Clients can view own record or studio with appointment" ON public.clients;
 CREATE POLICY "Clients can view own record or studio with appointment" ON public.clients FOR SELECT USING (
     profile_id = auth.uid() OR
     id IN (SELECT id FROM public.get_artist_client_ids())
 );
+
+DROP POLICY IF EXISTS "Users can insert own client record" ON public.clients;
 CREATE POLICY "Users can insert own client record" ON public.clients FOR INSERT WITH CHECK (
     profile_id = auth.uid()
 );
+
+DROP POLICY IF EXISTS "Clients can update own record" ON public.clients;
 CREATE POLICY "Clients can update own record" ON public.clients FOR UPDATE USING (profile_id = auth.uid());
 
 -- Appointments
+DROP POLICY IF EXISTS "Appointments viewable by involved parties" ON public.appointments;
 CREATE POLICY "Appointments viewable by involved parties" ON public.appointments FOR SELECT USING (
     client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
     artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
     studio_id IN (SELECT id FROM public.get_auth_studio_ids())
 );
+
+DROP POLICY IF EXISTS "Clients, artists, and studios can insert appointments" ON public.appointments;
 CREATE POLICY "Clients, artists, and studios can insert appointments" ON public.appointments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Involved parties can update appointments" ON public.appointments;
 CREATE POLICY "Involved parties can update appointments" ON public.appointments FOR UPDATE USING (
     client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
     artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
@@ -404,18 +429,24 @@ CREATE POLICY "Involved parties can update appointments" ON public.appointments 
 );
 
 -- Chats & Messages
+DROP POLICY IF EXISTS "Chats viewable by participants" ON public.chats;
 CREATE POLICY "Chats viewable by participants" ON public.chats FOR SELECT USING (
     client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
     artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
     studio_id IN (SELECT id FROM public.get_auth_studio_ids())
 );
+
+DROP POLICY IF EXISTS "Participants can insert chats" ON public.chats;
 CREATE POLICY "Participants can insert chats" ON public.chats FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Participants can update chats" ON public.chats;
 CREATE POLICY "Participants can update chats" ON public.chats FOR UPDATE USING (
     client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
     artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
     studio_id IN (SELECT id FROM public.get_auth_studio_ids())
 );
 
+DROP POLICY IF EXISTS "Chat messages viewable by chat participants" ON public.chat_messages;
 CREATE POLICY "Chat messages viewable by chat participants" ON public.chat_messages FOR SELECT USING (
     chat_id IN (SELECT id FROM public.chats WHERE 
         client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
@@ -423,21 +454,33 @@ CREATE POLICY "Chat messages viewable by chat participants" ON public.chat_messa
         studio_id IN (SELECT id FROM public.get_auth_studio_ids())
     )
 );
+
+DROP POLICY IF EXISTS "Participants can insert chat messages" ON public.chat_messages;
 CREATE POLICY "Participants can insert chat messages" ON public.chat_messages FOR INSERT WITH CHECK (true);
 
 -- Shares & Reviews (Publicly visible)
+DROP POLICY IF EXISTS "Shares viewable by everyone" ON public.shares;
 CREATE POLICY "Shares viewable by everyone" ON public.shares FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Artists can manage shares" ON public.shares;
 CREATE POLICY "Artists can manage shares" ON public.shares FOR ALL USING (
     artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Reviews viewable by everyone" ON public.reviews;
 CREATE POLICY "Reviews viewable by everyone" ON public.reviews FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Clients can create reviews" ON public.reviews;
 CREATE POLICY "Clients can create reviews" ON public.reviews FOR INSERT WITH CHECK (
     client_id IN (SELECT id FROM public.clients WHERE profile_id = auth.uid())
 );
 
 -- Consent Forms
+DROP POLICY IF EXISTS "Consent forms viewable by client, artist, and studio" ON public.consent_forms;
 CREATE POLICY "Consent forms viewable by client, artist, and studio" ON public.consent_forms FOR SELECT USING (
     client_id IN (SELECT id FROM public.clients WHERE profile_id = auth.uid()) OR
     artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid())
 );
+
+DROP POLICY IF EXISTS "Clients can insert consent forms" ON public.consent_forms;
 CREATE POLICY "Clients can insert consent forms" ON public.consent_forms FOR INSERT WITH CHECK (true);
