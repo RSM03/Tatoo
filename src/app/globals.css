@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0b0c0e;
+  --foreground: #f8f9fa;
+  --card-bg: #131519;
+  --border-color: #262930;
+  --primary-accent: #e63946;
+  --primary-accent-hover: #d90429;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for sleek tattoo studio aesthetic */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0e1013;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b2f38;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3e4452;
+}
+
+/* Custom animations and glow utilities */
+.glow-effect {
+  box-shadow: 0 0 35px -5px rgba(230, 57, 70, 0.25);
+}
+
+.subtle-border {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel {
+  background: rgba(19, 21, 25, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
