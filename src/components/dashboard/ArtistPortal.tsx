@@ -19,7 +19,9 @@ import {
   Tag,
   CheckCircle,
   Save,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export default function ArtistPortal({
@@ -75,6 +77,66 @@ export default function ArtistPortal({
   const [shareIsFlash, setShareIsFlash] = useState(true);
   const [shareImgUrl, setShareImgUrl] = useState('');
   const [uploadingShare, setUploadingShare] = useState(false);
+
+  // Calendar View State: 'week' or 'month' (Google / Teams style)
+  const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+
+  const handlePrevDate = () => {
+    const d = new Date(calendarDate);
+    if (calendarView === 'week') {
+      d.setDate(d.getDate() - 7);
+    } else {
+      d.setMonth(d.getMonth() - 1);
+    }
+    setCalendarDate(d);
+  };
+
+  const handleNextDate = () => {
+    const d = new Date(calendarDate);
+    if (calendarView === 'week') {
+      d.setDate(d.getDate() + 7);
+    } else {
+      d.setMonth(d.getMonth() + 1);
+    }
+    setCalendarDate(d);
+  };
+
+  const handleTodayDate = () => {
+    setCalendarDate(new Date());
+  };
+
+  const getWeekDays = (baseDate: Date) => {
+    const d = new Date(baseDate);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + i);
+      return dayDate;
+    });
+  };
+
+  const getMonthData = (baseDate: Date) => {
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    let startingDayOfWeek = firstDay.getDay() - 1;
+    if (startingDayOfWeek === -1) startingDayOfWeek = 6;
+
+    const totalDays = lastDay.getDate();
+    return { startingDayOfWeek, totalDays, year, month };
+  };
+
+  const isSameDay = (d1: Date, d2: Date) => {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  };
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClient();
@@ -460,57 +522,283 @@ export default function ArtistPortal({
         </button>
       </div>
 
-      {/* TAB 1: CALENDAR & APPOINTMENTS */}
-      {activeTab === 'calendar' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {appointments.map((app) => {
-              const startDate = new Date(app.start_time);
-              const endDate = new Date(app.end_time);
-              const isBreak = app.appointment_type === 'break_blocked' || app.appointment_type === 'vacation';
-              const clientName = app.clients?.profiles?.full_name || app.walk_in_name || 'Cita Bloqueada';
-              const isSigned = app.consent_forms && app.consent_forms.length > 0;
+      {/* TAB 1: CALENDAR & APPOINTMENTS (GOOGLE / TEAMS STYLE) */}
+      {activeTab === 'calendar' && (() => {
+        const weekDays = getWeekDays(calendarDate);
+        const monthData = getMonthData(calendarDate);
 
-              return (
-                <div key={app.id} className={`p-5 rounded-2xl border flex flex-col justify-between ${
-                  isBreak ? 'bg-amber-950/20 border-amber-500/20 text-amber-200' : 'glass-panel border-white/5'
-                }`}>
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
-                        {app.appointment_type === 'design_consultation' ? 'Consulta Diseño' : isBreak ? 'Descanso/Bloqueo' : 'Sesión Tatuaje'}
-                      </span>
-                      <span className="text-xs font-mono opacity-80">{app.status}</span>
-                    </div>
-
-                    <h3 className="font-bold text-white text-base mb-1">{clientName}</h3>
-                    {app.description && <p className="text-xs text-ink-400 mb-3 line-clamp-2">{app.description}</p>}
-
-                    <div className="flex items-center gap-3 text-xs text-ink-300 mb-3">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-crimson-500" />
-                        <span>{startDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - {endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isBreak && (
-                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                      <span className={isSigned ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
-                        {isSigned ? '✓ Consentimiento firmado' : '⚠️ Firma pendiente'}
-                      </span>
-                    </div>
-                  )}
+        return (
+          <div className="space-y-4">
+            {/* Calendar Controls Bar: Navigation, Title and View Mode Switcher */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-3xl bg-ink-900/90 border border-white/10 shadow-xl">
+              <div className="flex items-center gap-3">
+                {/* Navigation: Prev, Today, Next */}
+                <div className="flex items-center bg-ink-950 rounded-2xl border border-white/10 p-1 shadow-inner">
+                  <button
+                    onClick={handlePrevDate}
+                    className="p-2 rounded-xl hover:bg-white/10 text-ink-300 hover:text-white transition-colors"
+                    title="Anterior"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleTodayDate}
+                    className="px-3.5 py-1.5 rounded-xl hover:bg-white/10 text-xs font-bold text-ink-200 hover:text-white transition-colors"
+                  >
+                    Hoy
+                  </button>
+                  <button
+                    onClick={handleNextDate}
+                    className="p-2 rounded-xl hover:bg-white/10 text-ink-300 hover:text-white transition-colors"
+                    title="Siguiente"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              );
-            })}
+
+                {/* Calendar Range Header */}
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  {calendarView === 'week' ? (
+                    <span>
+                      Semana del {weekDays[0].toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} al {weekDays[6].toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  ) : (
+                    <span className="capitalize">
+                      {calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                    </span>
+                  )}
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                {/* Mode Selector: Semana / Mes */}
+                <div className="flex items-center bg-ink-950 p-1 rounded-2xl border border-white/10">
+                  <button
+                    onClick={() => setCalendarView('week')}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      calendarView === 'week'
+                        ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30'
+                        : 'text-ink-400 hover:text-white'
+                    }`}
+                  >
+                    Semana
+                  </button>
+                  <button
+                    onClick={() => setCalendarView('month')}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      calendarView === 'month'
+                        ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30'
+                        : 'text-ink-400 hover:text-white'
+                    }`}
+                  >
+                    Mes
+                  </button>
+                </div>
+
+                {/* Quick Add Block Button */}
+                <button
+                  onClick={() => {
+                    setModalDate(calendarDate.toISOString().split('T')[0]);
+                    setModalType('walk_in');
+                    setIsModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md shadow-crimson-600/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Añadir Cita</span>
+                </button>
+              </div>
+            </div>
+
+            {/* VISTA SEMANAL (7 COLUMNAS TIPO TEAMS / GOOGLE) */}
+            {calendarView === 'week' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                {weekDays.map((dayDate, idx) => {
+                  const isToday = isSameDay(dayDate, new Date());
+                  const dayAppointments = appointments.filter(a => isSameDay(new Date(a.start_time), dayDate));
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`rounded-3xl border p-3.5 flex flex-col justify-between min-h-[420px] transition-all ${
+                        isToday
+                          ? 'bg-crimson-950/20 border-crimson-500/40 shadow-xl shadow-crimson-950/20'
+                          : 'bg-ink-950/70 border-white/5 hover:border-white/10'
+                      }`}
+                    >
+                      <div>
+                        {/* Day Column Header */}
+                        <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-white/10">
+                          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-300">
+                            {dayDate.toLocaleDateString('es-ES', { weekday: 'short' })}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-sm font-bold ${isToday ? 'text-crimson-400 font-extrabold' : 'text-white'}`}>
+                              {dayDate.getDate()}
+                            </span>
+                            {isToday && <span className="w-1.5 h-1.5 rounded-full bg-crimson-500 animate-ping" />}
+                          </div>
+                        </div>
+
+                        {/* Appointments on this day */}
+                        <div className="space-y-2.5">
+                          {dayAppointments.length === 0 ? (
+                            <div className="text-center py-12 text-[11px] text-ink-600 font-mono">
+                              <span>Sin citas</span>
+                            </div>
+                          ) : (
+                            dayAppointments.map(app => {
+                              const start = new Date(app.start_time);
+                              const end = new Date(app.end_time);
+                              const isBreak = app.appointment_type === 'break_blocked' || app.appointment_type === 'vacation';
+                              const clientName = app.clients?.profiles?.full_name || app.walk_in_name || 'Cita';
+                              const isSigned = app.consent_forms && app.consent_forms.length > 0;
+
+                              return (
+                                <div
+                                  key={app.id}
+                                  className={`p-2.5 rounded-2xl border text-xs leading-snug transition-all ${
+                                    isBreak
+                                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                                      : app.appointment_type === 'design_consultation'
+                                      ? 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+                                      : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-300'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between font-mono text-[10px] opacity-85 mb-1">
+                                    <span>
+                                      {start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    <span>{isBreak ? '☕' : app.appointment_type === 'design_consultation' ? '📜' : '🩸'}</span>
+                                  </div>
+                                  <div className="font-bold text-white truncate text-xs">{clientName}</div>
+                                  {app.description && (
+                                    <div className="text-[10px] text-ink-400 truncate mt-0.5">{app.description}</div>
+                                  )}
+                                  {!isBreak && (
+                                    <div className="mt-1.5 pt-1 border-t border-white/5 text-[9px] font-semibold">
+                                      {isSigned ? (
+                                        <span className="text-emerald-400">✓ Consentimiento firmado</span>
+                                      ) : (
+                                        <span className="text-amber-400">⚠️ Firma pendiente</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quick Add Button on this day */}
+                      <button
+                        onClick={() => {
+                          const iso = dayDate.toISOString().split('T')[0];
+                          setModalDate(iso);
+                          setModalType('walk_in');
+                          setIsModalOpen(true);
+                        }}
+                        className="mt-3 w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-ink-400 hover:text-white border border-white/5 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-crimson-500" />
+                        <span>+ Añadir en este día</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* VISTA MENSUAL (TABLERO COMPLETO) */}
+            {calendarView === 'month' && (
+              <div className="glass-panel p-5 rounded-3xl border border-white/10 shadow-2xl bg-ink-950/70">
+                {/* Days of week header */}
+                <div className="grid grid-cols-7 gap-2 pb-3 mb-3 border-b border-white/10 text-center font-mono text-xs font-bold text-ink-400">
+                  <div>LUN</div>
+                  <div>MAR</div>
+                  <div>MIÉ</div>
+                  <div>JUE</div>
+                  <div>VIE</div>
+                  <div>SÁB</div>
+                  <div>DOM</div>
+                </div>
+
+                {/* Month Days Grid */}
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Empty prefix cells for previous month alignment */}
+                  {Array.from({ length: monthData.startingDayOfWeek }, (_, i) => (
+                    <div key={`empty-${i}`} className="min-h-[100px] rounded-2xl bg-transparent opacity-10 border border-transparent" />
+                  ))}
+
+                  {/* Actual Month Days */}
+                  {Array.from({ length: monthData.totalDays }, (_, i) => {
+                    const dayNum = i + 1;
+                    const thisDate = new Date(monthData.year, monthData.month, dayNum);
+                    const isToday = isSameDay(thisDate, new Date());
+                    const dayAppointments = appointments.filter(a => isSameDay(new Date(a.start_time), thisDate));
+
+                    return (
+                      <div
+                        key={dayNum}
+                        onClick={() => {
+                          const iso = thisDate.toISOString().split('T')[0];
+                          setModalDate(iso);
+                          setModalType('walk_in');
+                          setIsModalOpen(true);
+                        }}
+                        className={`min-h-[110px] p-2.5 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all hover:border-crimson-500/50 hover:bg-white/5 group ${
+                          isToday
+                            ? 'bg-crimson-950/20 border-crimson-500/40 shadow-md shadow-crimson-950/20'
+                            : 'bg-ink-900/60 border-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-bold ${isToday ? 'text-crimson-400 font-extrabold' : 'text-ink-200'}`}>
+                            {dayNum}
+                          </span>
+                          {dayAppointments.length > 0 && (
+                            <span className="text-[10px] font-mono bg-crimson-500/20 text-crimson-300 px-1.5 py-0.2 rounded-full border border-crimson-500/30">
+                              {dayAppointments.length}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1 my-1">
+                          {dayAppointments.slice(0, 2).map(app => {
+                            const isBreak = app.appointment_type === 'break_blocked' || app.appointment_type === 'vacation';
+                            return (
+                              <div
+                                key={app.id}
+                                className={`text-[10px] px-1.5 py-0.5 rounded-lg truncate font-medium border ${
+                                  isBreak
+                                    ? 'bg-amber-500/20 text-amber-200 border-amber-500/30'
+                                    : app.appointment_type === 'design_consultation'
+                                    ? 'bg-blue-500/20 text-blue-200 border-blue-500/30'
+                                    : 'bg-crimson-500/20 text-crimson-200 border-crimson-500/30'
+                                }`}
+                              >
+                                {new Date(app.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} {app.clients?.profiles?.full_name || app.walk_in_name || 'Cita'}
+                              </div>
+                            );
+                          })}
+                          {dayAppointments.length > 2 && (
+                            <span className="text-[9px] text-ink-400 font-mono block text-center">+{dayAppointments.length - 2} más</span>
+                          )}
+                        </div>
+
+                        <span className="text-[9px] text-ink-500 group-hover:text-crimson-400 transition-colors">
+                          + Añadir
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* TAB 2: CHATS WITH AI SUMMARY & HUMAN TAKEOVER */}
       {activeTab === 'chats' && (

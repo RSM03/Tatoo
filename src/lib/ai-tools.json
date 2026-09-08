@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "tatoo_ai_tools",
+  "version": "1.0.0",
+  "description": "Herramientas de IA para el asistente virtual de estudios de tatuaje",
+  "tools": [
+    {
+      "name": "book_appointment",
+      "description": "Reserva o agenda una cita directamente en el calendario del tatuador. Úsala cuando el cliente quiera reservar fecha y hora para consulta de diseño o sesión de tatuaje.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_type": {
+            "type": "string",
+            "enum": ["design_consultation", "tattoo_session"],
+            "description": "'design_consultation' para consulta inicial de boceto/diseño (45 min) o 'tattoo_session' para sesión completa con aguja y tinta."
+          },
+          "date": {
+            "type": "string",
+            "description": "Fecha de la cita en formato ISO YYYY-MM-DD (ej: '2026-09-12'). Si el usuario dice 'este viernes' o 'mañana', calcula la fecha concreta."
+          },
+          "time": {
+            "type": "string",
+            "description": "Hora de inicio en formato HH:MM (ej: '11:00', '16:30')."
+          },
+          "description": {
+            "type": "string",
+            "description": "Idea, temática o descripción del tatuaje que el cliente desea realizarse."
+          }
+        },
+        "required": ["date", "time"]
+      }
+    },
+    {
+      "name": "estimate_quote",
+      "description": "Calcula el presupuesto estimado según las medidas en cm, si es en color o blanco y negro, y la complejidad de la zona.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "size_cm": {
+            "type": "number",
+            "description": "Tamaño estimado en centímetros (ej: 15)."
+          },
+          "is_color": {
+            "type": "boolean",
+            "description": "True si el diseño lleva color, false si es en escala de grises / blackwork."
+          },
+          "placement": {
+            "type": "string",
+            "description": "Zona del cuerpo (ej: 'antebrazo', 'costillas', 'espalda', 'cuello')."
+          }
+        },
+        "required": ["size_cm"]
+      }
+    },
+    {
+      "name": "analyze_healing",
+      "description": "Analiza una fotografía de curación enviada por el cliente para descartar indicios de infección y guiar el proceso dérmico.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "image_url": {
+            "type": "string",
+            "description": "URL de la fotografía del tatuaje en cicatrización."
+          }
+        },
+        "required": ["image_url"]
+      }
+    },
+    {
+      "name": "request_human_takeover",
+      "description": "Pausa el asistente virtual y notifica al tatuador para que responda personalmente al cliente.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Motivo de la intervención humana solicitada por el cliente o requerida por complejidad."
+          }
+        },
+        "required": ["reason"]
+      }
+    },
+    {
+      "name": "get_artist_schedule",
+      "description": "Informa sobre los horarios de apertura del estudio y la disponibilidad habitual del artista.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "day_of_week": {
+            "type": "string",
+            "description": "Día de la semana a consultar (ej: 'lunes', 'sábado')."
+          }
+        }
+      }
+    }
+  ]
+}

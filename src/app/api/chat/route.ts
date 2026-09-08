@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { callEdenAI, calculateQuote, analyzeTattooHealingVision, generateChatSummary, compressContext, type ChatMessage } from '@/lib/edenai';
+import { callEdenAI, generateChatSummary, compressContext, type ChatMessage } from '@/lib/edenai';
+import { executeAiTool, detectToolIntent, AI_TOOLS, ToolExecutionContext } from '@/lib/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,138 +65,99 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. If chat not resolved yet, attempt to resolve or create via artist / client profiles
-    if (!chat) {
-      // Resolve Artist
-      let resolvedArtistId = (artistId && isUUID(artistId)) ? artistId : null;
-      let resolvedStudioId = (studioId && isUUID(studioId)) ? studioId : null;
+    // 2. If chat not resolved, resolve artist & client and fetch/create dedicated 1:1 chat
+    let resolvedArtistId = (artistId && isUUID(artistId)) ? artistId : (chat?.artist_id || null);
+    let resolvedStudioId = (studioId && isUUID(studioId)) ? studioId : (chat?.studio_id || null);
+    let resolvedClientId = chat?.client_id || null;
 
-      if (!resolvedArtistId) {
-        const { data: defaultArtist } = await supabase
-          .from('artists')
-          .select('id, studio_id, display_name, pricing_rules, healing_templates')
-          .limit(1)
-          .maybeSingle();
+    if (!resolvedArtistId) {
+      const { data: defaultArtist } = await supabase
+        .from('artists')
+        .select('id, studio_id, display_name, pricing_rules, healing_templates')
+        .limit(1)
+        .maybeSingle();
 
-        if (defaultArtist) {
-          resolvedArtistId = defaultArtist.id;
-          resolvedStudioId = resolvedStudioId || defaultArtist.studio_id;
-          artist = defaultArtist;
-        }
-      } else if (!artist) {
-        const { data: foundArtist } = await supabase
-          .from('artists')
-          .select('id, studio_id, display_name, pricing_rules, healing_templates')
-          .eq('id', resolvedArtistId)
-          .maybeSingle();
-        if (foundArtist) artist = foundArtist;
+      if (defaultArtist) {
+        resolvedArtistId = defaultArtist.id;
+        resolvedStudioId = resolvedStudioId || defaultArtist.studio_id;
+        artist = defaultArtist;
       }
-
-      if (!resolvedStudioId && artist?.studio_id) {
-        resolvedStudioId = artist.studio_id;
-      }
-
-      // Resolve Client
-      let resolvedClientId = null;
-      if (clientProfileId && isUUID(clientProfileId)) {
-        const { data: clientRec } = await supabase
-          .from('clients')
-          .select('id, profile_id, profiles(full_name)')
-          .eq('profile_id', clientProfileId)
-          .maybeSingle();
-
-        if (clientRec) {
-          resolvedClientId = clientRec.id;
-          client = clientRec;
-        } else {
-          const { data: newClient } = await supabase
-            .from('clients')
-            .insert({ profile_id: clientProfileId })
-            .select('id, profile_id')
-            .maybeSingle();
-          if (newClient) resolvedClientId = newClient.id;
-        }
-      }
-
-      // If we have both client and artist, look up or create chat row
-      if (resolvedClientId && resolvedArtistId && resolvedStudioId) {
-        let { data: existingChat } = await supabase
-          .from('chats')
-          .select('*')
-          .eq('client_id', resolvedClientId)
-          .eq('artist_id', resolvedArtistId)
-          .maybeSingle();
-
-        if (!existingChat) {
-          const { data: newChat } = await supabase
-            .from('chats')
-            .insert({
-              studio_id: resolvedStudioId,
-              artist_id: resolvedArtistId,
-              client_id: resolvedClientId,
-              ai_enabled: true,
-              status_badge: 'quoting'
-            })
-            .select()
-            .maybeSingle();
-          existingChat = newChat;
-        }
-
-        if (existingChat) {
-          chat = existingChat;
-          actualChatId = existingChat.id;
-        }
+    } else if (!artist) {
+      const { data: foundArtist } = await supabase
+        .from('artists')
+        .select('id, studio_id, display_name, pricing_rules, healing_templates')
+        .eq('id', resolvedArtistId)
+        .maybeSingle();
+      if (foundArtist) {
+        artist = foundArtist;
+        resolvedStudioId = resolvedStudioId || foundArtist.studio_id;
       }
     }
 
-    // Default artist & client fallbacks for prompts
+    if (!resolvedStudioId && artist?.studio_id) {
+      resolvedStudioId = artist.studio_id;
+    }
+
+    // Resolve client
+    if (!resolvedClientId && clientProfileId && isUUID(clientProfileId)) {
+      const { data: clientRec } = await supabase
+        .from('clients')
+        .select('id, profile_id, profiles(full_name)')
+        .eq('profile_id', clientProfileId)
+        .maybeSingle();
+
+      if (clientRec) {
+        resolvedClientId = clientRec.id;
+        client = clientRec;
+      } else {
+        const { data: newClient } = await supabase
+          .from('clients')
+          .insert({ profile_id: clientProfileId })
+          .select('id, profile_id')
+          .maybeSingle();
+        if (newClient) resolvedClientId = newClient.id;
+      }
+    }
+
+    // Ensure 1:1 dedicated chat row
+    if (!chat && resolvedClientId && resolvedArtistId && resolvedStudioId) {
+      let { data: existingChat } = await supabase
+        .from('chats')
+        .select('*')
+        .eq('client_id', resolvedClientId)
+        .eq('artist_id', resolvedArtistId)
+        .maybeSingle();
+
+      if (!existingChat) {
+        const { data: newChat } = await supabase
+          .from('chats')
+          .insert({
+            studio_id: resolvedStudioId,
+            artist_id: resolvedArtistId,
+            client_id: resolvedClientId,
+            ai_enabled: true,
+            status_badge: 'quoting'
+          })
+          .select()
+          .maybeSingle();
+        existingChat = newChat;
+      }
+
+      if (existingChat) {
+        chat = existingChat;
+        actualChatId = existingChat.id;
+      }
+    }
+
     const artistName = artist?.display_name || 'El Tatuador';
     const clientName = client?.profiles?.full_name || 'Cliente';
 
-    // 3. Prepare incoming user message
-    const incomingMessage: any = {
-      chat_id: actualChatId,
-      sender_role: senderRole,
-      content: content || (imageUrl ? 'Foto adjunta' : ''),
-      image_url: imageUrl || null
-    };
-
-    // 4. Healing photo vision analysis
-    let healingResult: any = null;
-    if (imageUrl && senderRole === 'client') {
-      const defaultTemplates = {
-        normal: {
-          es: "El tatuaje muestra una evolución normal de cicatrización. Sigue lavándolo 2-3 veces al día con jabón neutro y aplicando una fina capa de crema.",
-          en: "The tattoo shows normal healthy healing. Keep washing it 2-3 times daily with mild soap and applying a thin ointment layer."
-        },
-        redness_mild: {
-          es: "Se aprecia un enrojecimiento moderado habitual durante los primeros días. Evita el roce con ropa ajustada y no tomes el sol ni te bañes en piscinas.",
-          en: "Mild redness is common in the first few days. Avoid tight clothing friction, direct sun, and swimming pools."
-        },
-        alert_infection: {
-          es: "⚠️ ¡Atención! La imagen muestra posibles indicios de supuración o inflamación excesiva. Lava suavemente con jabón neutro y contacta urgentemente con el estudio o acude a un centro médico.",
-          en: "⚠️ Healing Alert! The image shows possible signs of abnormal discharge or excessive inflammation. Wash gently and contact the studio or a healthcare center immediately."
-        }
-      };
-
-      healingResult = await analyzeTattooHealingVision({
-        imageUrl,
-        artistTemplates: artist?.healing_templates || defaultTemplates,
-        lang: lang as 'es' | 'en'
-      });
-
-      incomingMessage.healing_status = healingResult.healing_status;
-      incomingMessage.healing_metadata = healingResult;
-    }
-
-    // Save incoming message if actualChatId exists
+    // 3. Save incoming user message
     let savedUserMsg: any = {
       id: 'msg-' + Date.now(),
       sender_role: senderRole,
-      content: incomingMessage.content,
-      image_url: incomingMessage.image_url,
-      healing_status: incomingMessage.healing_status,
-      healing_metadata: incomingMessage.healing_metadata,
+      content: content || (imageUrl ? 'Foto adjunta' : ''),
+      image_url: imageUrl || null,
       created_at: new Date().toISOString()
     };
 
@@ -204,11 +166,9 @@ export async function POST(req: NextRequest) {
         .from('chat_messages')
         .insert({
           chat_id: actualChatId,
-          sender_role: incomingMessage.sender_role,
-          content: incomingMessage.content,
-          image_url: incomingMessage.image_url,
-          healing_status: incomingMessage.healing_status,
-          healing_metadata: incomingMessage.healing_metadata
+          sender_role: senderRole,
+          content: savedUserMsg.content,
+          image_url: savedUserMsg.image_url
         })
         .select()
         .maybeSingle();
@@ -216,7 +176,7 @@ export async function POST(req: NextRequest) {
       if (dbUserMsg) savedUserMsg = dbUserMsg;
     }
 
-    // 5. Human intervention handling
+    // 4. Human intervention
     if (senderRole === 'artist' && actualChatId) {
       await supabase
         .from('chats')
@@ -240,84 +200,28 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 6. Healing Vision Immediate Feedback
-    if (healingResult) {
-      const aiReplyContent = `${healingResult.suggested_action}\n\n*${healingResult.analysis_text}*`;
-
-      let savedAiMsg: any = {
-        id: 'ai-' + Date.now(),
-        sender_role: 'ai_assistant',
-        content: aiReplyContent,
-        healing_status: healingResult.healing_status,
-        healing_metadata: healingResult,
-        created_at: new Date().toISOString()
-      };
-
-      if (actualChatId) {
-        const { data: dbAiMsg } = await supabase
-          .from('chat_messages')
-          .insert({
-            chat_id: actualChatId,
-            sender_role: 'ai_assistant',
-            content: aiReplyContent,
-            healing_status: healingResult.healing_status,
-            healing_metadata: healingResult
-          })
-          .select()
-          .maybeSingle();
-
-        if (dbAiMsg) savedAiMsg = dbAiMsg;
-
-        const newBadge = healingResult.healing_status === 'alert_infection' ? 'takeover' : 'healing_check';
-        await supabase
-          .from('chats')
-          .update({
-            status_badge: newBadge,
-            ai_summary: `[Curación] ${healingResult.healing_status}: ${healingResult.analysis_text.slice(0, 60)}...`,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', actualChatId);
-      }
-
-      return NextResponse.json({
-        success: true,
-        chat,
-        message: savedUserMsg,
-        aiResponse: savedAiMsg
-      });
-    }
-
-    // 7. Budget Calculation if size mentioned
-    const pricingRules = artist?.pricing_rules || {
-      minimum_fee: 60,
-      hourly_rate: 80,
-      size_rates: {
-        small: { max_cm: 5, base_price: 60 },
-        medium: { max_cm: 15, base_price: 140 },
-        large: { max_cm: 25, base_price: 260 },
-        xlarge: { max_cm: 999, base_price: 450 }
-      },
-      color_multiplier: 1.25,
-      complex_placement_multiplier: 1.15
+    // 5. Tool Context & Execution
+    const toolContext: ToolExecutionContext = {
+      studioId: resolvedStudioId || chat?.studio_id || '',
+      artistId: resolvedArtistId || chat?.artist_id || '',
+      clientId: resolvedClientId || chat?.client_id,
+      clientProfileId,
+      chatId: actualChatId,
+      artistPricingRules: artist?.pricing_rules,
+      artistHealingTemplates: artist?.healing_templates,
+      artistName,
+      lang: lang as 'es' | 'en'
     };
 
-    const sizeMatch = (content || '').match(/(\d{1,3})\s*(?:cm|centimetros|centímetros)/i);
-    let quoteData: any = null;
+    // Check if deterministic tool intent is detected
+    let toolDecision = detectToolIntent(content || '', imageUrl);
+    let toolResult: any = null;
 
-    if (sizeMatch) {
-      const parsedCm = parseInt(sizeMatch[1], 10);
-      const isColor = /color|rojo|azul|verde|acuarela|amarillo/i.test(content);
-      const isComplex = /costilla|cuello|mano|dedo|pecho|clavicula|pie|tobillo|rodilla/i.test(content);
-
-      quoteData = calculateQuote(pricingRules, {
-        size_cm: parsedCm,
-        is_color: isColor,
-        is_complex_placement: isComplex,
-        lang: lang as 'es' | 'en'
-      });
+    if (toolDecision) {
+      toolResult = await executeAiTool(toolDecision.tool, toolDecision.arguments, toolContext);
     }
 
-    // 8. Retrieve message history for context
+    // 6. Retrieve History for conversational context
     let historyMessages: ChatMessage[] = [];
     if (actualChatId) {
       const { data: dbHistory } = await supabase
@@ -325,7 +229,7 @@ export async function POST(req: NextRequest) {
         .select('sender_role, content, created_at')
         .eq('chat_id', actualChatId)
         .order('created_at', { ascending: true })
-        .limit(12);
+        .limit(10);
 
       if (dbHistory) {
         historyMessages = dbHistory.map(m => ({
@@ -341,29 +245,45 @@ export async function POST(req: NextRequest) {
 
     const compressed = compressContext(historyMessages);
 
-    // 9. Prompt Eden AI Assistant
-    const systemPrompt = `Eres el Asistente Virtual Inteligente del estudio de tatuajes para el artista ${artistName}.
-Tu objetivo es responder con estilo auténtico de estudio de tatuajes, cercano, profesional y moderno al cliente (${clientName}).
-Tus funciones son:
-1. Resolver dudas sobre estilos de tatuaje (Blackwork, Fineline, Realismo, Neo-traditional, etc.), higiene, preparación previa y cuidados posteriores.
-2. Calcular presupuestos aproximados siguiendo las directrices del tatuador cuando el cliente dé medidas o detalles.
-${quoteData ? `NOTA CLAVE DE PRESUPUESTO: El sistema ha calculado un presupuesto estimado de ${quoteData.estimated_min}€ a ${quoteData.estimated_max}€ para una pieza de ${quoteData.size_cm}cm. Incluye este rango en tu respuesta y añade SIEMPRE que es una estimación sujeta a confirmación en el estudio.` : ''}
-3. Recordar que las citas (tanto consultas de diseño gratuitas como sesiones de aguja) se pueden solicitar directamente en el calendario de la web.
-4. Responder en ${lang === 'en' ? 'Inglés' : 'Español'}.
-5. Mantener las respuestas ágiles (2 a 3 párrafos), con tono acogedor de tatuador profesional.`;
+    // 7. System Prompt with Tools JSON knowledge & Artist Identity
+    const toolsJsonSchema = JSON.stringify(AI_TOOLS, null, 2);
+    const systemPrompt = `Eres el Asistente Virtual Oficial con Inteligencia Artificial de ${artistName} en el estudio de tatuajes.
+Tu misión es atender con máxima cordialidad, profesionalidad y agilidad al cliente (${clientName}).
 
-    const aiResponseText = await callEdenAI({
-      messages: compressed,
-      instructions: systemPrompt,
-      temperature: 0.6
-    });
+HERRAMIENTAS DISPONIBLES (JSON SCHEMA):
+${toolsJsonSchema}
 
-    // 10. Save AI message
+INSTRUCCIONES CLAVE:
+1. Si una herramienta ya se ha ejecutado (${toolDecision ? `Ejecutada con éxito: ${toolDecision.tool}` : 'ninguna aún'}), utiliza su resultado directamente para responder de forma acogedora.
+${toolResult?.createdAppointment ? `¡IMPORTANTE! Se ha reservado la cita con éxito para el cliente: ${toolResult.displayText}. Confirma los detalles amablemente y recuérdale que se preparará la ficha y el consentimiento informado.` : ''}
+${toolResult?.quoteData ? `¡IMPORTANTE! El presupuesto oficial estimado es: ${toolResult.quoteData.estimated_min}€ - ${toolResult.quoteData.estimated_max}€. Menciónalo claramente avisando de que es orientativo hasta ver el detalle final.` : ''}
+${toolResult?.healingData ? `¡IMPORTANTE! El diagnóstico de curación es: ${toolResult.healingData.analysis_text}. ${toolResult.healingData.suggested_action}. Transmite calma e instrucciones claras.` : ''}
+
+2. Si el cliente pide agendar una cita (día, hora o boceto) y no se ejecutó previamente, invoca la herramienta book_appointment o confirma los detalles para cerrarla.
+3. Si el cliente solicita hablar con una persona o con ${artistName}, pon la IA en pausa e indícale que el tatuador le contestará en breve.
+4. Recuerda ser transparente: ${artistName} tiene acceso y supervisa esta conversación en todo momento.
+5. Responde en ${lang === 'en' ? 'Inglés' : 'Español'} de forma concisa y cercana (2 a 3 párrafos cortos).`;
+
+    let finalReplyText = '';
+
+    if (toolResult && toolResult.displayText && (toolDecision?.tool === 'book_appointment' || toolDecision?.tool === 'analyze_healing')) {
+      finalReplyText = toolResult.displayText;
+    } else {
+      finalReplyText = await callEdenAI({
+        messages: compressed,
+        instructions: systemPrompt,
+        temperature: 0.6
+      });
+    }
+
+    // 8. Save AI response message
     let savedAiMsg: any = {
       id: 'ai-' + Date.now(),
       sender_role: 'ai_assistant',
-      content: aiResponseText,
-      quote_data: quoteData || null,
+      content: finalReplyText,
+      quote_data: toolResult?.quoteData || null,
+      healing_status: toolResult?.healingData?.healing_status || null,
+      healing_metadata: toolResult?.healingData || null,
       created_at: new Date().toISOString()
     };
 
@@ -373,22 +293,30 @@ ${quoteData ? `NOTA CLAVE DE PRESUPUESTO: El sistema ha calculado un presupuesto
         .insert({
           chat_id: actualChatId,
           sender_role: 'ai_assistant',
-          content: aiResponseText,
-          quote_data: quoteData || null
+          content: finalReplyText,
+          quote_data: toolResult?.quoteData || null,
+          healing_status: toolResult?.healingData?.healing_status || null,
+          healing_metadata: toolResult?.healingData || null
         })
         .select()
         .maybeSingle();
 
       if (dbAiMsg) savedAiMsg = dbAiMsg;
 
-      const updatedHistory: ChatMessage[] = [...compressed, { role: 'assistant', content: aiResponseText }];
+      // Update badge & summary
+      let newBadge = 'quoting';
+      if (toolResult?.createdAppointment) newBadge = 'booking';
+      if (toolResult?.healingData) newBadge = toolResult.healingData.healing_status === 'alert_infection' ? 'takeover' : 'healing_check';
+      if (toolDecision?.tool === 'request_human_takeover') newBadge = 'takeover';
+
+      const updatedHistory: ChatMessage[] = [...compressed, { role: 'assistant', content: finalReplyText }];
       const chatSummary = await generateChatSummary(updatedHistory, lang as 'es' | 'en');
 
       await supabase
         .from('chats')
         .update({
           ai_summary: chatSummary,
-          status_badge: quoteData ? 'quoting' : 'booking',
+          status_badge: newBadge,
           updated_at: new Date().toISOString()
         })
         .eq('id', actualChatId);
@@ -399,7 +327,10 @@ ${quoteData ? `NOTA CLAVE DE PRESUPUESTO: El sistema ha calculado un presupuesto
       chat: chat || { id: actualChatId || 'session-chat', ai_enabled: true },
       message: savedUserMsg,
       aiResponse: savedAiMsg,
-      quote: quoteData
+      toolExecuted: toolDecision?.tool || null,
+      createdAppointment: toolResult?.createdAppointment || null,
+      quote: toolResult?.quoteData || null,
+      healing: toolResult?.healingData || null
     });
 
   } catch (err: any) {
@@ -409,13 +340,13 @@ ${quoteData ? `NOTA CLAVE DE PRESUPUESTO: El sistema ha calculado un presupuesto
       message: {
         id: 'msg-' + Date.now(),
         sender_role: 'client',
-        content: req.body ? 'Mensaje recibido' : 'Mensaje',
+        content: 'Mensaje recibido',
         created_at: new Date().toISOString()
       },
       aiResponse: {
         id: 'ai-' + Date.now(),
         sender_role: 'ai_assistant',
-        content: '¡Hola! Gracias por escribir al estudio. En este momento hemos registrado tu consulta y el tatuador o nuestro asistente te responderá enseguida. Si deseas pedir cita o consultar presupuesto por centímetros (ej. "15 cm"), indícanoslo.',
+        content: '¡Hola! He recibido tu mensaje. Como asistente del tatuador puedo agendar tu cita, calcular tu presupuesto por centímetros o revisar fotos de curación. ¿En qué te ayudo hoy?',
         created_at: new Date().toISOString()
       }
     });

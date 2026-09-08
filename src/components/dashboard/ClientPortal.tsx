@@ -18,7 +18,12 @@ import {
   Flame,
   ShieldCheck,
   Compass,
-  CornerDownRight
+  CornerDownRight,
+  User,
+  Users,
+  Bot,
+  ArrowRight,
+  Repeat
 } from 'lucide-react';
 import SignaturePad from 'signature_pad';
 
@@ -27,15 +32,15 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
   const [appointments, setAppointments] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [studios, setStudios] = useState<any[]>([]);
-  const [activeChat, setActiveChat] = useState<any>({
-    id: 'client-chat-session',
-    ai_enabled: true,
-    status_badge: 'quoting'
-  });
+  
+  // Dedicated 1:1 Chat per Artist state
+  const [selectedChatArtist, setSelectedChatArtist] = useState<any>(null);
+  const [activeChat, setActiveChat] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [loadingChat, setLoadingChat] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Booking Modal State
@@ -112,7 +117,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
 
       // 3. Fetch studios & artists
       const { data: stds } = await supabase.from('studios').select('id, name, address');
-      const { data: arts } = await supabase.from('artists').select('id, display_name, studio_id, specialties');
+      const { data: arts } = await supabase.from('artists').select('id, display_name, studio_id, specialties, hourly_rate, minimum_fee, bio');
       setStudios(stds || []);
       setArtists(arts || []);
 
@@ -121,29 +126,6 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       if (defaultStudio) setSelectedStudioId(defaultStudio);
       if (defaultArtist) setSelectedArtistId(defaultArtist);
 
-      // 4. Initialize Chat Session via Admin-backed server endpoint
-      try {
-        const sessionRes = await fetch('/api/chat/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientProfileId: user.id,
-            artistId: defaultArtist,
-            studioId: defaultStudio
-          })
-        });
-
-        if (sessionRes.ok) {
-          const sessionData = await sessionRes.json();
-          if (sessionData.chat) setActiveChat(sessionData.chat);
-          if (sessionData.messages && sessionData.messages.length > 0) {
-            setMessages(sessionData.messages);
-          }
-        }
-      } catch (chatInitErr) {
-        console.warn('Chat session init fallback:', chatInitErr);
-      }
-
     } catch (err) {
       console.error('Error loading client portal data:', err);
     } finally {
@@ -151,8 +133,37 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
     }
   };
 
+  // Open dedicated 1:1 chat with a specific artist
+  const handleSelectChatArtist = async (art: any) => {
+    setSelectedChatArtist(art);
+    setLoadingChat(true);
+    try {
+      const sessionRes = await fetch('/api/chat/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientProfileId: user.id,
+          artistId: art.id,
+          studioId: art.studio_id || studios[0]?.id
+        })
+      });
+
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData.chat) setActiveChat(sessionData.chat);
+        setMessages(sessionData.messages || []);
+      }
+    } catch (err) {
+      console.error('Error opening chat with artist:', err);
+    } finally {
+      setLoadingChat(false);
+    }
+  };
+
   const handleSendMessage = async (e?: React.FormEvent, uploadedImgUrl?: string, promptOverride?: string) => {
     if (e) e.preventDefault();
+    if (!selectedChatArtist) return;
+
     const textToSend = (promptOverride || inputText).trim();
     if ((!textToSend && !uploadedImgUrl) || sendingMsg) return;
 
@@ -182,8 +193,8 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           senderRole: 'client',
           lang: profile?.language || 'es',
           clientProfileId: user?.id,
-          artistId: selectedArtistId || artists[0]?.id,
-          studioId: selectedStudioId || studios[0]?.id
+          artistId: selectedChatArtist.id,
+          studioId: selectedChatArtist.studio_id || studios[0]?.id
         })
       });
 
@@ -191,11 +202,21 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       if (data.chat) {
         setActiveChat(data.chat);
       }
+
+      // If AI executed book_appointment, append the created appointment immediately!
+      if (data.createdAppointment) {
+        setAppointments(prev => [...prev, data.createdAppointment]);
+      }
+
       if (data.aiResponse) {
         setMessages(prev => [
           ...prev.filter(m => m.id !== tempId),
           data.message || optimisticMsg,
-          data.aiResponse
+          {
+            ...data.aiResponse,
+            createdAppointment: data.createdAppointment,
+            quote_data: data.quote || data.aiResponse.quote_data
+          }
         ]);
       } else if (data.message) {
         setMessages(prev => [...prev.filter(m => m.id !== tempId), data.message]);
@@ -377,7 +398,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Asistente IA del Estudio & Visión</span>
+          <span>Chat con Tatuador & Asistente IA</span>
         </button>
       </div>
 
@@ -475,171 +496,310 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         </div>
       )}
 
-      {/* TAB 2: AI & ARTIST CHAT (WITH VISION AFTERCARE) */}
+      {/* TAB 2: AI & ARTIST CHAT (1:1 EXCLUSIVO POR ARTISTA) */}
       {activeTab === 'chat' && (
-        <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden flex flex-col h-[700px] bg-ink-950/70 shadow-2xl relative">
-          {/* Chat Header */}
-          <div className="p-4 border-b border-white/10 bg-ink-900/90 backdrop-blur-md flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-crimson-600 via-crimson-500 to-amber-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-crimson-600/30">
-                AI
+        <div className="space-y-4">
+          {/* SCREEN A: IF NO ARTIST SELECTED -> ARTIST SELECTION VIEW */}
+          {!selectedChatArtist ? (
+            <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-white/10 bg-ink-950/70 shadow-2xl text-center">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-crimson-600 to-amber-500 text-white flex items-center justify-center mx-auto mb-4 shadow-lg shadow-crimson-600/30">
+                <Users className="w-7 h-7" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span>Asistente del Tatuador ({artists[0]?.display_name || 'Estudio'})</span>
-                  {activeChat?.ai_enabled ? (
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      IA Activa 24/7
-                    </span>
-                  ) : (
-                    <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold">
-                      ● Tatuador en directo
-                    </span>
-                  )}
-                </h3>
-                <p className="text-[11px] text-ink-400">Presupuestos por cm, recomendaciones de estilo y scanner de cicatrización</p>
-              </div>
-            </div>
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mb-2">
+                Selecciona un Tatuador para Chatear
+              </h2>
+              <p className="text-sm text-ink-400 max-w-lg mx-auto mb-8">
+                Para que tus dudas, presupuestos y citas le lleguen directamente al artista adecuado, cada tatuador tiene su propio canal 1:1 asistido por IA.
+              </p>
 
-            <div className="hidden sm:flex items-center gap-2 text-xs text-ink-400 font-mono">
-              <span className="w-2 h-2 rounded-full bg-crimson-500" />
-              <span>Eden AI (GPT-4o-mini)</span>
-            </div>
-          </div>
-
-          {/* Quick Action Prompt Chips */}
-          <div className="px-4 py-2 bg-ink-900/40 border-b border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => handleSendMessage(undefined, undefined, '¿Cuánto costaría aproximadamente un tatuaje de 15 cm a color en el antebrazo?')}
-              className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
-            >
-              <span>🩸 Presupuesto 15cm color</span>
-            </button>
-            <button
-              onClick={() => handleSendMessage(undefined, undefined, '¿Cómo debo limpiar y cuidar el tatuaje durante los primeros 3 días?')}
-              className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
-            >
-              <span>🩹 Cuidados iniciales</span>
-            </button>
-            <button
-              onClick={() => handleSendMessage(undefined, undefined, '¿Qué diferencia hay entre una consulta de diseño y una sesión de tatuaje?')}
-              className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
-            >
-              <span>📜 Consulta vs Sesión</span>
-            </button>
-          </div>
-
-          {/* Messages Area */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center py-16 text-ink-400 text-xs max-w-sm mx-auto">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-3">
-                  <Sparkles className="w-6 h-6" />
+              {artists.length === 0 ? (
+                <div className="text-ink-500 text-sm font-mono py-8">
+                  Cargando artistas del estudio...
                 </div>
-                <h4 className="text-sm font-bold text-white mb-1">¡Bienvenido al Chat del Estudio!</h4>
-                <p className="leading-relaxed">
-                  Indica qué idea tienes, las medidas en centímetros (ej: "12 cm") o pulsa en 📷 para enviar una foto de curación o referencia.
-                </p>
-              </div>
-            )}
-
-            {messages.map((msg) => {
-              const isClient = msg.sender_role === 'client';
-              const isAi = msg.sender_role === 'ai_assistant';
-
-              return (
-                <div key={msg.id} className={`flex flex-col ${isClient ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[88%] sm:max-w-[78%] p-4 rounded-2xl text-sm leading-relaxed ${
-                    isClient
-                      ? 'bg-crimson-600 text-white rounded-br-xs shadow-md shadow-crimson-600/20'
-                      : isAi
-                      ? 'bg-ink-900 border border-white/10 text-ink-100 rounded-bl-xs shadow-md'
-                      : 'bg-amber-600/20 border border-amber-500/30 text-amber-200 rounded-bl-xs'
-                  }`}>
-                    {/* Role Label */}
-                    <span className="block text-[10px] uppercase font-mono font-bold tracking-wider mb-1 opacity-75">
-                      {isClient ? 'Tú (Cliente)' : isAi ? '✦ Asistente IA del Estudio' : '⚡ Tatuador (Respuesta Directa)'}
-                    </span>
-
-                    {/* Attached Image (e.g. healing tattoo) */}
-                    {msg.image_url && (
-                      <div className="mb-3 rounded-xl overflow-hidden border border-white/15 max-w-xs shadow-lg">
-                        <img src={msg.image_url} alt="Foto tatuaje" className="w-full h-auto object-cover max-h-56" />
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    <div className="whitespace-pre-line text-xs sm:text-sm">{msg.content}</div>
-
-                    {/* Healing status badge if analyzed */}
-                    {msg.healing_status && (
-                      <div className="mt-2.5 pt-2 border-t border-white/10 text-xs flex items-center gap-1.5 font-semibold">
-                        {msg.healing_status === 'normal' && <span className="text-emerald-400 font-bold">✅ Cicatrización Fisiológica Normal</span>}
-                        {msg.healing_status === 'redness_mild' && <span className="text-amber-400 font-bold">⚠️ Enrojecimiento Leve Esperable</span>}
-                        {msg.healing_status === 'alert_infection' && <span className="text-crimson-400 font-bold">🚨 Alerta: Posible Irritación Severa o Supuración</span>}
-                      </div>
-                    )}
-
-                    {/* Quote Card if calculation generated */}
-                    {msg.quote_data && (
-                      <div className="mt-3 p-3 rounded-xl bg-black/40 border border-amber-500/30 text-xs space-y-1">
-                        <div className="font-bold text-amber-400 flex items-center gap-1">
-                          <span>💰 Estimación: {msg.quote_data.estimated_min}€ - {msg.quote_data.estimated_max}€</span>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 max-w-4xl mx-auto text-left">
+                  {artists.map((art) => (
+                    <div
+                      key={art.id}
+                      onClick={() => handleSelectChatArtist(art)}
+                      className="tattoo-card p-6 rounded-3xl border border-white/10 hover:border-crimson-500/60 cursor-pointer transition-all hover:scale-[1.02] flex flex-col justify-between group shadow-xl"
+                    >
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 rounded-2xl bg-ink-900 border border-crimson-500/30 text-crimson-400 font-bold text-lg flex items-center justify-center shadow-inner group-hover:border-crimson-500">
+                            {art.display_name?.charAt(0) || 'A'}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-white text-base group-hover:text-crimson-400 transition-colors">
+                              {art.display_name}
+                            </h3>
+                            <span className="text-[11px] text-ink-400 font-mono">
+                              Tarifa base: {art.minimum_fee || 60}€
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-[11px] text-ink-400">{msg.quote_data.disclaimer}</p>
+
+                        {/* Specialties badges */}
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {(art.specialties && art.specialties.length > 0 ? art.specialties : ['Tattoo', 'Custom Ink']).map((spec: string, sIdx: number) => (
+                            <span
+                              key={sIdx}
+                              className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/5 text-ink-300 border border-white/5"
+                            >
+                              {spec}
+                            </span>
+                          ))}
+                        </div>
+
+                        {art.bio && (
+                          <p className="text-xs text-ink-400 line-clamp-2 mb-4 leading-relaxed">
+                            {art.bio}
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <span className="text-[10px] text-ink-500 mt-1 px-1 font-mono">
-                    {new Date(msg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                      <button
+                        type="button"
+                        className="w-full py-2.5 rounded-xl bg-crimson-600/20 group-hover:bg-crimson-600 text-crimson-300 group-hover:text-white border border-crimson-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                      >
+                        <span>Abrir Chat Directo</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-
-            {/* Live Typing Indicator */}
-            {isAiThinking && (
-              <div className="flex flex-col items-start">
-                <div className="p-3.5 rounded-2xl bg-ink-900 border border-crimson-500/30 text-ink-300 rounded-bl-xs flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+              )}
+            </div>
+          ) : (
+            /* SCREEN B: DEDICATED 1:1 CHAT WITH SELECTED ARTIST */
+            <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden flex flex-col h-[740px] bg-ink-950/70 shadow-2xl relative">
+              {/* Chat Header */}
+              <div className="p-4 border-b border-white/10 bg-ink-900/95 backdrop-blur-md flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-crimson-600 via-crimson-500 to-amber-500 flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-crimson-600/30">
+                    {selectedChatArtist.display_name?.charAt(0) || 'A'}
                   </div>
-                  <span className="text-xs font-mono text-ink-400">El Asistente está escribiendo...</span>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Chat con {selectedChatArtist.display_name}</span>
+                      {activeChat?.ai_enabled ? (
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 font-mono">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                          IA Activa (Supervisada)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold font-mono">
+                          ● Tatuador en directo
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-ink-400">
+                      Especialidades: {selectedChatArtist.specialties?.join(', ') || 'Todo estilo'}
+                    </p>
+                  </div>
                 </div>
+
+                {/* Switch Artist Button */}
+                <button
+                  onClick={() => setSelectedChatArtist(null)}
+                  className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-ink-200 hover:text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors"
+                >
+                  <Repeat className="w-3.5 h-3.5 text-crimson-500" />
+                  <span>Cambiar Tatuador</span>
+                </button>
               </div>
-            )}
 
-            <div ref={messagesEndRef} />
-          </div>
+              {/* Quick Action Prompt Chips */}
+              <div className="px-4 py-2.5 bg-ink-900/40 border-b border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => handleSendMessage(undefined, undefined, 'Quiero pedir una cita para este viernes a las 11:00')}
+                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-crimson-500/10 hover:bg-crimson-500/20 text-crimson-300 hover:text-white border border-crimson-500/30 transition-colors flex items-center gap-1 font-medium"
+                >
+                  <span>🗓️ Pedir cita este viernes 11:00</span>
+                </button>
+                <button
+                  onClick={() => handleSendMessage(undefined, undefined, '¿Cuánto costaría aproximadamente un tatuaje de 15 cm a color en el antebrazo?')}
+                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
+                >
+                  <span>💰 Presupuesto 15cm color</span>
+                </button>
+                <button
+                  onClick={() => handleSendMessage(undefined, undefined, '¿Cómo debo cuidar el tatuaje durante los primeros 3 días?')}
+                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
+                >
+                  <span>🩹 Cuidados iniciales</span>
+                </button>
+                <button
+                  onClick={() => handleSendMessage(undefined, undefined, 'Quiero hablar con el tatuador')}
+                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white border border-amber-500/30 transition-colors flex items-center gap-1"
+                >
+                  <span>🧑‍🎨 Hablar con el tatuador</span>
+                </button>
+              </div>
 
-          {/* Input Area */}
-          <form onSubmit={(e) => handleSendMessage(e)} className="p-3.5 border-t border-white/10 bg-ink-900/90 backdrop-blur-md flex items-center gap-2">
-            {/* Camera Button for healing tracker photos */}
-            <label className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white cursor-pointer transition-colors border border-white/5 flex items-center justify-center shrink-0" title="Subir foto de tu tatuaje para análisis o referencia">
-              <Camera className="w-5 h-5 text-crimson-500" />
-              <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-            </label>
+              {/* Messages Area */}
+              <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
+                {/* Transparent Initial Welcome Banner (pinned) */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-ink-900 via-ink-950 to-ink-900 border border-crimson-500/30 text-xs space-y-2.5 shadow-lg">
+                  <div className="flex items-center gap-2 font-bold text-white text-sm">
+                    <Bot className="w-4 h-4 text-crimson-500" />
+                    <span>Asistente Virtual Oficial de {selectedChatArtist.display_name}</span>
+                  </div>
+                  <p className="text-ink-300 leading-relaxed">
+                    Estás en el canal directo con el asistente de <strong>{selectedChatArtist.display_name}</strong>. Desde este chat puedes hacer todo directamente:
+                  </p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-ink-300 font-medium">
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-amber-400">💰</span>
+                      <span><strong>Presupuestos por medidas:</strong> Indica centímetros (ej: "15 cm en antebrazo").</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-crimson-400">📅</span>
+                      <span><strong>Agendar citas por chat:</strong> Pide fecha y hora y la agendará en el calendario.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-emerald-400">🩹</span>
+                      <span><strong>Revisar curación:</strong> Pulsa 📷 para analizar que no haya infección.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-blue-400">🧑‍🎨</span>
+                      <span><strong>Pausa y trato humano:</strong> Escribe "Quiero hablar con el tatuador".</span>
+                    </li>
+                  </ul>
+                  <div className="pt-2 border-t border-white/5 text-[11px] text-amber-400/90 flex items-center gap-1.5 font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                    <span>Transparencia: {selectedChatArtist.display_name} supervisa este chat y puede intervenir personalmente en cualquier momento.</span>
+                  </div>
+                </div>
 
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ej: Quiero presupuesto para pieza de 15cm a color en el antebrazo..."
-              className="flex-1 px-4 py-2.5 rounded-xl bg-ink-950 border border-white/10 text-sm text-white placeholder-ink-500 focus:outline-none focus:border-crimson-500 transition-colors"
-            />
+                {loadingChat && (
+                  <div className="text-center py-12 text-xs font-mono text-ink-400">
+                    Cargando historial con {selectedChatArtist.display_name}...
+                  </div>
+                )}
 
-            <button
-              type="submit"
-              disabled={sendingMsg || (!inputText.trim())}
-              className="p-3 rounded-xl bg-crimson-600 hover:bg-crimson-500 disabled:opacity-40 text-white transition-all shadow-md shadow-crimson-600/30 shrink-0"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
+                {messages.map((msg) => {
+                  const isClient = msg.sender_role === 'client';
+                  const isAi = msg.sender_role === 'ai_assistant';
+
+                  return (
+                    <div key={msg.id} className={`flex flex-col ${isClient ? 'items-end' : 'items-start'}`}>
+                      <div className={`max-w-[88%] sm:max-w-[78%] p-4 rounded-2xl text-sm leading-relaxed ${
+                        isClient
+                          ? 'bg-crimson-600 text-white rounded-br-xs shadow-md shadow-crimson-600/20'
+                          : isAi
+                          ? 'bg-ink-900 border border-white/10 text-ink-100 rounded-bl-xs shadow-md'
+                          : 'bg-amber-600/20 border border-amber-500/30 text-amber-200 rounded-bl-xs'
+                      }`}>
+                        {/* Role Label */}
+                        <span className="block text-[10px] uppercase font-mono font-bold tracking-wider mb-1 opacity-75">
+                          {isClient ? 'Tú (Cliente)' : isAi ? `✦ Asistente de ${selectedChatArtist.display_name}` : `⚡ ${selectedChatArtist.display_name} (Intervención)`}
+                        </span>
+
+                        {/* Attached Image */}
+                        {msg.image_url && (
+                          <div className="mb-3 rounded-xl overflow-hidden border border-white/15 max-w-xs shadow-lg">
+                            <img src={msg.image_url} alt="Foto tatuaje" className="w-full h-auto object-cover max-h-56" />
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        <div className="whitespace-pre-line text-xs sm:text-sm">{msg.content}</div>
+
+                        {/* Interactive Confirmed Appointment Card (Created via AI) */}
+                        {msg.createdAppointment && (
+                          <div className="mt-3 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-xs space-y-1.5 shadow-lg">
+                            <div className="font-bold text-emerald-400 flex items-center gap-1.5 text-sm">
+                              <span>✅ Cita Agendada en el Calendario</span>
+                            </div>
+                            <div className="text-ink-200">
+                              <strong>Tipo:</strong> {msg.createdAppointment.appointment_type === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'}
+                            </div>
+                            <div className="text-ink-200 font-mono text-[11px]">
+                              <strong>Fecha y Hora:</strong> {new Date(msg.createdAppointment.start_time).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date(msg.createdAppointment.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}h
+                            </div>
+                            <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between">
+                              <span className="text-[10px] text-emerald-400/80">Reflejada en tu pestaña Mis Citas</span>
+                              <button
+                                onClick={() => setActiveTab('appointments')}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-[10px] transition-colors"
+                              >
+                                Ver Mis Citas →
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Healing status badge */}
+                        {msg.healing_status && (
+                          <div className="mt-2.5 pt-2 border-t border-white/10 text-xs flex items-center gap-1.5 font-semibold">
+                            {msg.healing_status === 'normal' && <span className="text-emerald-400 font-bold">✅ Cicatrización Fisiológica Normal</span>}
+                            {msg.healing_status === 'redness_mild' && <span className="text-amber-400 font-bold">⚠️ Enrojecimiento Leve Esperable</span>}
+                            {msg.healing_status === 'alert_infection' && <span className="text-crimson-400 font-bold">🚨 Alerta: Posible Irritación Severa o Supuración</span>}
+                          </div>
+                        )}
+
+                        {/* Quote Card if calculation generated */}
+                        {msg.quote_data && (
+                          <div className="mt-3 p-3 rounded-xl bg-black/40 border border-amber-500/30 text-xs space-y-1">
+                            <div className="font-bold text-amber-400 flex items-center gap-1">
+                              <span>💰 Estimación: {msg.quote_data.estimated_min}€ - {msg.quote_data.estimated_max}€</span>
+                            </div>
+                            <p className="text-[11px] text-ink-400">{msg.quote_data.disclaimer}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <span className="text-[10px] text-ink-500 mt-1 px-1 font-mono">
+                        {new Date(msg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Live Typing Indicator */}
+                {isAiThinking && (
+                  <div className="flex flex-col items-start">
+                    <div className="p-3.5 rounded-2xl bg-ink-900 border border-crimson-500/30 text-ink-300 rounded-bl-xs flex items-center gap-3 shadow-lg">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-xs font-mono text-ink-400">El Asistente de {selectedChatArtist.display_name} está respondiendo...</span>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <form onSubmit={(e) => handleSendMessage(e)} className="p-3.5 border-t border-white/10 bg-ink-900/95 backdrop-blur-md flex items-center gap-2">
+                {/* Camera Button */}
+                <label className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white cursor-pointer transition-colors border border-white/5 flex items-center justify-center shrink-0" title="Subir foto de tu tatuaje para análisis o referencia">
+                  <Camera className="w-5 h-5 text-crimson-500" />
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                </label>
+
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={`Escribe a ${selectedChatArtist.display_name} (ej: 'Quiero cita para este viernes a las 11:00' o '15cm antebrazo')...`}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-ink-950 border border-white/10 text-sm text-white placeholder-ink-500 focus:outline-none focus:border-crimson-500 transition-colors"
+                />
+
+                <button
+                  type="submit"
+                  disabled={sendingMsg || (!inputText.trim())}
+                  className="p-3 rounded-xl bg-crimson-600 hover:bg-crimson-500 disabled:opacity-40 text-white transition-all shadow-md shadow-crimson-600/30 shrink-0"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
 
