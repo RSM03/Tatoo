@@ -62,9 +62,9 @@ export default function Navbar() {
     switch (role) {
       case 'studio':
       case 'artist':
-        return <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/30">Estudio / Tatuadores</span>;
+        return <span className="bg-amber-500/15 text-amber-400 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-amber-500/30 font-bold">⚡ Estudio / Artistas</span>;
       default:
-        return <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/30">Cliente</span>;
+        return <span className="bg-crimson-500/15 text-crimson-400 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-crimson-500/30 font-bold">🩸 Cliente</span>;
     }
   };
 

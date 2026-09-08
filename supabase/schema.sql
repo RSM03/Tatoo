@@ -330,37 +330,97 @@ CREATE POLICY "Studio owners can delete artists" ON public.artists FOR DELETE US
     studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
 );
 
+-- ------------------------------------------------------------------------------
+-- HELPER FUNCTIONS FOR NON-RECURSIVE RLS EVALUATION
+-- ------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_auth_client_ids()
+RETURNS TABLE (id UUID)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT id FROM public.clients WHERE profile_id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_auth_artist_ids()
+RETURNS TABLE (id UUID)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT a.id FROM public.artists a
+  LEFT JOIN public.studios s ON s.id = a.studio_id
+  WHERE a.profile_id = auth.uid() OR s.owner_id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_auth_studio_ids()
+RETURNS TABLE (id UUID)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT id FROM public.studios WHERE owner_id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_artist_client_ids()
+RETURNS TABLE (id UUID)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT client_id FROM public.appointments 
+  WHERE artist_id IN (
+    SELECT a.id FROM public.artists a
+    LEFT JOIN public.studios s ON s.id = a.studio_id
+    WHERE a.profile_id = auth.uid() OR s.owner_id = auth.uid()
+  );
+$$;
+
 -- Clients
-CREATE POLICY "Clients can view own record or studio/artist with appointment" ON public.clients FOR SELECT USING (
+CREATE POLICY "Clients can view own record or studio with appointment" ON public.clients FOR SELECT USING (
     profile_id = auth.uid() OR
-    id IN (SELECT client_id FROM public.appointments WHERE artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid()))
+    id IN (SELECT id FROM public.get_artist_client_ids())
+);
+CREATE POLICY "Users can insert own client record" ON public.clients FOR INSERT WITH CHECK (
+    profile_id = auth.uid()
 );
 CREATE POLICY "Clients can update own record" ON public.clients FOR UPDATE USING (profile_id = auth.uid());
 
 -- Appointments
 CREATE POLICY "Appointments viewable by involved parties" ON public.appointments FOR SELECT USING (
-    client_id IN (SELECT id FROM public.clients WHERE profile_id = auth.uid()) OR
-    artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid()) OR
-    studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
+    client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
+    artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
+    studio_id IN (SELECT id FROM public.get_auth_studio_ids())
 );
 CREATE POLICY "Clients, artists, and studios can insert appointments" ON public.appointments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Involved parties can update appointments" ON public.appointments FOR UPDATE USING (
-    client_id IN (SELECT id FROM public.clients WHERE profile_id = auth.uid()) OR
-    artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid()) OR
-    studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
+    client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
+    artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
+    studio_id IN (SELECT id FROM public.get_auth_studio_ids())
 );
 
 -- Chats & Messages
 CREATE POLICY "Chats viewable by participants" ON public.chats FOR SELECT USING (
-    client_id IN (SELECT id FROM public.clients WHERE profile_id = auth.uid()) OR
-    artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid()) OR
-    studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
+    client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
+    artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
+    studio_id IN (SELECT id FROM public.get_auth_studio_ids())
 );
+CREATE POLICY "Participants can insert chats" ON public.chats FOR INSERT WITH CHECK (true);
+CREATE POLICY "Participants can update chats" ON public.chats FOR UPDATE USING (
+    client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
+    artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
+    studio_id IN (SELECT id FROM public.get_auth_studio_ids())
+);
+
 CREATE POLICY "Chat messages viewable by chat participants" ON public.chat_messages FOR SELECT USING (
     chat_id IN (SELECT id FROM public.chats WHERE 
-        client_id IN (SELECT id FROM public.clients WHERE profile_id = auth.uid()) OR
-        artist_id IN (SELECT id FROM public.artists WHERE profile_id = auth.uid()) OR
-        studio_id IN (SELECT id FROM public.studios WHERE owner_id = auth.uid())
+        client_id IN (SELECT id FROM public.get_auth_client_ids()) OR
+        artist_id IN (SELECT id FROM public.get_auth_artist_ids()) OR
+        studio_id IN (SELECT id FROM public.get_auth_studio_ids())
     )
 );
 CREATE POLICY "Participants can insert chat messages" ON public.chat_messages FOR INSERT WITH CHECK (true);

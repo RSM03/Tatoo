@@ -286,30 +286,26 @@ export default function ArtistPortal({
       const startDateTime = new Date(`${modalDate}T${modalStartTime}:00`);
       const endDateTime = new Date(`${modalDate}T${modalEndTime}:00`);
 
-      const newRecord: any = {
-        artist_id: artist.id,
-        studio_id: artist.studio_id || (await supabase.from('studios').select('id').limit(1).single()).data?.id,
-        appointment_type: modalType === 'walk_in' ? 'tattoo_session' : modalType === 'break' ? 'break_blocked' : 'vacation',
-        title: modalTitle || (modalType === 'walk_in' ? 'Cita Walk-in' : modalType === 'break' ? 'Espacio de Descanso' : 'Vacaciones'),
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        status: 'confirmed'
-      };
+      const res = await fetch('/api/appointments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistId: artist.id,
+          studioId: artist.studio_id,
+          appointmentType: modalType === 'walk_in' ? 'tattoo_session' : modalType === 'break' ? 'break_blocked' : 'vacation',
+          title: modalTitle || (modalType === 'walk_in' ? 'Cita Walk-in' : modalType === 'break' ? 'Espacio de Descanso' : 'Vacaciones'),
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          walkInName: modalType === 'walk_in' ? (walkInClientName.trim() || 'Cliente No Registrado') : null,
+          walkInPhone: modalType === 'walk_in' ? walkInClientPhone.trim() : null,
+          status: 'confirmed'
+        })
+      });
 
-      if (modalType === 'walk_in') {
-        newRecord.walk_in_name = walkInClientName.trim() || 'Cliente No Registrado';
-        newRecord.walk_in_phone = walkInClientPhone.trim();
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al guardar evento');
 
-      const { data: created, error } = await supabase
-        .from('appointments')
-        .insert(newRecord)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setAppointments(prev => [...prev, created]);
+      setAppointments(prev => [...prev, data.appointment]);
       setIsModalOpen(false);
       setWalkInClientName('');
       setWalkInClientPhone('');
