@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { callEdenAI, generateChatSummary, compressContext, type ChatMessage } from '@/lib/edenai';
-import { executeAiTool, detectToolIntent, AI_TOOLS, ToolExecutionContext } from '@/lib/ai-tools';
+import { callEdenAI, callEdenAIWithTools, generateChatSummary, compressContext, type ChatMessage } from '@/lib/edenai';
+import { executeAiTool, detectToolIntent, AI_TOOLS, OPENAI_TOOLS, ToolExecutionContext, ToolExecutionResult } from '@/lib/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 5. Tool Context & Execution
+    // 5. Tool Context
     const toolContext: ToolExecutionContext = {
       studioId: resolvedStudioId || chat?.studio_id || '',
       artistId: resolvedArtistId || chat?.artist_id || '',
@@ -210,16 +210,9 @@ export async function POST(req: NextRequest) {
       artistPricingRules: artist?.pricing_rules,
       artistHealingTemplates: artist?.healing_templates,
       artistName,
-      lang: lang as 'es' | 'en'
+      lang: lang as 'es' | 'en',
+      userMessage: content || ''
     };
-
-    // Check if deterministic tool intent is detected
-    let toolDecision = detectToolIntent(content || '', imageUrl);
-    let toolResult: any = null;
-
-    if (toolDecision) {
-      toolResult = await executeAiTool(toolDecision.tool, toolDecision.arguments, toolContext);
-    }
 
     // 6. Retrieve History for conversational context
     let historyMessages: ChatMessage[] = [];
@@ -240,50 +233,154 @@ export async function POST(req: NextRequest) {
     }
 
     if (historyMessages.length === 0) {
-      historyMessages = [{ role: 'user', content: content || 'Hola' }];
+      historyMessages = [{ role: 'user', content: content || (imageUrl ? 'Te adjunto esta foto para que la revises.' : 'Hola') }];
     }
 
     const compressed = compressContext(historyMessages);
 
-    // 7. System Prompt with Tools JSON knowledge & Artist Identity
-    const toolsJsonSchema = JSON.stringify(AI_TOOLS, null, 2);
+    // 7. System Prompt with Real Temporal Context & Artist Identity
+    const now = new Date();
+    const toLocalIso = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    const todayIso = toLocalIso(now);
+    const todayFormatted = now.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const currentTimeFormatted = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+    // Precompute upcoming 7 days in the current year to eliminate model cutoff hallucination
+    const calendarWeekReference = [0, 1, 2, 3, 4, 5, 6, 7].map(dayOffset => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + dayOffset);
+      const iso = toLocalIso(d);
+      const weekdayName = d.toLocaleDateString('es-ES', { weekday: 'long' });
+      const pretty = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+      const label = dayOffset === 0 ? 'Hoy' : (dayOffset === 1 ? 'Mañana' : `Este ${weekdayName}`);
+      return `- ${label} (${pretty}): ${iso}`;
+    }).join('\n');
+
     const systemPrompt = `Eres el Asistente Virtual Oficial con Inteligencia Artificial de ${artistName} en el estudio de tatuajes.
 Tu misión es atender con máxima cordialidad, profesionalidad y agilidad al cliente (${clientName}).
 
-HERRAMIENTAS DISPONIBLES (JSON SCHEMA):
-${toolsJsonSchema}
+CALENDARIO OFICIAL Y CONTEXTO TEMPORAL ACTUAL:
+- Fecha de hoy: ${todayFormatted} (ISO: ${todayIso})
+- Hora actual: ${currentTimeFormatted}
+- Año actual: ${now.getFullYear()}
+- Tatuador: ${artistName}
+- Especialidades: ${artist?.specialties?.join(', ') || 'Todo estilo de tatuaje'}
+- Tarifa base mínima: ${artist?.minimum_fee || 60}€
 
-INSTRUCCIONES CLAVE:
-1. Si una herramienta ya se ha ejecutado (${toolDecision ? `Ejecutada con éxito: ${toolDecision.tool}` : 'ninguna aún'}), utiliza su resultado directamente para responder de forma acogedora.
-${toolResult?.createdAppointment ? `¡IMPORTANTE! Se ha reservado la cita con éxito para el cliente: ${toolResult.displayText}. Confirma los detalles amablemente y recuérdale que se preparará la ficha y el consentimiento informado.` : ''}
-${toolResult?.quoteData ? `¡IMPORTANTE! El presupuesto oficial estimado es: ${toolResult.quoteData.estimated_min}€ - ${toolResult.quoteData.estimated_max}€. Menciónalo claramente avisando de que es orientativo hasta ver el detalle final.` : ''}
-${toolResult?.healingData ? `¡IMPORTANTE! El diagnóstico de curación es: ${toolResult.healingData.analysis_text}. ${toolResult.healingData.suggested_action}. Transmite calma e instrucciones claras.` : ''}
+CALENDARIO DE ESTA SEMANA (AÑO ${now.getFullYear()}):
+${calendarWeekReference}
 
-2. Si el cliente pide agendar una cita (día, hora o boceto) y no se ejecutó previamente, invoca la herramienta book_appointment o confirma los detalles para cerrarla.
-3. Si el cliente solicita hablar con una persona o con ${artistName}, pon la IA en pausa e indícale que el tatuador le contestará en breve.
-4. Recuerda ser transparente: ${artistName} tiene acceso y supervisa esta conversación en todo momento.
-5. Responde en ${lang === 'en' ? 'Inglés' : 'Español'} de forma concisa y cercana (2 a 3 párrafos cortos).`;
+REGLAS CRÍTICAS DE FECHAS (OBLIGATORIAS):
+1. La fecha actual es ${todayFormatted} (${todayIso}). Estamos en el año ${now.getFullYear()}.
+2. Cuando el cliente diga "hoy", "mañana", "este miércoles", "el viernes", "el próximo lunes", debes usar EXCLUSIVAMENTE las fechas del calendario de arriba (${now.getFullYear()}).
+3. NUNCA inventes fechas de 2023 o 2024 ni meses pasados. Si el cliente dice "este miércoles", la fecha en ${now.getFullYear()} es exactamente la indicada en el calendario de arriba.
+4. Cuando una herramienta devuelva huecos disponibles, cita SIEMPRE exactamente los días de la semana y horas devueltos por la herramienta.
 
-    let finalReplyText = '';
+REGLAS FUNDAMENTALES DE HERRAMIENTAS (TOOLS):
+1. 'check_availability': ÚSALA SIEMPRE que el cliente pregunte por citas de forma genérica ("quiero una cita", "dame una cita", "¿tienes hueco?", "¿qué horarios tienes?", "qué huecos tienes para este miércoles", "quiero reservar para el viernes"). NUNCA reserves directamente sin que el cliente haya confirmado un hueco específico. check_availability consultará la agenda real y devolverá huecos libres para que el cliente elija.
+2. 'book_appointment': ÚSALA ÚNICAMENTE cuando el cliente haya especificado una fecha y una hora concreta o haya elegido uno de los huecos propuestos (ej: "resérvame el viernes a las 11:00").
+3. 'get_client_appointments': ÚSALA si el cliente pregunta qué citas tiene agendadas o cuándo es su próxima cita.
+4. 'reschedule_appointment': ÚSALA cuando el cliente pida cambiar, reprogramar o mover una cita existente a otro día u hora.
+5. 'cancel_appointment': ÚSALA cuando el cliente pida anular o cancelar su cita agendada.
+6. 'estimate_quote': ÚSALA si el cliente consulta precio, presupuesto o indica medidas en cm.
+7. 'analyze_healing': ÚSALA si el cliente envía una foto de curación dérmica.
+8. 'request_human_takeover': ÚSALA si el cliente solicita expresamente hablar con una persona humana o con ${artistName}.
 
-    if (toolResult && toolResult.displayText && (toolDecision?.tool === 'book_appointment' || toolDecision?.tool === 'analyze_healing')) {
-      finalReplyText = toolResult.displayText;
-    } else {
-      finalReplyText = await callEdenAI({
-        messages: compressed,
-        instructions: systemPrompt,
-        temperature: 0.6
-      });
+Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir en cualquier momento. Responde siempre en ${lang === 'en' ? 'Inglés' : 'Español'} de forma cercana, acogedora y profesional.`;
+
+    // 8. Agentic Tool Execution Loop with Eden AI
+    let executedToolResult: ToolExecutionResult | null = null;
+    let toolExecutedName: string | null = null;
+
+    // Handle immediate image healing analysis if photo sent
+    if (imageUrl) {
+      toolExecutedName = 'analyze_healing';
+      executedToolResult = await executeAiTool('analyze_healing', { image_url: imageUrl }, toolContext);
     }
 
-    // 8. Save AI response message
+    let workingMessages: ChatMessage[] = [...compressed];
+    let finalReplyText = '';
+
+    // First LLM Turn (with tools schema)
+    const firstCall = await callEdenAIWithTools({
+      messages: workingMessages,
+      instructions: systemPrompt,
+      tools: OPENAI_TOOLS,
+      temperature: 0.5
+    });
+
+    if (firstCall.tool_calls && firstCall.tool_calls.length > 0) {
+      // Model selected a tool!
+      const toolCall = firstCall.tool_calls[0];
+      toolExecutedName = toolCall.function.name;
+
+      let parsedArgs: any = {};
+      try {
+        parsedArgs = JSON.parse(toolCall.function.arguments);
+      } catch {
+        parsedArgs = {};
+      }
+
+      executedToolResult = await executeAiTool(toolCall.function.name, parsedArgs, toolContext);
+
+      // Append assistant message with tool_calls and tool result message
+      workingMessages.push({
+        role: 'assistant',
+        content: null,
+        tool_calls: firstCall.tool_calls
+      });
+
+      workingMessages.push({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        name: toolCall.function.name,
+        content: JSON.stringify(executedToolResult.result)
+      });
+
+      // Second LLM Turn: model formulates natural response based on real tool execution data
+      const secondCall = await callEdenAIWithTools({
+        messages: workingMessages,
+        instructions: systemPrompt,
+        tools: OPENAI_TOOLS,
+        temperature: 0.5
+      });
+
+      finalReplyText = secondCall.content || executedToolResult.displayText || 'He gestionado tu petición.';
+    } else if (firstCall.content) {
+      finalReplyText = firstCall.content;
+    } else {
+      // Fallback deterministic intent if Eden AI didn't return text
+      const fallbackDecision = detectToolIntent(content || '', imageUrl);
+      if (fallbackDecision) {
+        toolExecutedName = fallbackDecision.tool;
+        executedToolResult = await executeAiTool(fallbackDecision.tool, fallbackDecision.arguments, toolContext);
+        finalReplyText = executedToolResult.displayText || 'He procesado tu solicitud.';
+      } else {
+        finalReplyText = '¡Hola! Soy el asistente virtual del estudio. Puedo mostrarte huecos libres para citas, modificar tus reservas existentes, calcular presupuestos o revisar la curación de tu tatuaje. ¿En qué te ayudo?';
+      }
+    }
+
+    // 9. Save AI response message
     let savedAiMsg: any = {
       id: 'ai-' + Date.now(),
       sender_role: 'ai_assistant',
       content: finalReplyText,
-      quote_data: toolResult?.quoteData || null,
-      healing_status: toolResult?.healingData?.healing_status || null,
-      healing_metadata: toolResult?.healingData || null,
+      quote_data: executedToolResult?.quoteData || null,
+      healing_status: executedToolResult?.healingData?.healing_status || null,
+      healing_metadata: executedToolResult?.healingData || null,
+      available_slots: executedToolResult?.availableSlots || null,
+      created_appointment: executedToolResult?.createdAppointment || null,
+      rescheduled_appointment: executedToolResult?.rescheduledAppointment || null,
       created_at: new Date().toISOString()
     };
 
@@ -294,20 +391,27 @@ ${toolResult?.healingData ? `¡IMPORTANTE! El diagnóstico de curación es: ${to
           chat_id: actualChatId,
           sender_role: 'ai_assistant',
           content: finalReplyText,
-          quote_data: toolResult?.quoteData || null,
-          healing_status: toolResult?.healingData?.healing_status || null,
-          healing_metadata: toolResult?.healingData || null
+          quote_data: executedToolResult?.quoteData || null,
+          healing_status: executedToolResult?.healingData?.healing_status || null,
+          healing_metadata: executedToolResult?.healingData || null
         })
         .select()
         .maybeSingle();
 
-      if (dbAiMsg) savedAiMsg = dbAiMsg;
+      if (dbAiMsg) {
+        savedAiMsg = {
+          ...dbAiMsg,
+          available_slots: executedToolResult?.availableSlots || null,
+          created_appointment: executedToolResult?.createdAppointment || null,
+          rescheduled_appointment: executedToolResult?.rescheduledAppointment || null
+        };
+      }
 
-      // Update badge & summary
+      // Update chat status badge & summary
       let newBadge = 'quoting';
-      if (toolResult?.createdAppointment) newBadge = 'booking';
-      if (toolResult?.healingData) newBadge = toolResult.healingData.healing_status === 'alert_infection' ? 'takeover' : 'healing_check';
-      if (toolDecision?.tool === 'request_human_takeover') newBadge = 'takeover';
+      if (executedToolResult?.createdAppointment || executedToolResult?.rescheduledAppointment) newBadge = 'booking';
+      if (executedToolResult?.healingData) newBadge = executedToolResult.healingData.healing_status === 'alert_infection' ? 'takeover' : 'healing_check';
+      if (toolExecutedName === 'request_human_takeover') newBadge = 'takeover';
 
       const updatedHistory: ChatMessage[] = [...compressed, { role: 'assistant', content: finalReplyText }];
       const chatSummary = await generateChatSummary(updatedHistory, lang as 'es' | 'en');
@@ -327,10 +431,14 @@ ${toolResult?.healingData ? `¡IMPORTANTE! El diagnóstico de curación es: ${to
       chat: chat || { id: actualChatId || 'session-chat', ai_enabled: true },
       message: savedUserMsg,
       aiResponse: savedAiMsg,
-      toolExecuted: toolDecision?.tool || null,
-      createdAppointment: toolResult?.createdAppointment || null,
-      quote: toolResult?.quoteData || null,
-      healing: toolResult?.healingData || null
+      toolExecuted: toolExecutedName,
+      createdAppointment: executedToolResult?.createdAppointment || null,
+      rescheduledAppointment: executedToolResult?.rescheduledAppointment || null,
+      cancelledAppointmentId: executedToolResult?.cancelledAppointmentId || null,
+      availableSlots: executedToolResult?.availableSlots || null,
+      clientAppointments: executedToolResult?.clientAppointments || null,
+      quote: executedToolResult?.quoteData || null,
+      healing: executedToolResult?.healingData || null
     });
 
   } catch (err: any) {
@@ -346,7 +454,7 @@ ${toolResult?.healingData ? `¡IMPORTANTE! El diagnóstico de curación es: ${to
       aiResponse: {
         id: 'ai-' + Date.now(),
         sender_role: 'ai_assistant',
-        content: '¡Hola! He recibido tu mensaje. Como asistente del tatuador puedo agendar tu cita, calcular tu presupuesto por centímetros o revisar fotos de curación. ¿En qué te ayudo hoy?',
+        content: '¡Hola! He recibido tu mensaje. Como asistente del tatuador puedo consultar huecos libres para tu cita, reprogramar una cita existente, calcular tu presupuesto o revisar fotos de curación. ¿En qué te ayudo hoy?',
         created_at: new Date().toISOString()
       }
     });

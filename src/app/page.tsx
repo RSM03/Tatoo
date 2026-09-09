@@ -49,68 +49,86 @@ export default function HomePage() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-gradient-to-tr from-crimson-600/25 via-amber-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-6xl mx-auto text-center flex flex-col items-center">
-          {/* Tattoo Studio Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-crimson-500/10 border border-crimson-500/30 text-xs font-mono font-bold text-crimson-400 mb-6 backdrop-blur-md shadow-lg shadow-crimson-600/10">
-            <Flame className="w-3.5 h-3.5 text-crimson-500 animate-pulse" />
-            <span>EL SISTEMA OPERATIVO PARA ESTUDIOS DE TATUAJE E ILUSTRACIÓN</span>
+          {/* Marked Tattoo Studio Badge */}
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-crimson-950/70 border border-crimson-500/50 text-xs font-mono font-bold text-crimson-300 mb-6 backdrop-blur-md shadow-xl shadow-crimson-600/20">
+            <span className="text-amber-400">✦</span>
+            <Flame className="w-4 h-4 text-crimson-500 animate-pulse" />
+            <span className="tracking-wider uppercase">SISTEMA PROFESIONAL PARA ESTUDIOS DE TATUAJE & ARTE CORPORAL</span>
+            <span className="text-amber-400">✦</span>
           </div>
 
-          {/* Main Headline with Ink Styling */}
-          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.1] mb-6">
-            El Asistente Inteligente de <span className="bg-gradient-to-r from-crimson-500 via-amber-400 to-crimson-400 bg-clip-text text-transparent">Aguja, Tinta y Citas</span>
+          {/* Main Headline with Dramatic Ink Styling */}
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white max-w-5xl leading-[1.08] mb-6 tattoo-heading">
+            El Ecosistema Inteligente de <span className="bg-gradient-to-r from-crimson-500 via-amber-300 to-crimson-400 bg-clip-text text-transparent drop-shadow-[0_4px_25px_rgba(217,4,41,0.5)]">Aguja, Tinta y Citas</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-ink-400 text-lg sm:text-xl max-w-2xl font-normal leading-relaxed mb-10">
-            Cotiza piezas automáticamente según centímetros y colores, supervisa la cicatrización con visión artificial (detecta infecciones), agenda citas y firma consentimientos sanitarios con validez legal.
+          <p className="text-ink-300 text-lg sm:text-xl max-w-2xl font-normal leading-relaxed mb-10">
+            Cotiza piezas automáticamente según centímetros y colores, supervisa la cicatrización con visión artificial contra infecciones, agenda citas en tiempo real y firma consentimientos sanitarios con validez legal.
           </p>
 
           {/* Hero CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             <Link
               href="/register"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-base shadow-xl shadow-crimson-600/35 flex items-center justify-center gap-2.5 transition-all hover:scale-105 border border-crimson-500/30"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-crimson-600 via-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-extrabold text-base shadow-2xl shadow-crimson-600/40 flex items-center justify-center gap-2.5 transition-all hover:scale-105 border border-crimson-400/50"
             >
               <span>Comenzar Ahora</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/login"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-ink-900/90 hover:bg-white/10 border border-white/15 text-ink-100 font-semibold text-base transition-colors flex items-center justify-center gap-2 shadow-md"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-ink-950/90 hover:bg-white/10 border border-white/20 text-white font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg hover:border-crimson-500/50"
             >
               <span>Acceder al Panel</span>
             </Link>
           </div>
 
-          {/* Tattoo Style Showcase Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-10">
-            <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-white/5 border border-white/10 text-ink-300">⚡ BLACKWORK</span>
-            <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-white/5 border border-white/10 text-ink-300">🩸 TRADICIONAL & NEO</span>
-            <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-white/5 border border-white/10 text-ink-300">🗡️ FINE LINE</span>
-            <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-white/5 border border-white/10 text-ink-300">🎨 REALISMO & COLOR</span>
+          {/* Marked Tattoo Style Showcase Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
+            <span className="text-xs font-mono font-bold tracking-wider px-3.5 py-1 rounded-xl bg-ink-950/90 border border-crimson-500/40 text-ink-200 shadow-md flex items-center gap-1.5">
+              <span className="text-crimson-500">✦</span> BLACKWORK & DARK ART
+            </span>
+            <span className="text-xs font-mono font-bold tracking-wider px-3.5 py-1 rounded-xl bg-ink-950/90 border border-crimson-500/40 text-ink-200 shadow-md flex items-center gap-1.5">
+              <span className="text-crimson-500">🩸</span> TRADICIONAL & NEO
+            </span>
+            <span className="text-xs font-mono font-bold tracking-wider px-3.5 py-1 rounded-xl bg-ink-950/90 border border-amber-500/40 text-ink-200 shadow-md flex items-center gap-1.5">
+              <span className="text-amber-400">🗡️</span> REALISMO & MICRO-INK
+            </span>
+            <span className="text-xs font-mono font-bold tracking-wider px-3.5 py-1 rounded-xl bg-ink-950/90 border border-amber-500/40 text-ink-200 shadow-md flex items-center gap-1.5">
+              <span className="text-amber-400">⚡</span> FINE LINE & GEOMÉTRICO
+            </span>
           </div>
 
           {/* Fast Features Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-16 border-t border-white/5 mt-14 w-full max-w-4xl">
-            <div className="tattoo-card p-4 rounded-2xl flex flex-col items-center gap-2">
-              <Calendar className="w-6 h-6 text-crimson-500" />
-              <span className="text-sm font-semibold text-white">Agenda & Walk-ins</span>
-              <span className="text-[11px] text-ink-500">Diseños, sesiones y descansos</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pt-14 border-t border-white/10 mt-14 w-full max-w-4xl">
+            <div className="tattoo-card p-5 rounded-2xl flex flex-col items-center text-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-crimson-600/15 border border-crimson-500/30 flex items-center justify-center text-crimson-400">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <span className="text-sm font-bold text-white">Agenda & Horarios</span>
+              <span className="text-xs text-ink-400">Huecos libres y privacidad RGPD</span>
             </div>
-            <div className="tattoo-card p-4 rounded-2xl flex flex-col items-center gap-2">
-              <Sparkles className="w-6 h-6 text-amber-400" />
-              <span className="text-sm font-semibold text-white">Presupuestos con IA</span>
-              <span className="text-[11px] text-ink-500">Tarifas por cm, zona y color</span>
+            <div className="tattoo-card p-5 rounded-2xl flex flex-col items-center text-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <span className="text-sm font-bold text-white">Presupuestos con IA</span>
+              <span className="text-xs text-ink-400">Cálculo exacto por cm, zona y color</span>
             </div>
-            <div className="tattoo-card p-4 rounded-2xl flex flex-col items-center gap-2">
-              <Camera className="w-6 h-6 text-crimson-500" />
-              <span className="text-sm font-semibold text-white">Scanner Curación</span>
-              <span className="text-[11px] text-ink-500">Visión IA contra infecciones</span>
+            <div className="tattoo-card p-5 rounded-2xl flex flex-col items-center text-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-crimson-600/15 border border-crimson-500/30 flex items-center justify-center text-crimson-400">
+                <Camera className="w-5 h-5" />
+              </div>
+              <span className="text-sm font-bold text-white">Scanner Curación</span>
+              <span className="text-xs text-ink-400">Visión IA contra infecciones dérmicas</span>
             </div>
-            <div className="tattoo-card p-4 rounded-2xl flex flex-col items-center gap-2">
-              <FileSignature className="w-6 h-6 text-amber-400" />
-              <span className="text-sm font-semibold text-white">Consentimiento Digital</span>
-              <span className="text-[11px] text-ink-500">Firma ágil con validez sanitaria</span>
+            <div className="tattoo-card p-5 rounded-2xl flex flex-col items-center text-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <FileSignature className="w-5 h-5" />
+              </div>
+              <span className="text-sm font-bold text-white">Consentimiento Digital</span>
+              <span className="text-xs text-ink-400">Firma ágil con validez legal sanitaria</span>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import TatooBackground from '@/components/TatooBackground';
 
 export const metadata: Metadata = {
   title: 'Tatoo AI — Asistente Inteligente para Estudios y Tatuadores',
@@ -17,9 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="dark">
-      <body className="bg-ink-950 text-ink-100 min-h-screen flex flex-col antialiased selection:bg-crimson-600 selection:text-white">
+      <body className="bg-[#060709] text-ink-100 min-h-screen flex flex-col antialiased selection:bg-crimson-600 selection:text-white relative">
+        <TatooBackground />
         <Navbar />
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col relative z-0">
           {children}
         </main>
         <footer className="border-t border-white/5 py-8 px-4 text-center text-xs text-ink-500 bg-ink-900/50">

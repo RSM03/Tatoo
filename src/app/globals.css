@@ -13,13 +13,9 @@
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background-color: transparent;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(230, 57, 70, 0.08) 0%, transparent 60%),
-    radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
-  background-attachment: fixed;
 }
 
 /* Custom Scrollbar for sleek tattoo studio aesthetic */
@@ -50,32 +46,101 @@ body {
   scrollbar-width: none;
 }
 
-/* Custom Tattoo Studio UI Accents */
+/* Custom Tattoo Studio UI Accents - Marked & Immersive Aesthetic */
 .glow-effect {
-  box-shadow: 0 0 35px -5px rgba(230, 57, 70, 0.3);
+  box-shadow: 0 0 35px -5px rgba(217, 4, 41, 0.4);
 }
 
 .subtle-border {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .glass-panel {
-  background: rgba(13, 16, 22, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(11, 14, 20, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .tattoo-card {
-  background: linear-gradient(135deg, rgba(20, 24, 33, 0.9) 0%, rgba(10, 12, 16, 0.95) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  position: relative;
+  background: linear-gradient(145deg, rgba(22, 27, 38, 0.95) 0%, rgba(11, 14, 20, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tattoo-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(220, 38, 38, 0.4) 50%, transparent 100%);
+  pointer-events: none;
 }
 
 .tattoo-card:hover {
-  border-color: rgba(230, 57, 70, 0.4);
+  border-color: rgba(220, 38, 38, 0.7);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.9), 0 0 25px -3px rgba(220, 38, 38, 0.25);
+  transform: translateY(-2px);
+}
+
+.tattoo-card-gold {
+  position: relative;
+  background: linear-gradient(145deg, rgba(28, 24, 18, 0.95) 0%, rgba(13, 11, 9, 0.98) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.85);
+}
+
+.tattoo-card-gold:hover {
+  border-color: rgba(245, 158, 11, 0.7);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.9), 0 0 25px -3px rgba(245, 158, 11, 0.25);
 }
 
 .tattoo-gold-glow {
-  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 30px -5px rgba(245, 158, 11, 0.35);
+}
+
+.tattoo-crimson-glow {
+  box-shadow: 0 0 30px -5px rgba(217, 4, 41, 0.45);
+}
+
+.tattoo-heading {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 14px rgba(217, 4, 41, 0.35);
+}
+
+.tattoo-gothic-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.tattoo-gothic-divider::before,
+.tattoo-gothic-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.4), transparent);
+}
+
+.tattoo-slot-btn {
+  background: linear-gradient(135deg, rgba(136, 8, 21, 0.3) 0%, rgba(18, 19, 22, 0.9) 100%);
+  border: 1px solid rgba(220, 38, 38, 0.45);
+  color: #fff;
+  transition: all 0.2s ease-out;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+.tattoo-slot-btn:hover {
+  background: linear-gradient(135deg, rgba(217, 4, 41, 0.9) 0%, rgba(185, 28, 28, 0.95) 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(217, 4, 41, 0.5);
+  transform: scale(1.04);
 }

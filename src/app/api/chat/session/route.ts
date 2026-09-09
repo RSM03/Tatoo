@@ -107,6 +107,62 @@ export async function POST(req: NextRequest) {
       messages = msgs || [];
     }
 
+    // 5. If chat has no messages, send the official AI assistant welcome message
+    if (messages.length === 0) {
+      let artistDisplayName = 'el tatuador';
+      if (resolvedArtistId) {
+        const { data: artRec } = await supabase
+          .from('artists')
+          .select('display_name')
+          .eq('id', resolvedArtistId)
+          .maybeSingle();
+        if (artRec?.display_name) artistDisplayName = artRec.display_name;
+      }
+
+      const welcomeContent = `¡Hola! 👋 Soy el Asistente Virtual Oficial con Inteligencia Artificial de **${artistDisplayName}**.
+
+Estoy aquí para ayudarte en todo lo que necesites en tiempo real:
+- 🗓️ **Consultar disponibilidad y agendar citas**: Consulta huecos libres en directo para *Consulta de Diseño* o *Sesión de Tatuaje* y resérvalos con un solo clic.
+- 💰 **Calcular presupuestos estimados**: Cuéntame tu idea, tamaño en cm, zona del cuerpo y si es a color o blanco/negro.
+- 🔄 **Gestionar tus citas**: Puedes ver tus citas agendadas, cambiarlas de fecha/hora o cancelarlas en cualquier momento.
+- 📷 **Revisión de cicatrización**: Si te acabas de tatuar, sube una foto de tu piel y analizaré cómo evoluciona la curación.
+
+⚠️ **Transparencia**: **${artistDisplayName}** tiene acceso completo y supervisa este chat en directo, pudiendo intervenir personalmente en la conversación cuando lo necesites.
+
+¿En qué te puedo ayudar hoy?`;
+
+      if (chat?.id) {
+        const { data: insertedWelcome } = await supabase
+          .from('chat_messages')
+          .insert({
+            chat_id: chat.id,
+            sender_role: 'ai_assistant',
+            content: welcomeContent
+          })
+          .select()
+          .maybeSingle();
+
+        if (insertedWelcome) {
+          messages = [insertedWelcome];
+        } else {
+          messages = [{
+            id: 'welcome-' + Date.now(),
+            chat_id: chat.id,
+            sender_role: 'ai_assistant',
+            content: welcomeContent,
+            created_at: new Date().toISOString()
+          }];
+        }
+      } else {
+        messages = [{
+          id: 'welcome-' + Date.now(),
+          sender_role: 'ai_assistant',
+          content: welcomeContent,
+          created_at: new Date().toISOString()
+        }];
+      }
+    }
+
     return NextResponse.json({
       success: true,
       chat: chat || {

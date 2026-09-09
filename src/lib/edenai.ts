@@ -6,9 +6,26 @@
  * ==============================================================================
  */
 
+export interface ChatToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string | Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }>;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content?: string | null | Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }>;
+  tool_calls?: ChatToolCall[];
+  tool_call_id?: string;
+  name?: string;
+}
+
+export interface CallEdenAIResponse {
+  content: string | null;
+  tool_calls?: ChatToolCall[];
 }
 
 export interface PricingRules {
@@ -94,21 +111,22 @@ export function calculateQuote(
 }
 
 /**
- * Dispatches a completion request to Eden AI
+ * Dispatches a completion request to Eden AI with native OpenAI tools support
  */
-export async function callEdenAI(params: {
+export async function callEdenAIWithTools(params: {
   messages: ChatMessage[];
   instructions?: string;
+  tools?: any[];
   temperature?: number;
   max_output_tokens?: number;
-}): Promise<string> {
+}): Promise<CallEdenAIResponse> {
   const apiKey = process.env.EDENAI_API_KEY;
   const apiUrl = process.env.EDENAI_API_URL || 'https://api.edenai.run/v3/chat/completions';
   const model = process.env.EDENAI_MODEL || 'openai/gpt-4o-mini';
 
   if (!apiKey) {
     console.warn('[EdenAI] EDENAI_API_KEY is not configured in environment. Using smart simulation mode.');
-    return generateFallbackReply(params.messages);
+    return { content: generateFallbackReply(params.messages) };
   }
 
   try {
@@ -121,6 +139,9 @@ export async function callEdenAI(params: {
 
     if (params.instructions) {
       payload.instructions = params.instructions;
+    }
+    if (params.tools && params.tools.length > 0) {
+      payload.tools = params.tools;
     }
     if (params.max_output_tokens) {
       payload.max_output_tokens = params.max_output_tokens;
@@ -139,22 +160,44 @@ export async function callEdenAI(params: {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[EdenAI] API error status:', response.status, errorText);
-      return generateFallbackReply(params.messages);
+      return { content: generateFallbackReply(params.messages) };
     }
 
     const data = await response.json();
-    
+    const message = data?.choices?.[0]?.message;
+
+    // Check if tool_calls returned
+    if (message?.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+      return {
+        content: message.content || null,
+        tool_calls: message.tool_calls
+      };
+    }
+
     // Support both standard OpenAI format and EdenAI envelope
-    const reply = data?.choices?.[0]?.message?.content 
+    const reply = message?.content 
       || data?.openai?.generated_text 
       || data?.generated_text
       || (typeof data === 'string' ? data : null);
 
-    return reply || generateFallbackReply(params.messages);
+    return { content: reply || generateFallbackReply(params.messages) };
   } catch (err: any) {
     console.error('[EdenAI] Network error:', err.message);
-    return generateFallbackReply(params.messages);
+    return { content: generateFallbackReply(params.messages) };
   }
+}
+
+/**
+ * Convenience helper that calls Eden AI and returns string content
+ */
+export async function callEdenAI(params: {
+  messages: ChatMessage[];
+  instructions?: string;
+  temperature?: number;
+  max_output_tokens?: number;
+}): Promise<string> {
+  const res = await callEdenAIWithTools(params);
+  return res.content || '';
 }
 
 /**

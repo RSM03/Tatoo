@@ -62,42 +62,50 @@ export default function Navbar() {
     switch (role) {
       case 'studio':
       case 'artist':
-        return <span className="bg-amber-500/15 text-amber-400 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-amber-500/30 font-bold">⚡ Estudio / Artistas</span>;
+        return <span className="bg-amber-500/20 text-amber-300 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-amber-500/40 font-bold shadow-sm flex items-center gap-1"><span>⚡</span> Estudio & Tatuadores</span>;
       default:
-        return <span className="bg-crimson-500/15 text-crimson-400 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-crimson-500/30 font-bold">🩸 Cliente</span>;
+        return <span className="bg-crimson-600/25 text-crimson-300 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-crimson-500/40 font-bold shadow-sm flex items-center gap-1"><span>🩸</span> Cliente</span>;
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 glass-panel border-b border-white/5 px-4 lg:px-8 py-3.5 transition-all">
+    <header className="sticky top-0 z-50 glass-panel border-b border-white/10 px-4 lg:px-8 py-3.5 transition-all shadow-2xl">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-crimson-600 to-amber-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-crimson-600/30 group-hover:scale-105 transition-transform">
-            T
+        {/* Brand Logo - Marked Tattoo Crest */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-crimson-700 via-crimson-600 to-amber-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-crimson-600/40 group-hover:scale-105 transition-all border border-crimson-400/40">
+            <span className="font-serif">T</span>
+            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-ink-950 border border-amber-400/80 flex items-center justify-center text-[7px] text-amber-300 font-bold">
+              ✦
+            </div>
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
-              Tatoo <span className="text-crimson-500 text-xs font-mono uppercase bg-crimson-500/10 px-1.5 py-0.5 rounded border border-crimson-500/20">AI</span>
+            <span className="font-display text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+              <span>TATOO</span>
+              <span className="text-[10px] font-mono font-bold tracking-widest uppercase bg-crimson-600/30 text-crimson-300 px-2 py-0.5 rounded-md border border-crimson-500/40 shadow-inner">
+                AI STUDIO
+              </span>
             </span>
-            <span className="text-[10px] text-ink-400 tracking-wider uppercase font-medium">Smart Tattoo Studio</span>
+            <span className="text-[9px] text-ink-400 tracking-widest uppercase font-mono font-semibold">
+              Arte Corporal & Agenda Inteligente
+            </span>
           </div>
         </Link>
 
         {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-ink-900/80 p-1 rounded-full border border-white/5">
+        <nav className="hidden md:flex items-center gap-1 bg-ink-950/90 p-1.5 rounded-2xl border border-white/10 shadow-inner">
           <Link
             href="/"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              pathname === '/' ? 'bg-white/10 text-white shadow-sm' : 'text-ink-400 hover:text-white'
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+              pathname === '/' ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30' : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >
             {t.nav.home}
           </Link>
           <Link
             href="/shares"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
-              pathname === '/shares' ? 'bg-white/10 text-white shadow-sm' : 'text-ink-400 hover:text-white'
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              pathname === '/shares' ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30' : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Image className="w-3.5 h-3.5" />
@@ -105,8 +113,8 @@ export default function Navbar() {
           </Link>
           <Link
             href="/reviews"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              pathname === '/reviews' ? 'bg-white/10 text-white shadow-sm' : 'text-ink-400 hover:text-white'
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+              pathname === '/reviews' ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30' : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >
             {t.nav.reviews}

@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 export default function ArtistPortal({
   user,
@@ -81,6 +82,35 @@ export default function ArtistPortal({
   // Calendar View State: 'week' or 'month' (Google / Teams style)
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+
+  // Clear Chat Modal State
+  const [showClearChatModal, setShowClearChatModal] = useState(false);
+  const [clearingChat, setClearingChat] = useState(false);
+
+  const handleClearChat = async () => {
+    if (!selectedChat?.id) return;
+    setClearingChat(true);
+    try {
+      const res = await fetch('/api/chat/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: selectedChat.id })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Error al limpiar el chat');
+
+      if (data.initialMessage) {
+        setChatMessages([data.initialMessage]);
+      } else {
+        setChatMessages([]);
+      }
+      setShowClearChatModal(false);
+    } catch (err: any) {
+      alert(`Error al limpiar el chat: ${err.message}`);
+    } finally {
+      setClearingChat(false);
+    }
+  };
 
   const handlePrevDate = () => {
     const d = new Date(calendarDate);
@@ -853,17 +883,29 @@ export default function ArtistPortal({
                     </p>
                   </div>
 
-                  <button
-                    onClick={handleToggleAi}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      selectedChat.ai_enabled
-                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
-                        : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'
-                    }`}
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>{selectedChat.ai_enabled ? 'Pausar IA (Tomar Control)' : 'Reanudar Asistente IA'}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowClearChatModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-red-500/20 text-ink-300 hover:text-red-300 border border-white/10 hover:border-red-500/30 transition-all"
+                      title="Limpiar toda la conversación"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      <span className="hidden sm:inline">Limpiar chat</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleAi}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        selectedChat.ai_enabled
+                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
+                          : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'
+                      }`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>{selectedChat.ai_enabled ? 'Pausar IA' : 'Reanudar Asistente IA'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Messages Container */}
@@ -891,7 +933,7 @@ export default function ArtistPortal({
                             </div>
                           )}
 
-                          <div className="whitespace-pre-line">{msg.content}</div>
+                          <MarkdownRenderer content={msg.content} />
 
                           {msg.healing_status && (
                             <div className="mt-2 pt-2 border-t border-white/10 text-xs font-semibold">
@@ -1272,6 +1314,40 @@ export default function ArtistPortal({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CLEAR CHAT CONFIRMATION MODAL */}
+      {showClearChatModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-red-500/30 bg-ink-950/95 relative shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white text-center mb-2">
+              ¿Estás seguro que quieres eliminar toda la conversación?
+            </h3>
+            <p className="text-xs text-ink-400 text-center mb-6 leading-relaxed">
+              Esta acción vaciará todos los mensajes de este chat de forma definitiva.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearChatModal(false)}
+                className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white font-semibold text-sm transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={clearingChat}
+                onClick={handleClearChat}
+                className="flex-1 py-3 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white font-bold text-sm shadow-lg shadow-crimson-600/30 transition-all hover:scale-[1.02]"
+              >
+                {clearingChat ? 'Eliminando...' : 'Sí, eliminar conversación'}
+              </button>
+            </div>
           </div>
         </div>
       )}

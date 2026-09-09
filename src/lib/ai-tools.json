@@ -1,53 +1,138 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "name": "tatoo_ai_tools",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Herramientas de IA para el asistente virtual de estudios de tatuaje",
   "tools": [
     {
-      "name": "book_appointment",
-      "description": "Reserva o agenda una cita directamente en el calendario del tatuador. Úsala cuando el cliente quiera reservar fecha y hora para consulta de diseño o sesión de tatuaje.",
+      "name": "check_availability",
+      "description": "Comprueba los huecos y horarios reales disponibles en la agenda del tatuador para una fecha o rango de fechas. NUNCA reserves una cita cuando el cliente pida una cita de forma genérica; usa primero esta herramienta para proponer 2-4 opciones reales de horarios disponibles.",
       "parameters": {
         "type": "object",
         "properties": {
+          "preferred_date": {
+            "type": "string",
+            "description": "Fecha solicitada o aproximada en formato YYYY-MM-DD del año 2026 (ej: '2026-09-09' para este miércoles) o en lenguaje natural exacto (ej: 'este miércoles', 'mañana', 'el viernes'). NUNCA uses años pasados como 2023 o 2024."
+          },
           "appointment_type": {
             "type": "string",
             "enum": ["design_consultation", "tattoo_session"],
-            "description": "'design_consultation' para consulta inicial de boceto/diseño (45 min) o 'tattoo_session' para sesión completa con aguja y tinta."
+            "description": "Tipo de cita: 'design_consultation' (45 min para consultar boceto y diseño) o 'tattoo_session' (sesión con aguja y tinta, 3h)."
           },
+          "preferred_time_of_day": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "any"],
+            "description": "Preferencia horaria: 'morning' (10:00 - 14:00), 'afternoon' (16:00 - 20:00) o 'any' (cualquiera)."
+          }
+        },
+        "required": ["preferred_date"]
+      }
+    },
+    {
+      "name": "book_appointment",
+      "description": "Reserva formalmente una cita en la agenda del tatuador para una fecha y hora EXACTA que el cliente haya solicitado o confirmado explícitamente. NUNCA reserves automáticamente sin que el cliente haya indicado o elegido una fecha y hora concreta.",
+      "parameters": {
+        "type": "object",
+        "properties": {
           "date": {
             "type": "string",
-            "description": "Fecha de la cita en formato ISO YYYY-MM-DD (ej: '2026-09-12'). Si el usuario dice 'este viernes' o 'mañana', calcula la fecha concreta."
+            "description": "Fecha exacta de la cita en formato ISO YYYY-MM-DD del año 2026 (ej: '2026-09-09' para este miércoles) o texto natural como 'este miércoles'."
           },
           "time": {
             "type": "string",
-            "description": "Hora de inicio en formato HH:MM (ej: '11:00', '16:30')."
+            "description": "Hora exacta de inicio en formato HH:MM (ej: '11:00', '16:30')."
+          },
+          "appointment_type": {
+            "type": "string",
+            "enum": ["design_consultation", "tattoo_session"],
+            "description": "Tipo de cita a agendar."
           },
           "description": {
             "type": "string",
-            "description": "Idea, temática o descripción del tatuaje que el cliente desea realizarse."
+            "description": "Idea, temática o descripción de la pieza o boceto que el cliente desea tatuarse."
           }
         },
         "required": ["date", "time"]
       }
     },
     {
+      "name": "get_client_appointments",
+      "description": "Consulta las citas que el cliente tiene actualmente agendadas (pendientes, confirmadas o reprogramadas). Úsala cuando el cliente pregunte '¿cuándo es mi cita?', '¿qué citas tengo?' o antes de modificar una cita.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "type": "string",
+            "enum": ["upcoming", "all"],
+            "description": "'upcoming' para consultar citas a partir de hoy, o 'all' para todo el historial."
+          }
+        }
+      }
+    },
+    {
+      "name": "reschedule_appointment",
+      "description": "Modifica o reprograma una cita existente del cliente a una nueva fecha y hora. Úsala cuando el cliente solicite cambiar, mover o posponer su cita.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "ID de la cita a reprogramar. Si el cliente solo tiene una cita activa, se detectará automáticamente."
+          },
+          "new_date": {
+            "type": "string",
+            "description": "Nueva fecha deseada en formato YYYY-MM-DD del año 2026 (ej: '2026-09-09' para este miércoles) o en lenguaje natural (ej: 'este miércoles', 'el viernes')."
+          },
+          "new_time": {
+            "type": "string",
+            "description": "Nueva hora de inicio en formato HH:MM (ej: '12:00', '17:00')."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo opcional del cambio expresado por el cliente."
+          }
+        },
+        "required": ["new_date", "new_time"]
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "description": "Cancela o anula una cita agendada por el cliente. Úsala cuando el cliente diga que no podrá asistir o pida anular o cancelar su cita.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "ID de la cita a cancelar. Si tiene una sola cita futura activa, se resolverá automáticamente."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo de la cancelación proporcionado por el cliente."
+          }
+        }
+      }
+    },
+    {
       "name": "estimate_quote",
-      "description": "Calcula el presupuesto estimado según las medidas en cm, si es en color o blanco y negro, y la complejidad de la zona.",
+      "description": "Calcula el presupuesto estimado para un tatuaje según los centímetros de tamaño, si lleva color o escala de grises, y la complejidad de la zona del cuerpo.",
       "parameters": {
         "type": "object",
         "properties": {
           "size_cm": {
             "type": "number",
-            "description": "Tamaño estimado en centímetros (ej: 15)."
+            "description": "Tamaño estimado en centímetros (ej: 12, 20)."
           },
           "is_color": {
             "type": "boolean",
-            "description": "True si el diseño lleva color, false si es en escala de grises / blackwork."
+            "description": "True si el diseño lleva tinta de color, false si es black & grey o solo tinta negra."
           },
           "placement": {
             "type": "string",
-            "description": "Zona del cuerpo (ej: 'antebrazo', 'costillas', 'espalda', 'cuello')."
+            "description": "Zona anatómica del cuerpo (ej: 'antebrazo', 'costillas', 'espalda', 'gemelo', 'cuello')."
+          },
+          "style": {
+            "type": "string",
+            "description": "Estilo artístico del tatuaje si se menciona (ej: 'neotradicional', 'realismo', 'lineal/fine line', 'micro-realismo')."
           }
         },
         "required": ["size_cm"]
@@ -55,13 +140,13 @@
     },
     {
       "name": "analyze_healing",
-      "description": "Analiza una fotografía de curación enviada por el cliente para descartar indicios de infección y guiar el proceso dérmico.",
+      "description": "Analiza una fotografía de cicatrización del tatuaje enviada por el cliente para evaluar la regeneración dérmica y descartar signos de infección o mala curación.",
       "parameters": {
         "type": "object",
         "properties": {
           "image_url": {
             "type": "string",
-            "description": "URL de la fotografía del tatuaje en cicatrización."
+            "description": "URL pública o data URL de la imagen del tatuaje cicatrizando."
           }
         },
         "required": ["image_url"]
@@ -69,13 +154,13 @@
     },
     {
       "name": "request_human_takeover",
-      "description": "Pausa el asistente virtual y notifica al tatuador para que responda personalmente al cliente.",
+      "description": "Pausa el asistente virtual y notifica urgentemente al tatuador para que intervenga y responda de forma personalizada al cliente.",
       "parameters": {
         "type": "object",
         "properties": {
           "reason": {
             "type": "string",
-            "description": "Motivo de la intervención humana solicitada por el cliente o requerida por complejidad."
+            "description": "Motivo por el cual se requiere la intervención directa del tatuador."
           }
         },
         "required": ["reason"]
@@ -83,7 +168,7 @@
     },
     {
       "name": "get_artist_schedule",
-      "description": "Informa sobre los horarios de apertura del estudio y la disponibilidad habitual del artista.",
+      "description": "Informa de los horarios habituales de apertura del estudio, turnos de cabina y disponibilidad general del artista.",
       "parameters": {
         "type": "object",
         "properties": {
