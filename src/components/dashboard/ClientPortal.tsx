@@ -36,6 +36,7 @@ import SignaturePad from 'signature_pad';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PublicArtistAgenda from '@/components/dashboard/PublicArtistAgenda';
 import { compressImageForChat } from '@/lib/image-upload';
+import { ensureDarkInkSignature } from '@/lib/signature';
 import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
 import StudioShopSection from '@/components/dashboard/StudioShopSection';
 import StudioMapView from '@/components/dashboard/StudioMapView';
@@ -437,7 +438,8 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
     }
 
     setSigningConsent(true);
-    const signatureDataUrl = signaturePadRef.current.toDataURL();
+    const rawSignature = signaturePadRef.current.toDataURL();
+    const signatureDataUrl = await ensureDarkInkSignature(rawSignature);
 
     try {
       const res = await fetch('/api/consent/sign', {
