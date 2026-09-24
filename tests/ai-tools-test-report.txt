@@ -1,0 +1,243 @@
+================================================================================
+REPORTE DE AUDITORÍA Y EJECUCIÓN: AI TOOLS & FUNCTION CALLING SUITE
+================================================================================
+Fecha de Ejecución : 2026-09-24T17:57:47.381Z
+Versión del Agente : Tatoo AI v2.0.0
+Total Pruebas      : 83
+Pruebas Exitosas   : 83 (PASS)
+Pruebas Fallidas   : 0 (FAIL)
+Tasa de Éxito      : 100.00%
+================================================================================
+
+RESUMEN EJECUTIVO:
+Se ha auditado y ejecutado la suite de pruebas completa sobre el motor de
+Function Calling y herramientas de IA para estudios de tatuajes y tatuadores.
+
+Aspectos Críticos Validados:
+1. Esquema OpenAPI y compatibilidad con Eden AI / GPT-4o:
+   Las 10 herramientas cuentan con tipos bien definidos, descripciones semánticas
+   en español para guiar el modelo y parámetros obligatorios consistentes.
+2. Corrección de Alucinación en Fechas Relativas:
+   El analizador parseRelativeDate resuelve expresiones coloquiales como
+   "este miércoles", "este viernes", "el próximo lunes" o "mañana por la mañana"
+   sin desplazamientos erróneos de día hacia domingos o años pasados.
+3. Detección Determinista de Intenciones (Fallback Heurístico):
+   En caso de timeout o ausencia de tool calling directo del proveedor, el agente
+   clasifica con precisión la intención del usuario según palabras clave, incluso
+   ante erratas comunes del cliente ("que huecs tienes").
+4. Prevención de Doble Reserva (Anti-Collision Slot Engine):
+   Ninguna cita puede solaparse total o parcialmente con una franja ya ocupada
+   en la agenda del tatuador.
+5. Duración Dinámica según Especialidad:
+   Citas de diseño (45 min = 0.75h) reservan huecos breves, mientras que piezas
+   completas o mangas (3h a 5h) bloquean el turno correspondiente de forma proporcional.
+6. Motor de Precios Transparente:
+   Cálculo automático con tarifas base por tramo de centímetros, multiplicador de
+   color (1.25x) y recargo por zonas complejas/dolorosas (1.15x).
+7. Catálogo de Tienda y Aftercare del Estudio:
+   Integración de productos oficiales (cremas Balm Tattoo, Hustle Butter, parches
+   Second Skin y jabones neutros) con stock y precios en euros.
+
+================================================================================
+MATRIZ DETALLADA DE PRUEBAS (83 / 83 PASS)
+================================================================================
+  1. [PASS] La configuración define una lista de tools válida
+       -> Encontradas: 10
+  2. [PASS] Se encuentran registradas las 10 tools requeridas
+       -> Esperadas: 10, Encontradas: 10
+  3. [PASS] Tool 'check_availability' está definida
+       -> Descripción: Comprueba los huecos y horarios reales d...
+  4. [PASS] Tool 'check_availability' tiene una descripción detallada en español para el LLM
+  5. [PASS] Tool 'check_availability' define un esquema de parámetros de tipo 'object'
+  6. [PASS] Tool 'book_appointment' está definida
+       -> Descripción: Reserva formalmente una cita en la agend...
+  7. [PASS] Tool 'book_appointment' tiene una descripción detallada en español para el LLM
+  8. [PASS] Tool 'book_appointment' define un esquema de parámetros de tipo 'object'
+  9. [PASS] Tool 'get_client_appointments' está definida
+       -> Descripción: Consulta las citas que el cliente tiene ...
+ 10. [PASS] Tool 'get_client_appointments' tiene una descripción detallada en español para el LLM
+ 11. [PASS] Tool 'get_client_appointments' define un esquema de parámetros de tipo 'object'
+ 12. [PASS] Tool 'reschedule_appointment' está definida
+       -> Descripción: Modifica o reprograma una cita existente...
+ 13. [PASS] Tool 'reschedule_appointment' tiene una descripción detallada en español para el LLM
+ 14. [PASS] Tool 'reschedule_appointment' define un esquema de parámetros de tipo 'object'
+ 15. [PASS] Tool 'cancel_appointment' está definida
+       -> Descripción: Cancela o anula una cita agendada por el...
+ 16. [PASS] Tool 'cancel_appointment' tiene una descripción detallada en español para el LLM
+ 17. [PASS] Tool 'cancel_appointment' define un esquema de parámetros de tipo 'object'
+ 18. [PASS] Tool 'estimate_quote' está definida
+       -> Descripción: Calcula el presupuesto estimado para un ...
+ 19. [PASS] Tool 'estimate_quote' tiene una descripción detallada en español para el LLM
+ 20. [PASS] Tool 'estimate_quote' define un esquema de parámetros de tipo 'object'
+ 21. [PASS] Tool 'analyze_healing' está definida
+       -> Descripción: Analiza una fotografía de cicatrización ...
+ 22. [PASS] Tool 'analyze_healing' tiene una descripción detallada en español para el LLM
+ 23. [PASS] Tool 'analyze_healing' define un esquema de parámetros de tipo 'object'
+ 24. [PASS] Tool 'request_human_takeover' está definida
+       -> Descripción: Pausa el asistente virtual y notifica ur...
+ 25. [PASS] Tool 'request_human_takeover' tiene una descripción detallada en español para el LLM
+ 26. [PASS] Tool 'request_human_takeover' define un esquema de parámetros de tipo 'object'
+ 27. [PASS] Tool 'get_artist_schedule' está definida
+       -> Descripción: Informa de los horarios habituales de ap...
+ 28. [PASS] Tool 'get_artist_schedule' tiene una descripción detallada en español para el LLM
+ 29. [PASS] Tool 'get_artist_schedule' define un esquema de parámetros de tipo 'object'
+ 30. [PASS] Tool 'get_studio_products' está definida
+       -> Descripción: Consulta el catálogo de productos dispon...
+ 31. [PASS] Tool 'get_studio_products' tiene una descripción detallada en español para el LLM
+ 32. [PASS] Tool 'get_studio_products' define un esquema de parámetros de tipo 'object'
+ 33. [PASS] parseRelativeDate('este miércoles') -> 2026-09-09
+       -> Resuelto: 2026-09-09 - Mismo día miércoles se resuelve a hoy 2026-09-09
+ 34. [PASS] parseRelativeDate('este miercoles') -> 2026-09-09
+       -> Resuelto: 2026-09-09 - Mismo día miércoles sin tilde
+ 35. [PASS] parseRelativeDate('este viernes') -> 2026-09-11
+       -> Resuelto: 2026-09-11 - Viernes de esta misma semana (+2 días)
+ 36. [PASS] parseRelativeDate('el jueves') -> 2026-09-10
+       -> Resuelto: 2026-09-10 - Jueves inmediato (+1 día)
+ 37. [PASS] parseRelativeDate('el próximo lunes') -> 2026-09-14
+       -> Resuelto: 2026-09-14 - Próximo lunes de la semana siguiente (+5 días)
+ 38. [PASS] parseRelativeDate('mañana por la mañana') -> 2026-09-10
+       -> Resuelto: 2026-09-10 - Mañana (jueves 10) diferenciando "mañana" temporal de matinal
+ 39. [PASS] parseRelativeDate('pasado mañana') -> 2026-09-11
+       -> Resuelto: 2026-09-11 - Pasado mañana (+2 días)
+ 40. [PASS] parseRelativeDate('16 de octubre') -> 2026-10-16
+       -> Resuelto: 2026-10-16 - Fecha con nombre de mes en español
+ 41. [PASS] parseRelativeDate('2026-11-20') -> 2026-11-20
+       -> Resuelto: 2026-11-20 - Fecha ISO explícita preservada
+ 42. [PASS] Intent: "hola, ¿qué huecs tienes para este mier..." -> check_availability
+       -> Detectado: check_availability - Consulta de huecos con errata ("huecs") y fecha relativa "este miercoles"
+ 43. [PASS] Parámetros válidos para check_availability (Consulta de huecos con errata ("huecs") y fecha relativa "este miercoles")
+       -> {"preferred_date":"2026-09-09","appointment_type":"tattoo_session","duration_hours":3}
+ 44. [PASS] Intent: "que huecos tienes para este viernes pa..." -> check_availability
+       -> Detectado: check_availability - Consulta de diseño ajusta automáticamente duración a 0.75h (45 min)
+ 45. [PASS] Parámetros válidos para check_availability (Consulta de diseño ajusta automáticamente duración a 0.75h (45 min))
+       -> {"preferred_date":"2026-09-11","appointment_type":"design_consultation","duration_hours":0.75}
+ 46. [PASS] Intent: "quiero reservar para este miercoles a ..." -> book_appointment
+       -> Detectado: book_appointment - Reserva explícita con fecha y hora concreta mapea a book_appointment
+ 47. [PASS] Parámetros válidos para book_appointment (Reserva explícita con fecha y hora concreta mapea a book_appointment)
+       -> {"appointment_type":"tattoo_session","date":"2026-09-09","time":"11:00","duration_hours":3,"description":"quiero reservar para este miercoles a las 11:00 para tatuaje"}
+ 48. [PASS] Intent: "¿cuándo tengo mi próxima cita?..." -> get_client_appointments
+       -> Detectado: get_client_appointments - Pregunta sobre citas agendadas mapea a get_client_appointments
+ 49. [PASS] Parámetros válidos para get_client_appointments (Pregunta sobre citas agendadas mapea a get_client_appointments)
+       -> {"filter":"upcoming"}
+ 50. [PASS] Intent: "necesito cambiar mi cita al viernes..." -> reschedule_appointment
+       -> Detectado: reschedule_appointment - Solicitud de cambio de cita mapea a reschedule_appointment
+ 51. [PASS] Parámetros válidos para reschedule_appointment (Solicitud de cambio de cita mapea a reschedule_appointment)
+       -> {"new_date":"2026-09-11","new_time":"11:00","reason":"necesito cambiar mi cita al viernes"}
+ 52. [PASS] Intent: "tengo un imprevisto en el trabajo y qu..." -> cancel_appointment
+       -> Detectado: cancel_appointment - Solicitud de anulación mapea a cancel_appointment
+ 53. [PASS] Parámetros válidos para cancel_appointment (Solicitud de anulación mapea a cancel_appointment)
+       -> {"reason":"tengo un imprevisto en el trabajo y quiero cancelar mi cita"}
+ 54. [PASS] Intent: "¿cuánto costaría un tatuaje de 15 cm a..." -> estimate_quote
+       -> Detectado: estimate_quote - Cotización con tamaño y color mapea a estimate_quote
+ 55. [PASS] Parámetros válidos para estimate_quote (Cotización con tamaño y color mapea a estimate_quote)
+       -> {"size_cm":15,"is_color":true,"placement":"antebrazo"}
+ 56. [PASS] Intent: "¿qué crema aftercare o bálsamo cicatri..." -> get_studio_products
+       -> Detectado: get_studio_products - Pregunta por bálsamo aftercare mapea a get_studio_products con filtro aftercare
+ 57. [PASS] Parámetros válidos para get_studio_products (Pregunta por bálsamo aftercare mapea a get_studio_products con filtro aftercare)
+       -> {"category":"aftercare"}
+ 58. [PASS] Intent: "¿qué horario tenéis en el estudio los ..." -> get_artist_schedule
+       -> Detectado: get_artist_schedule - Pregunta por horario de apertura mapea a get_artist_schedule
+ 59. [PASS] Parámetros válidos para get_artist_schedule (Pregunta por horario de apertura mapea a get_artist_schedule)
+       -> {}
+ 60. [PASS] Intent: "quiero hablar con una persona real o c..." -> request_human_takeover
+       -> Detectado: request_human_takeover - Petición de humano mapea a request_human_takeover
+ 61. [PASS] Parámetros válidos para request_human_takeover (Petición de humano mapea a request_human_takeover)
+       -> {"reason":"quiero hablar con una persona real o con el tatuador urgente"}
+ 62. [PASS] Intent: "mira cómo va cicatrizando mi tatuaje..." -> analyze_healing
+       -> Detectado: analyze_healing - Envío de foto clínica mapea a analyze_healing
+ 63. [PASS] Parámetros válidos para analyze_healing (Envío de foto clínica mapea a analyze_healing)
+       -> {"image_url":"https://images.unsplash.com/photo-example.jpg"}
+ 64. [PASS] Anti-Collision: 11:00-14:00 vs 11:00-14:00 -> BLOQUEADO
+       -> Misma hora exacta que cita existente (11:00-14:00) DEBE colisionar
+ 65. [PASS] Anti-Collision: 12:00-13:00 vs 11:00-14:00 -> BLOQUEADO
+       -> Cita intermedia dentro del rango ocupado (12:00-13:00) DEBE colisionar
+ 66. [PASS] Anti-Collision: 10:30-12:00 vs 11:00-14:00 -> BLOQUEADO
+       -> Cita que comienza antes pero termina dentro (10:30-12:00) DEBE colisionar
+ 67. [PASS] Anti-Collision: 13:30-16:00 vs 11:00-14:00 -> BLOQUEADO
+       -> Cita que solapa el final (13:30-16:00) DEBE colisionar
+ 68. [PASS] Anti-Collision: 14:00-16:30 vs 11:00-14:00 -> PERMITIDO
+       -> Cita que comienza exactamente cuando termina la anterior (14:00-16:30) NO colisiona
+ 69. [PASS] Anti-Collision: 09:30-10:45 vs 11:00-14:00 -> PERMITIDO
+       -> Consulta matinal anterior (09:30-10:45) NO colisiona
+ 70. [PASS] estimate_quote({"size_cm":4,"is_color":false,"placement":"muñeca"}) -> 60€
+       -> Calculado: 60€ (Rango: 54€ - 69€) - Pieza pequeña de 4cm en blanco y negro aplica base small (60€)
+ 71. [PASS] estimate_quote({"size_cm":12,"is_color":false,"placement":"antebrazo"}) -> 140€
+       -> Calculado: 140€ (Rango: 126€ - 161€) - Pieza mediana de 12cm en blanco y negro aplica base medium (140€)
+ 72. [PASS] estimate_quote({"size_cm":12,"is_color":true,"placement":"antebrazo"}) -> 175€
+       -> Calculado: 175€ (Rango: 158€ - 201€) - Pieza mediana de 12cm con COLOR aplica 1.25x (140€ -> 175€)
+ 73. [PASS] estimate_quote({"size_cm":20,"is_color":true,"placement":"costillas"}) -> 374€
+       -> Calculado: 374€ (Rango: 337€ - 430€) - Pieza grande de 20cm en zona sensible (costillas) con COLOR aplica ambos multiplicadores
+ 74. [PASS] get_studio_products(category: 'all') -> 5 productos
+       -> Filtro "all" devuelve todos los productos del catálogo
+ 75. [PASS] Todos los productos de categoría 'all' tienen precio positivo y nombre válido
+ 76. [PASS] get_studio_products(category: 'aftercare') -> 2 productos
+       -> Filtro "aftercare" devuelve cremas y mantecas cicatrizantes
+ 77. [PASS] Todos los productos de categoría 'aftercare' tienen precio positivo y nombre válido
+ 78. [PASS] get_studio_products(category: 'protection') -> 1 productos
+       -> Filtro "protection" devuelve láminas second skin
+ 79. [PASS] Todos los productos de categoría 'protection' tienen precio positivo y nombre válido
+ 80. [PASS] get_studio_products(category: 'soaps') -> 1 productos
+       -> Filtro "soaps" devuelve jabones neutros
+ 81. [PASS] Todos los productos de categoría 'soaps' tienen precio positivo y nombre válido
+ 82. [PASS] get_studio_products(category: 'merch') -> 1 productos
+       -> Filtro "merch" devuelve ropa y merchandising
+ 83. [PASS] Todos los productos de categoría 'merch' tienen precio positivo y nombre válido
+
+================================================================================
+DETALLE DE LAS 10 TOOLS AUDITADAS
+================================================================================
+1. check_availability
+   - Propósito : Consulta huecos reales en agenda
+   - Parámetros: preferred_date, appointment_type, duration_hours, preferred_time_of_day
+   - Regla     : NUNCA reserva directamente; propone 2 a 4 opciones horarias.
+
+2. book_appointment
+   - Propósito : Agenda cita formalmente con fecha y hora exacta
+   - Parámetros: date, time, appointment_type, duration_hours, description
+   - Regla     : Bloquea el intervalo exacto impidiendo colisiones futuras.
+
+3. get_client_appointments
+   - Propósito : Consulta citas del cliente
+   - Parámetros: filter ('upcoming' o 'all')
+   - Regla     : Devuelve el estado, fecha y tatuador de sus reservas activas.
+
+4. reschedule_appointment
+   - Propósito : Mueve fecha u hora de una cita existente
+   - Parámetros: appointment_id, new_date, new_time, reason
+   - Regla     : Comprueba disponibilidad anti-colisión antes de confirmar el traslado.
+
+5. cancel_appointment
+   - Propósito : Anula o libera una cita agendada
+   - Parámetros: appointment_id, reason
+   - Regla     : Cambia estado a 'cancelled' y reabre automáticamente el turno.
+
+6. estimate_quote
+   - Propósito : Presupuesta una pieza según características
+   - Parámetros: size_cm, is_color, placement, style
+   - Regla     : Aplica base por tramos cm, mínimo garantizado, 1.25x color y 1.15x zonas complejas.
+
+7. analyze_healing
+   - Propósito : Visión clínica para evaluar cicatrización
+   - Parámetros: image_url
+   - Regla     : Detecta eritema, secreción o riesgo dérmico emitiendo recomendaciones aftercare.
+
+8. request_human_takeover
+   - Propósito : Escalamiento urgente e intervención de una persona
+   - Parámetros: reason
+   - Regla     : Pausa el asistente virtual y notifica al tatuador en el dashboard.
+
+9. get_artist_schedule
+   - Propósito : Informa de los horarios de apertura del estudio
+   - Parámetros: day_of_week
+   - Regla     : Retorna días de apertura, turnos matinales y de tarde.
+
+10. get_studio_products
+    - Propósito : Catálogo de productos y aftercare en venta
+    - Parámetros: category ('all', 'aftercare', 'soaps', 'protection', 'merch')
+    - Regla     : Informa al cliente de precios y disponibilidad para el cuidado del tattoo.
+
+================================================================================
+CERTIFICACIÓN TÉCNICA:
+Reporte generado para Tatoo AI Agent Suite.
+Todos los 83 tests pasaron satisfactoriamente (100% PASS RATE).
+================================================================================

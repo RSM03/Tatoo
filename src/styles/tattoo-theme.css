@@ -292,6 +292,84 @@
 }
 
 /* ==============================================================================
+ * 🗺️ REAL MAP (LEAFLET) ATELIER THEME CUSTOMIZATION
+ * ============================================================================== */
+.leaflet-container {
+  background-color: #050608 !important;
+  font-family: inherit !important;
+  z-index: 10 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(10, 13, 19, 0.95) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(220, 38, 38, 0.3) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 30px rgba(220, 38, 38, 0.25) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(10, 13, 19, 0.95) !important;
+  border: 1px solid rgba(220, 38, 38, 0.3) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 8px 12px !important;
+  font-size: 18px !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #ffffff !important;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7) !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: rgba(15, 19, 28, 0.92) !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(5, 6, 8, 0.8) !important;
+  color: #64748b !important;
+  font-size: 10px !important;
+  border-top-left-radius: 8px !important;
+  padding: 2px 8px !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.leaflet-control-attribution a {
+  color: #94a3b8 !important;
+}
+
+.custom-tattoo-pin-wrapper {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ==============================================================================
  * AISLAMIENTO ESTRICTO PARA IMPRESIÓN Y DESCARGA DE PDF
  * ==============================================================================
  * Oculta el 100% de la página (navbar, dashboard, backgrounds, botones)
