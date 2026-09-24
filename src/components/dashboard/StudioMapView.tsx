@@ -66,31 +66,41 @@ const REAL_CITY_COORDINATES: Record<string, [number, number]> = {
   'san sebastián': [43.3183, -1.9812]
 };
 
-// Capas de teselas cartográficas de producción
+const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || 'cb1_3wwq_1_a72e46e5578240a005390bc7';
+
+// Capas de teselas cartográficas de producción con clave oficial CARTO + OpenStreetMap
 const TILE_LAYERS = {
   dark: {
     id: 'dark',
-    name: 'Tinta Atelier (Oscuro)',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Tinta Atelier (CARTO Dark)',
+    url: `https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${CARTO_API_KEY}`,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  },
+  voyager: {
+    id: 'voyager',
+    name: 'CARTO Voyager (Detallado)',
+    url: `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${CARTO_API_KEY}`,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  },
+  light: {
+    id: 'light',
+    name: 'CARTO Positron (Luz)',
+    url: `https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${CARTO_API_KEY}`,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 20
   },
   streets: {
     id: 'streets',
-    name: 'Callejero Detallado (OSM)',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    name: 'Callejero OpenStreetMap (Libre)',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
     subdomains: 'abc',
     maxZoom: 19
-  },
-  satellite: {
-    id: 'satellite',
-    name: 'Satélite HD (Esri)',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Earthstar Geographics',
-    subdomains: 'abc',
-    maxZoom: 18
   }
 };
 
@@ -116,7 +126,7 @@ export default function StudioMapView({
   const userMarkerRef = useRef<any>(null);
 
   const [isLeafletReady, setIsLeafletReady] = useState(false);
-  const [currentLayer, setCurrentLayer] = useState<'dark' | 'streets' | 'satellite'>('dark');
+  const [currentLayer, setCurrentLayer] = useState<'dark' | 'voyager' | 'light' | 'streets'>('dark');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [activeStudioId, setActiveStudioId] = useState<string | null>(studios[0]?.id || null);
@@ -233,7 +243,8 @@ export default function StudioMapView({
       const tileLayer = L.tileLayer(layerConfig.url, {
         attribution: layerConfig.attribution,
         subdomains: layerConfig.subdomains,
-        maxZoom: layerConfig.maxZoom
+        maxZoom: layerConfig.maxZoom,
+        className: (layerConfig as any).className || ''
       }).addTo(map);
 
       tileLayerRef.current = tileLayer;
@@ -258,7 +269,7 @@ export default function StudioMapView({
     };
   }, [isLeafletReady]);
 
-  // 3. Cambiar capa de teselas (Dark / Streets / Satellite)
+  // 3. Cambiar capa de teselas (Dark / Voyager / Light / Streets)
   useEffect(() => {
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
     const L = (window as any).L;
@@ -269,7 +280,8 @@ export default function StudioMapView({
     const newLayer = L.tileLayer(layerConfig.url, {
       attribution: layerConfig.attribution,
       subdomains: layerConfig.subdomains,
-      maxZoom: layerConfig.maxZoom
+      maxZoom: layerConfig.maxZoom,
+      className: (layerConfig as any).className || ''
     }).addTo(mapInstanceRef.current);
     tileLayerRef.current = newLayer;
   }, [currentLayer]);

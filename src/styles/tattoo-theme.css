@@ -369,6 +369,15 @@
   border: none !important;
 }
 
+/* Filtro Dark Mode para teselas OpenStreetMap 100% libres y sin API Key */
+.tattoo-tiles-dark .leaflet-tile {
+  filter: brightness(0.65) invert(1) contrast(1.4) hue-rotate(195deg) saturate(0.28) !important;
+}
+
+.tattoo-tiles-topo .leaflet-tile {
+  filter: brightness(0.9) contrast(1.1) !important;
+}
+
 /* ==============================================================================
  * AISLAMIENTO ESTRICTO PARA IMPRESIÓN Y DESCARGA DE PDF
  * ==============================================================================

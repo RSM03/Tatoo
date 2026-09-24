@@ -17,13 +17,20 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
+    const updatePayload: any = {
+      address: address.trim(),
+      city: city.trim(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (typeof body.latitude === 'number' && typeof body.longitude === 'number') {
+      updatePayload.latitude = body.latitude;
+      updatePayload.longitude = body.longitude;
+    }
+
     const { data: updatedStudio, error } = await supabase
       .from('studios')
-      .update({
-        address: address.trim(),
-        city: city.trim(),
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', studioId)
       .select()
       .single();
