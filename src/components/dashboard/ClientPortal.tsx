@@ -29,14 +29,18 @@ import {
   RefreshCw,
   Search,
   MapPin,
-  Building2
+  Building2,
+  ShoppingBag
 } from 'lucide-react';
 import SignaturePad from 'signature_pad';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PublicArtistAgenda from '@/components/dashboard/PublicArtistAgenda';
+import { compressImageForChat } from '@/lib/image-upload';
+import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
+import StudioShopSection from '@/components/dashboard/StudioShopSection';
 
 export default function ClientPortal({ user, profile }: { user: any; profile: any }) {
-  const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history' | 'shop'>('appointments');
   const [appointments, setAppointments] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [studios, setStudios] = useState<any[]>([]);
@@ -56,10 +60,14 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
   const [selectedStudioId, setSelectedStudioId] = useState('');
   const [selectedArtistId, setSelectedArtistId] = useState('');
   const [bookingType, setBookingType] = useState('tattoo_session');
+  const [bookingDurationHours, setBookingDurationHours] = useState<number>(2.5);
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState('11:00');
   const [bookingDescription, setBookingDescription] = useState('');
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+
+  // View / Print Legal Consent Document Modal State
+  const [viewConsentModalApp, setViewConsentModalApp] = useState<any>(null);
 
   // Consent Modal State
   const [selectedConsentApp, setSelectedConsentApp] = useState<any>(null);
@@ -183,7 +191,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
             *,
             studios (id, name, address),
             artists (id, display_name),
-            consent_forms (id, signed_at)
+            consent_forms (*)
           `)
           .eq('client_id', clientId)
           .order('start_time', { ascending: true });
@@ -326,17 +334,23 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
     }
   };
 
-  // Handle Photo upload for tattoo healing tracking
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo upload with client-side compression to prevent HTTP 413 / Next.js payload errors
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      handleSendMessage(undefined, dataUrl);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Compresses 5-15MB phone camera photos down to ~100-200KB instantly via canvas
+      const compressedDataUrl = await compressImageForChat(file, 1000, 0.75);
+      handleSendMessage(undefined, compressedDataUrl);
+    } catch (err: any) {
+      console.error('Error compressing image:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        handleSendMessage(undefined, reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Handle New Booking Creation using server-side API (bypasses RLS recursion)
@@ -362,7 +376,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       }
 
       const startDateTime = new Date(`${bookingDate}T${bookingTime}:00`);
-      const durationHours = bookingType === 'design_consultation' ? 0.75 : 3;
+      const durationHours = bookingType === 'design_consultation' ? 0.75 : bookingDurationHours;
       const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
 
       const res = await fetch('/api/appointments/create', {
@@ -584,6 +598,18 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           <Sparkles className="w-4 h-4 text-white" />
           <span>Chat con Tatuador & Asistente IA</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('shop')}
+          className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
+            activeTab === 'shop'
+              ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-400/50 shadow-lg shadow-emerald-600/30'
+              : 'text-ink-400 hover:text-white hover:bg-white/5 border border-transparent'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4 text-emerald-400" />
+          <span>Tienda & Cuidados</span>
+        </button>
       </div>
 
       {/* TAB 1: ACTIVE UPCOMING APPOINTMENTS */}
@@ -652,9 +678,19 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-xs">
                         {isSigned ? (
-                          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Consentimiento firmado
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="flex items-center gap-1.5 text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Consentimiento firmado
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setViewConsentModalApp(app)}
+                              className="text-[11px] font-semibold text-emerald-300 hover:text-white underline px-1 py-0.5 transition-colors"
+                              title="Ver y descargar documento firmado oficial en PDF"
+                            >
+                              Descargar / PDF
+                            </button>
+                          </div>
                         ) : (
                           <span className="flex items-center gap-1.5 text-amber-400 font-semibold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
                             <AlertTriangle className="w-3.5 h-3.5" /> Consentimiento pendiente
@@ -1545,6 +1581,24 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         </div>
       )}
 
+      {/* TAB 3: STUDIO SHOP & AFTERCARE (TIENDA & CUIDADOS) */}
+      {activeTab === 'shop' && (
+        <div className="space-y-6">
+          <StudioShopSection
+            isArtistMode={false}
+            currentStudioId={selectedStudioId || studios[0]?.id}
+            onInquireInChat={(product) => {
+              const matchedArtist = artists.find(a => a.studio_id === (selectedStudioId || studios[0]?.id)) || artists[0];
+              if (matchedArtist) {
+                handleSelectChatArtist(matchedArtist);
+                setActiveTab('chat');
+                setInputText(`Hola, me gustaría información y disponibilidad sobre el producto: ${product.name} (${product.price}€).`);
+              }
+            }}
+          />
+        </div>
+      )}
+
       {/* BOOKING MODAL */}
       {isBookingOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1613,6 +1667,38 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   <span className="text-[10px] font-normal text-ink-400">Aguja y tinta en cabina</span>
                 </button>
               </div>
+
+              {bookingType === 'tattoo_session' && (
+                <div className="bg-ink-900/60 p-3.5 rounded-2xl border border-white/5 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-ink-300">
+                    <span className="font-semibold uppercase tracking-wider text-[11px]">Tamaño de Pieza & Duración</span>
+                    <span className="font-mono text-crimson-400 font-bold">{bookingDurationHours}h de sesión</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    {[
+                      { hours: 1, label: 'Flash / Mini', time: '1h' },
+                      { hours: 1.5, label: 'Pequeño / Frase', time: '1.5h' },
+                      { hours: 2.5, label: 'Mediano / Detalle', time: '2.5h' },
+                      { hours: 4, label: 'Grande / Media Manga', time: '4h' },
+                      { hours: 5, label: 'Manga / Espalda', time: '5h' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.hours}
+                        type="button"
+                        onClick={() => setBookingDurationHours(opt.hours)}
+                        className={`p-2 rounded-xl text-left border transition-all text-xs ${
+                          bookingDurationHours === opt.hours
+                            ? 'bg-crimson-600/20 border-crimson-500 text-white font-bold shadow-sm'
+                            : 'bg-ink-950/60 border-white/5 text-ink-400 hover:text-white'
+                        }`}
+                      >
+                        <div className="truncate font-semibold">{opt.label}</div>
+                        <div className="text-[10px] text-ink-400 font-mono">{opt.time}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -2005,6 +2091,17 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           </div>
         </div>
       )}
+
+      {/* OFFICIAL LEGAL CONSENT DOCUMENT VIEWER & PDF PRINTER */}
+      <ConsentDocumentModal
+        isOpen={Boolean(viewConsentModalApp)}
+        onClose={() => setViewConsentModalApp(null)}
+        consent={viewConsentModalApp?.consent_forms?.[0]}
+        appointment={viewConsentModalApp}
+        studioName={viewConsentModalApp?.studios?.name}
+        studioAddress={viewConsentModalApp?.studios?.address}
+        artistName={viewConsentModalApp?.artists?.display_name}
+      />
     </div>
   );
 }

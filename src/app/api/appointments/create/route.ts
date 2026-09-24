@@ -47,6 +47,39 @@ export async function POST(req: NextRequest) {
       resolvedStudioId = defaultStudio?.id;
     }
 
+    // Ensure start_time and end_time are valid
+    const startDt = new Date(startTime);
+    let endDt = new Date(endTime);
+
+    if (isNaN(startDt.getTime())) {
+      return NextResponse.json({ error: 'La fecha u hora de inicio no es válida.' }, { status: 400 });
+    }
+
+    if (isNaN(endDt.getTime()) || endDt <= startDt) {
+      // Auto-fallback duration based on appointment type
+      const defaultDurationHours = appointmentType === 'design_consultation' ? 0.75 : 2.5;
+      endDt = new Date(startDt.getTime() + defaultDurationHours * 60 * 60 * 1000);
+    }
+
+    // STRICT COLLISION CHECK: Prevent overlapping appointments for this artist
+    const { data: conflicts } = await supabase
+      .from('appointments')
+      .select('id, start_time, end_time, title')
+      .eq('artist_id', resolvedArtistId)
+      .neq('status', 'cancelled')
+      .lt('start_time', endDt.toISOString())
+      .gt('end_time', startDt.toISOString());
+
+    if (conflicts && conflicts.length > 0) {
+      const confStart = new Date(conflicts[0].start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const confEnd = new Date(conflicts[0].end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      return NextResponse.json({
+        error: `El tatuador ya tiene una cita reservada en este intervalo (${confStart} - ${confEnd}). No se permiten citas solapadas. Por favor, selecciona otro horario.`,
+        conflict: true,
+        conflictingAppointment: conflicts[0]
+      }, { status: 409 });
+    }
+
     const newRecord: any = {
       studio_id: resolvedStudioId,
       artist_id: resolvedArtistId,
@@ -57,8 +90,8 @@ export async function POST(req: NextRequest) {
       appointment_type: appointmentType,
       title: title || (appointmentType === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'),
       description: description || null,
-      start_time: startTime,
-      end_time: endTime,
+      start_time: startDt.toISOString(),
+      end_time: endDt.toISOString(),
       status
     };
 

@@ -49,6 +49,7 @@ export interface ToolExecutionResult {
   clientAppointments?: any[];
   quoteData?: any;
   healingData?: any;
+  productsData?: any[];
 }
 
 /**
@@ -394,12 +395,28 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
     const appointmentType = isConsultation ? 'design_consultation' : 'tattoo_session';
     const { targetDate } = extractRequestedDate(undefined, text);
 
+    // Dynamic duration based on tattoo size or description
+    let customDuration: number | undefined;
+    if (isConsultation) {
+      customDuration = 0.75;
+    } else if (/manga completa|espalda completa|brazo entero/i.test(text)) {
+      customDuration = 5;
+    } else if (/media manga|pieza grande|espalda|pecho completo/i.test(text)) {
+      customDuration = 4;
+    } else if (/pequeño|pequeno|mini|lettering|flash/i.test(text)) {
+      customDuration = 1.5;
+    } else if (/(\d+(?:\.\d+)?)\s*horas?/i.test(text)) {
+      const match = text.match(/(\d+(?:\.\d+)?)\s*horas?/i);
+      if (match) customDuration = parseFloat(match[1]);
+    }
+
     // If explicit time is given AND user explicitly says "resérvame" or "confirma"
     if (explicitTime && /(?:resérvame|reservame|agéndame|agendame|confírmame|confirmame|ponme|quiero reservar)/i.test(text)) {
       return {
         tool: 'book_appointment',
         arguments: {
           appointment_type: appointmentType,
+          duration_hours: customDuration,
           date: targetDate,
           time: explicitTime,
           description: content
@@ -413,6 +430,7 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
       arguments: {
         preferred_date: targetDate,
         appointment_type: appointmentType,
+        duration_hours: customDuration,
         preferred_time_of_day: /(?:por\s+la\s+|en\s+la\s+)?tarde|pm/i.test(text) ? 'afternoon' : (/(?:por\s+la\s+|en\s+la\s+)?mañana|am/i.test(text) ? 'morning' : 'any')
       }
     };
@@ -441,6 +459,21 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
     return {
       tool: 'get_artist_schedule',
       arguments: {}
+    };
+  }
+
+  // 8. Studio Products & Aftercare intent (Creams, second-skin, antibacterial soap, merch)
+  const isProductsIntent = /(?:crema|aftercare|pomada|balsamo|bálsamo|hustle butter|balm tattoo|jabon|jabón|segunda piel|second skin|dermalize|merch|tienda|productos?|cuidados?|comprar|curar el tatuaje|jabones)/i.test(text);
+  if (isProductsIntent) {
+    let cat = 'all';
+    if (/crema|pomada|balsamo|bálsamo|aftercare|hustle/i.test(text)) cat = 'aftercare';
+    else if (/jabon|jabón|limpiar/i.test(text)) cat = 'soaps';
+    else if (/segunda piel|second skin|parche|lámina|dermalize/i.test(text)) cat = 'protection';
+    else if (/camiseta|merch|ropa/i.test(text)) cat = 'merch';
+
+    return {
+      tool: 'get_studio_products',
+      arguments: { category: cat }
     };
   }
 
@@ -490,7 +523,7 @@ export async function executeAiTool(
           context.userMessage
         );
         const parsedDateStr = targetDate;
-        const durationHours = appointmentType === 'design_consultation' ? 0.75 : 2.5;
+        const durationHours = toolArgs.duration_hours ? Number(toolArgs.duration_hours) : (appointmentType === 'design_consultation' ? 0.75 : 2.5);
 
         // Fetch existing appointments for this artist starting from target date
         const startDateObj = new Date(`${parsedDateStr}T00:00:00`);
@@ -627,7 +660,7 @@ export async function executeAiTool(
           };
         }
 
-        const durationHours = appointmentType === 'design_consultation' ? 0.75 : 3;
+        const durationHours = toolArgs.duration_hours ? Number(toolArgs.duration_hours) : (appointmentType === 'design_consultation' ? 0.75 : 2.5);
         const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
 
         // Collision check
@@ -1104,6 +1137,52 @@ export async function executeAiTool(
         result: { available: true },
         displayText: `🗓️ El estudio y ${context.artistName || 'el artista'} atienden de Lunes a Viernes de 10:00 a 20:00 y Sábados de 11:00 a 19:00. ¿Qué día te gustaría venir para consultar disponibilidad?`
       };
+    }
+
+    case 'get_studio_products': {
+      try {
+        const category = toolArgs.category || 'all';
+        let query = supabase.from('products').select('*');
+        if (context.studioId) {
+          query = query.eq('studio_id', context.studioId);
+        }
+        if (category !== 'all') {
+          query = query.eq('category', category);
+        }
+
+        const { data: products } = await query;
+        let productList = products || [];
+
+        // Curated fallback seed if DB table has not been initialized
+        if (productList.length === 0) {
+          const SEED_CATALOG = [
+            { name: 'Balm Tattoo Original (30g)', price: 12.0, category: 'aftercare', description: 'Pomada cicatrizante con pantenol y dexpantenol para regeneración dérmica rápida.', in_stock: true },
+            { name: 'Hustle Butter Deluxe (150ml)', price: 24.5, category: 'aftercare', description: 'Manteca 100% vegana con karité y mango. Calma el picor y realza los colores.', in_stock: true },
+            { name: 'Jabón Espuma Antibacteriano Blue Soap (250ml)', price: 14.0, category: 'soaps', description: 'Jabón antiséptico suave con pH neutro especial para curar tatuajes recientes.', in_stock: true },
+            { name: 'Láminas Second-Skin Dermalize Pro (Pack 5)', price: 15.0, category: 'protection', description: 'Película protectora impermeable y transpirable de grado médico.', in_stock: true },
+            { name: 'Camiseta Oficial Atelier Blackwork (Edición Limitada)', price: 28.0, category: 'merch', description: '100% algodón orgánico pesado con serigrafía exclusiva del estudio.', in_stock: true }
+          ];
+          productList = category === 'all' ? SEED_CATALOG : SEED_CATALOG.filter(p => p.category === category);
+        }
+
+        const itemsText = productList.map(p => `• **${p.name}** (${p.price}€): ${p.description}`).join('\n');
+        const displayText = `🛍️ **Productos de Cuidado & Tienda del Estudio:**\n\n${itemsText}\n\nLos tenemos disponibles en el estudio para que te los lleves el día de tu cita. Si quieres, ¡puedo pedirle a ${context.artistName || 'el artista'} que te reserve uno en recepción!`;
+
+        return {
+          success: true,
+          tool: 'get_studio_products',
+          result: { products: productList },
+          productsData: productList,
+          displayText
+        };
+      } catch (err: any) {
+        return {
+          success: false,
+          tool: 'get_studio_products',
+          result: { error: err.message },
+          displayText: 'No se pudieron consultar los productos en este momento.'
+        };
+      }
     }
 
     default:

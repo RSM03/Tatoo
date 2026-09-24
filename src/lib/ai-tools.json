@@ -23,6 +23,10 @@
             "type": "string",
             "enum": ["morning", "afternoon", "any"],
             "description": "Preferencia horaria: 'morning' (10:00 - 14:00), 'afternoon' (16:00 - 20:00) o 'any' (cualquiera)."
+          },
+          "duration_hours": {
+            "type": "number",
+            "description": "Duración estimada de la sesión en horas (ej: 0.75 para consulta de diseño, 1.5 para mini/lettering, 2.5 para pieza mediana, 4 para pieza grande, 5 para manga completa)."
           }
         },
         "required": ["preferred_date"]
@@ -46,6 +50,10 @@
             "type": "string",
             "enum": ["design_consultation", "tattoo_session"],
             "description": "Tipo de cita a agendar."
+          },
+          "duration_hours": {
+            "type": "number",
+            "description": "Duración en horas de la cita a agendar (ej: 0.75 para consulta, 1.5 para pieza pequeña, 2.5 para mediana, 4 para grande, 5 para sesión manga)."
           },
           "description": {
             "type": "string",
@@ -175,6 +183,20 @@
           "day_of_week": {
             "type": "string",
             "description": "Día de la semana a consultar (ej: 'lunes', 'sábado')."
+          }
+        }
+      }
+    },
+    {
+      "name": "get_studio_products",
+      "description": "Consulta el catálogo de productos disponibles en el estudio de tatuajes (cremas aftercare, bálsamos cicatrizantes, jabones antibacterianos, láminas de protección second skin y merchandising). Úsala cuando el cliente pregunte qué cremas usar, qué productos tienen a la venta, o precios de cuidados para su tatuaje.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["all", "aftercare", "soaps", "protection", "merch"],
+            "description": "Categoría a filtrar: 'aftercare' (cremas/bálsamos), 'soaps' (jabones neutros), 'protection' (láminas second skin), 'merch' (camisetas/merchandising) o 'all' (todo)."
           }
         }
       }

@@ -21,9 +21,13 @@ import {
   Save,
   Trash2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShoppingBag
 } from 'lucide-react';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
+import EditAppointmentModal from '@/components/dashboard/EditAppointmentModal';
+import StudioShopSection from '@/components/dashboard/StudioShopSection';
 
 export default function ArtistPortal({
   user,
@@ -36,7 +40,7 @@ export default function ArtistPortal({
   artistId?: string;
   onBackToStudio?: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'chats' | 'pricing' | 'healing' | 'shares'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'chats' | 'pricing' | 'healing' | 'shares' | 'products'>('calendar');
   const [artist, setArtist] = useState<any>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [chats, setChats] = useState<any[]>([]);
@@ -45,6 +49,10 @@ export default function ArtistPortal({
   const [artistInputText, setArtistInputText] = useState('');
   const [shares, setShares] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modals for appointment edition and consent form viewing
+  const [editingApp, setEditingApp] = useState<any>(null);
+  const [viewingConsentApp, setViewingConsentApp] = useState<any>(null);
 
   // Manual Appointment / Break Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -212,7 +220,7 @@ export default function ArtistPortal({
           .select(`
             *,
             clients (id, dni_nie, profiles (full_name, email, phone)),
-            consent_forms (id, signed_at)
+            consent_forms (*)
           `)
           .eq('artist_id', art.id)
           .order('start_time', { ascending: true });
@@ -550,6 +558,16 @@ export default function ArtistPortal({
           <Share2 className="w-4 h-4 text-purple-400" />
           <span>Sección Share & Newsletter</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === 'products' ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4 text-pink-400" />
+          <span>Tienda & Productos</span>
+        </button>
       </div>
 
       {/* TAB 1: CALENDAR & APPOINTMENTS (GOOGLE / TEAMS STYLE) */}
@@ -706,12 +724,33 @@ export default function ArtistPortal({
                                     <div className="text-[10px] text-ink-400 truncate mt-0.5">{app.description}</div>
                                   )}
                                   {!isBreak && (
-                                    <div className="mt-1.5 pt-1 border-t border-white/5 text-[9px] font-semibold">
-                                      {isSigned ? (
-                                        <span className="text-emerald-400">✓ Consentimiento firmado</span>
-                                      ) : (
-                                        <span className="text-amber-400">⚠️ Firma pendiente</span>
-                                      )}
+                                    <div className="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between gap-1 text-[10px]">
+                                      <span className={`px-1.5 py-0.5 rounded-md font-mono text-[9px] font-bold ${
+                                        app.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                                      }`}>
+                                        {app.status === 'confirmed' ? '✓ Confirmada' : '⏳ Pendiente'}
+                                      </span>
+
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => { e.stopPropagation(); setEditingApp(app); }}
+                                          className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white text-[9px] font-semibold transition-colors"
+                                          title="Confirmar o ajustar duración de la cita"
+                                        >
+                                          Editar
+                                        </button>
+                                        {isSigned && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); setViewingConsentApp(app); }}
+                                            className="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[9px] font-bold transition-colors"
+                                            title="Ver y descargar consentimiento legal firmado"
+                                          >
+                                            PDF
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -800,7 +839,13 @@ export default function ArtistPortal({
                             return (
                               <div
                                 key={app.id}
-                                className={`text-[10px] px-1.5 py-0.5 rounded-lg truncate font-medium border ${
+                                onClick={(e) => {
+                                  if (!isBreak) {
+                                    e.stopPropagation();
+                                    setEditingApp(app);
+                                  }
+                                }}
+                                className={`text-[10px] px-1.5 py-0.5 rounded-lg truncate font-medium border cursor-pointer hover:scale-[1.02] transition-transform ${
                                   isBreak
                                     ? 'bg-amber-500/20 text-amber-200 border-amber-500/30'
                                     : app.appointment_type === 'design_consultation'
@@ -1218,6 +1263,16 @@ export default function ArtistPortal({
         </div>
       )}
 
+      {/* TAB 6: STUDIO SHOP & PRODUCTS (TIENDA & PRODUCTOS) */}
+      {activeTab === 'products' && (
+        <div className="space-y-6">
+          <StudioShopSection
+            isArtistMode={true}
+            currentStudioId={artist?.studio_id}
+          />
+        </div>
+      )}
+
       {/* MODAL: MANUAL WALK-IN OR BREAK BLOCK */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1351,6 +1406,26 @@ export default function ArtistPortal({
           </div>
         </div>
       )}
+
+      {/* EDIT & CONFIRM APPOINTMENT MODAL */}
+      <EditAppointmentModal
+        isOpen={Boolean(editingApp)}
+        onClose={() => setEditingApp(null)}
+        appointment={editingApp}
+        onAppointmentUpdated={(updated) => {
+          setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
+        }}
+      />
+
+      {/* OFFICIAL LEGAL CONSENT DOCUMENT VIEWER & PDF PRINTER */}
+      <ConsentDocumentModal
+        isOpen={Boolean(viewingConsentApp)}
+        onClose={() => setViewingConsentApp(null)}
+        consent={viewingConsentApp?.consent_forms?.[0]}
+        appointment={viewingConsentApp}
+        studioName="Tatoo Studio Atelier"
+        artistName={artist?.display_name}
+      />
     </div>
   );
 }

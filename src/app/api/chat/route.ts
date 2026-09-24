@@ -295,6 +295,7 @@ REGLAS FUNDAMENTALES DE HERRAMIENTAS (TOOLS):
 6. 'estimate_quote': ÚSALA si el cliente consulta precio, presupuesto o indica medidas en cm.
 7. 'analyze_healing': ÚSALA si el cliente envía una foto de curación dérmica.
 8. 'request_human_takeover': ÚSALA si el cliente solicita expresamente hablar con una persona humana o con ${artistName}.
+9. 'get_studio_products': ÚSALA si el cliente pregunta por cremas para curar el tatuaje (como Balm Tattoo o Hustle Butter), jabones neutros o antibacterianos, láminas second skin o productos de la tienda del estudio.
 
 Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir en cualquier momento. Responde siempre en ${lang === 'en' ? 'Inglés' : 'Español'} de forma cercana, acogedora y profesional.`;
 
@@ -438,7 +439,8 @@ Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir
       availableSlots: executedToolResult?.availableSlots || null,
       clientAppointments: executedToolResult?.clientAppointments || null,
       quote: executedToolResult?.quoteData || null,
-      healing: executedToolResult?.healingData || null
+      healing: executedToolResult?.healingData || null,
+      products: executedToolResult?.productsData || null
     });
 
   } catch (err: any) {
