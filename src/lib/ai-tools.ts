@@ -365,8 +365,8 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
     };
   }
 
-  // 4. Client Appointments Query intent (e.g. "¿cuándo es mi cita?", "¿qué citas tengo agendadas?")
-  const isCheckMyApps = /(?:cuándo|cuando)\s+es\s+mi\s+cita/i.test(text)
+  // 4. Client Appointments Query intent (e.g. "¿cuándo es mi cita?", "¿cuándo tengo mi próxima cita?", "¿qué citas tengo agendadas?")
+  const isCheckMyApps = /(?:cuándo|cuando)\s+(?:es|tengo)\s+(?:mi\s+|alguna\s+)?(?:próxima\s+|proxima\s+)?(?:cita|sesion|sesión)/i.test(text)
     || /(?:qué|que)\s+citas\s+tengo/i.test(text)
     || /mis\s+citas/i.test(text)
     || /tengo\s+(?:alguna\s+)?cita/i.test(text);
@@ -378,13 +378,23 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
     };
   }
 
-  // 5. Booking vs Availability Check intent:
+  // 5. Studio Opening Schedule intent (e.g. "¿qué horario tenéis en el estudio los sábados?", "horario de apertura")
+  const isScheduleQuery = /(?:horario\s+(?:del\s+estudio|de\s+apertura|habitual)|a\s+qu[eé]\s+hora\s+abr[ií]s|qu[eé]\s+horario\s+ten[eé]is|cu[aá]ndo\s+abr[ií]s|horario\s+de\s+atenci[oó]n|est[aá]is\s+abiertos?)/i.test(text);
+  if (isScheduleQuery) {
+    return {
+      tool: 'get_artist_schedule',
+      arguments: {}
+    };
+  }
+
+  // 6. Booking vs Availability Check intent:
   // Catches queries with typos like "que huecs tiene para este viernes", "que horarios tienes", etc.
   const hasAvailabilityQuery = /(?:huec[a-z]*|horari[a-z]*|disponib[a-z]*|libr[a-z]*|turn[a-z]*|sitio[a-z]*|fechas?|dias?|días?|citas?)/i.test(text)
     && /(?:tienes?|teneis|hay|tenga|tengas|cuándo|cuando|qué|que|cuál|cual|ver|para|este|esta|próximo|proximo|mañana|manana|miercoles|miércoles|lunes|martes|jueves|viernes|sabado|sábado|domingo)/i.test(text);
 
   const hasAppointmentIntent = hasAvailabilityQuery
     || /(?:quiero|puedo|deseo|pedir|solicitar|agendar|reservar|reservame|resérvame|poner|dame|darme|sacar)\s+(?:una\s+)?(?:cita|sesion|sesión|consulta|hueco|turno)/i.test(text)
+    || /(?:quiero|deseo|me\s+gustaría|me\s+gustaria)?\s*(?:reservar|agendar|resérvame|reservame|agéndame|agendame)\s+(?:para|el|este|un|una)/i.test(text)
     || /(?:cita|sesion|sesión)\s+(?:para\s+el|el\s+próximo|el\s+proximo|este|mañana|hoy)/i.test(text)
     || /(?:tienes\s+hueco|tienes\s+huecos|hay\s+hueco|hay\s+huecos|disponibilidad)/i.test(text)
     || /(?:que|qué)\s+(?:huec[a-z]*|horari[a-z]*|dias|días)\s+(?:tienes|hay)/i.test(text);

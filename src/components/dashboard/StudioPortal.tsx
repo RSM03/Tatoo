@@ -18,8 +18,10 @@ import {
   ExternalLink,
   X,
   LogIn,
-  UserCheck
+  UserCheck,
+  MapPin
 } from 'lucide-react';
+import StudioMapView from '@/components/dashboard/StudioMapView';
 
 const DEFAULT_REMINDER_SUBJECT = '🔔 Recordatorio de tu cita en {studio_name} para el {date}';
 const DEFAULT_REMINDER_BODY = `¡Hola {client_name}! Te recordamos tu cita de {appointment_type} programada para el {date} a las {time} con {artist_name} en {studio_name} ({studio_address}).
@@ -62,7 +64,7 @@ Puedes solicitar cita o consultar tu idea directamente aquí:
 ¡Un abrazo del equipo de {studio_name}!`;
 
 export default function StudioPortal({ user, profile }: { user: any; profile: any }) {
-  const [activeTab, setActiveTab] = useState<'artists' | 'schedule' | 'emails' | 'reviews'>('artists');
+  const [activeTab, setActiveTab] = useState<'artists' | 'schedule' | 'location' | 'emails' | 'reviews'>('artists');
   const [studio, setStudio] = useState<any>(null);
   const [artists, setArtists] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -361,6 +363,16 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
         </button>
 
         <button
+          onClick={() => setActiveTab('location')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === 'location' ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white'
+          }`}
+        >
+          <MapPin className="w-4 h-4 text-emerald-400" />
+          <span>Ubicación y Mapa</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('emails')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
             activeTab === 'emails' ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white'
@@ -520,6 +532,44 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
               <span>{savingHours ? 'Guardando...' : 'Guardar Horario de Apertura'}</span>
             </button>
           </form>
+        </div>
+      )}
+
+      {/* TAB LOCATION: STUDIO MAP & ADDRESS CONFIGURATION */}
+      {activeTab === 'location' && studio && (
+        <div className="space-y-6">
+          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-bold uppercase mb-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>Geo-Localización & Mapa Territorial</span>
+                </div>
+                <h2 className="font-display text-xl font-bold text-white">Ubicación y Cobertura de tu Estudio</h2>
+                <p className="text-xs text-ink-400 mt-1 max-w-xl">
+                  Configura la dirección física y la ciudad para que los clientes encuentren tu estudio en el mapa interactivo y calculen rutas directas con Google Maps.
+                </p>
+              </div>
+            </div>
+
+            <StudioMapView
+              studios={[{
+                ...studio,
+                artists_count: artists.length
+              }]}
+              isOwnerView={true}
+              onUpdateStudioAddress={async (studioId, address, city) => {
+                const res = await fetch('/api/studios/update-location', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ studioId, address, city })
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || 'Error al actualizar dirección');
+                setStudio((prev: any) => ({ ...prev, address, city }));
+              }}
+            />
+          </div>
         </div>
       )}
 

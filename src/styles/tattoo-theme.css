@@ -1,0 +1,355 @@
+/**
+ * ==============================================================================
+ * 🎨 TATOO AI — MASTER THEME & UI STYLE SYSTEM
+ * ==============================================================================
+ * Este es el archivo maestro de estilos para toda la aplicación.
+ * Permite cambiar la paleta de colores, tipografías, tarjetas, bordes,
+ * botones, modales y estética general modificando únicamente este archivo.
+ * ==============================================================================
+ */
+
+:root {
+  /* --- PALETA DE FONDOS (ATMÓSFERA DARK ATELIER) --- */
+  --t-bg-void: #050608;               /* Negro ultra-profundo base */
+  --t-bg-ink: #0a0d13;                /* Fondo secundario tinta */
+  --t-bg-card: #0f131c;               /* Fondo de tarjetas y paneles */
+  --t-bg-card-hover: #151a26;         /* Hover de tarjetas */
+  --t-bg-overlay: rgba(5, 6, 8, 0.85); /* Overlay para modales y backdrops */
+
+  /* --- COLORES DE ACENTO & TINTA --- */
+  --t-crimson: #dc2626;               /* Carmesí primario */
+  --t-crimson-bright: #ef4444;        /* Rojo brillante highlights */
+  --t-crimson-dark: #991b1b;          /* Rojo oscuro profundo */
+  --t-crimson-subtle: rgba(220, 38, 38, 0.12); /* Tintes carmesí transparentes */
+
+  --t-gold: #f59e0b;                  /* Dorado / Ámbar para sellos y advertencias */
+  --t-gold-bright: #fbbf24;
+  --t-gold-subtle: rgba(245, 158, 11, 0.12);
+
+  --t-emerald: #10b981;               /* Esmeralda para confirmaciones y consentimientos */
+  --t-emerald-subtle: rgba(16, 185, 129, 0.12);
+
+  --t-blue: #3b82f6;                  /* Azul para consultas de diseño */
+  --t-blue-subtle: rgba(59, 130, 246, 0.12);
+
+  /* --- TEXTO & TIPOGRAFÍA --- */
+  --t-text-main: #f8fafc;             /* Texto principal blanco brillante */
+  --t-text-muted: #94a3b8;            /* Texto secundario gris slate */
+  --t-text-dim: #64748b;              /* Texto atenuado / etiquetas */
+
+  /* --- BORDES Y SEPARADORES --- */
+  --t-border-subtle: rgba(255, 255, 255, 0.08);
+  --t-border-distinct: rgba(255, 255, 255, 0.16);
+  --t-border-accent: rgba(220, 38, 38, 0.35);
+  --t-border-gold: rgba(245, 158, 11, 0.35);
+
+  /* --- SOMBRAS Y RESPLANDORES (GLOWS) --- */
+  --t-shadow-sm: 0 4px 12px -2px rgba(0, 0, 0, 0.6);
+  --t-shadow-lg: 0 20px 45px -10px rgba(0, 0, 0, 0.85);
+  --t-glow-crimson: 0 0 30px -5px rgba(220, 38, 38, 0.35);
+  --t-glow-gold: 0 0 30px -5px rgba(245, 158, 11, 0.35);
+  --t-glow-emerald: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+
+  /* --- RADIO DE BORDES (CURVATURAS MODERNAS) --- */
+  --t-radius-sm: 0.625rem;            /* 10px */
+  --t-radius-md: 0.875rem;            /* 14px */
+  --t-radius-lg: 1.25rem;             /* 20px */
+  --t-radius-xl: 1.75rem;             /* 28px */
+}
+
+/* ==============================================================================
+ * CLASES REUTILIZABLES DE COMPONENTES UI (TATTOO ATELIER)
+ * ============================================================================== */
+
+/* Fondo dinámico atmospheric para la aplicación */
+.tattoo-bg-main {
+  background-color: var(--t-bg-void);
+  background-image: 
+    radial-gradient(at 10% 15%, rgba(220, 38, 38, 0.08) 0px, transparent 55%),
+    radial-gradient(at 90% 85%, rgba(245, 158, 11, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(15, 19, 28, 0.95) 0%, var(--t-bg-void) 100%);
+}
+
+/* Paneles de cristal ahumado (Glassmorphism oscuro) */
+.tattoo-panel {
+  background: rgba(15, 19, 28, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--t-border-subtle);
+  border-radius: var(--t-radius-xl);
+  box-shadow: var(--t-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tattoo-panel-hover:hover {
+  border-color: var(--t-border-distinct);
+}
+
+/* Tarjetas interactivas de Citas, Tatuadores y Productos */
+.tattoo-card {
+  position: relative;
+  background: linear-gradient(150deg, rgba(21, 26, 38, 0.95) 0%, rgba(13, 16, 24, 0.98) 100%);
+  border: 1px solid var(--t-border-subtle);
+  border-radius: var(--t-radius-lg);
+  box-shadow: var(--t-shadow-sm);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tattoo-card:hover {
+  border-color: var(--t-border-accent);
+  box-shadow: var(--t-shadow-lg), var(--t-glow-crimson);
+  transform: translateY(-2px);
+}
+
+/* Card Variante Dorada / Flash / Destacada */
+.tattoo-card-gold {
+  position: relative;
+  background: linear-gradient(150deg, rgba(28, 23, 16, 0.95) 0%, rgba(15, 13, 9, 0.98) 100%);
+  border: 1px solid var(--t-border-gold);
+  border-radius: var(--t-radius-lg);
+  box-shadow: var(--t-shadow-sm);
+  transition: all 0.25s ease;
+}
+
+.tattoo-card-gold:hover {
+  border-color: rgba(245, 158, 11, 0.7);
+  box-shadow: var(--t-shadow-lg), var(--t-glow-gold);
+  transform: translateY(-2px);
+}
+
+/* ==============================================================================
+ * BOTONES & ACCIONES
+ * ============================================================================== */
+
+/* Botón Carmesí Primario */
+.tattoo-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--t-crimson) 0%, var(--t-crimson-dark) 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: var(--t-radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.tattoo-btn-primary:hover {
+  background: linear-gradient(135deg, var(--t-crimson-bright) 0%, var(--t-crimson) 100%);
+  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.55);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.tattoo-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Botón Dorado / Destacado */
+.tattoo-btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--t-gold) 0%, #b45309 100%);
+  color: #0b0e14;
+  font-weight: 800;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: var(--t-radius-md);
+  border: 1px solid rgba(251, 191, 36, 0.6);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tattoo-btn-gold:hover {
+  background: linear-gradient(135deg, var(--t-gold-bright) 0%, var(--t-gold) 100%);
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.5);
+  transform: translateY(-1px) scale(1.02);
+}
+
+/* Botón Secundario Ahumado */
+.tattoo-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--t-text-muted);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--t-radius-md);
+  border: 1px solid var(--t-border-subtle);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tattoo-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: var(--t-border-distinct);
+}
+
+/* ==============================================================================
+ * BADGES & ETIQUETAS DE ESTADO
+ * ============================================================================== */
+
+.tattoo-badge-confirmed {
+  background: var(--t-emerald-subtle);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tattoo-badge-pending {
+  background: var(--t-gold-subtle);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tattoo-badge-cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ==============================================================================
+ * CAMPOS DE FORMULARIO E INPUTS
+ * ============================================================================== */
+
+.tattoo-input {
+  width: 100%;
+  background: rgba(11, 14, 20, 0.95);
+  border: 1px solid var(--t-border-distinct);
+  border-radius: var(--t-radius-md);
+  padding: 0.65rem 1rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.tattoo-input:focus {
+  border-color: var(--t-crimson);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
+.tattoo-input::placeholder {
+  color: var(--t-text-dim);
+}
+
+/* ==============================================================================
+ * MAPA INTERACTIVO DE ESTUDIOS
+ * ============================================================================== */
+
+.tattoo-map-container {
+  position: relative;
+  width: 100%;
+  border-radius: var(--t-radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--t-border-distinct);
+  background: #090c12;
+  box-shadow: var(--t-shadow-lg);
+}
+
+.tattoo-map-pin {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tattoo-map-pin:hover {
+  transform: scale(1.25) translateY(-4px);
+  z-index: 50;
+}
+
+/* ==============================================================================
+ * AISLAMIENTO ESTRICTO PARA IMPRESIÓN Y DESCARGA DE PDF
+ * ==============================================================================
+ * Oculta el 100% de la página (navbar, dashboard, backgrounds, botones)
+ * e imprime ÚNICAMENTE la hoja blanca formal del documento de consentimiento.
+ * ============================================================================== */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* Ocultar todos los elementos generales del sitio */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Ocultar botones de cierre y controles interactivos dentro del modal */
+  .print\:hidden,
+  button,
+  nav,
+  header {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Mostrar exclusivamente el documento con id 'consent-printable-document' */
+  #consent-printable-document,
+  #consent-printable-document * {
+    visibility: visible !important;
+  }
+
+  /* Posicionar el documento ocupando la hoja completa en blanco */
+  #consent-printable-document {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* Ajustes de contraste para la firma y membrete */
+  #consent-printable-document img {
+    max-width: 100% !important;
+    display: block !important;
+    filter: none !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+}

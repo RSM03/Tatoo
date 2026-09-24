@@ -38,6 +38,7 @@ import PublicArtistAgenda from '@/components/dashboard/PublicArtistAgenda';
 import { compressImageForChat } from '@/lib/image-upload';
 import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
 import StudioShopSection from '@/components/dashboard/StudioShopSection';
+import StudioMapView from '@/components/dashboard/StudioMapView';
 
 export default function ClientPortal({ user, profile }: { user: any; profile: any }) {
   const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history' | 'shop'>('appointments');
@@ -109,8 +110,25 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
   const [selectedStudioForBrowsing, setSelectedStudioForBrowsing] = useState<any>(null);
   const [studioSearchTerm, setStudioSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('all');
+  const [studioViewMode, setStudioViewMode] = useState<'grid' | 'map'>('grid');
   const [artistSearchTerm, setArtistSearchTerm] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
+
+  const handleUpdateStudioAddress = async (studioId: string, address: string, city: string) => {
+    try {
+      const res = await fetch('/api/studios/update-location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studioId, address, city })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Error al actualizar ubicación');
+      setStudios(prev => prev.map(s => s.id === studioId ? { ...s, address, city } : s));
+    } catch (err: any) {
+      console.error('Update studio address error:', err);
+      throw err;
+    }
+  };
 
   // Public Artist Agenda state (Privacy-protected calendar)
   const [agendaArtist, setAgendaArtist] = useState<any>(null);
@@ -940,8 +958,62 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     })()}
                   </div>
 
-                  {/* Studios List Grid */}
-                  {studios.length === 0 ? (
+                  {/* Mode Switcher: Cards vs Interactive Map */}
+                  <div className="max-w-3xl mx-auto flex items-center justify-between pt-1 mb-6 border-t border-white/5">
+                    <div className="text-xs text-ink-400 font-mono">
+                      {studios.length} {studios.length === 1 ? 'estudio disponible' : 'estudios disponibles'}
+                    </div>
+                    <div className="flex items-center p-1 bg-ink-900 rounded-xl border border-white/10 shadow-inner">
+                      <button
+                        type="button"
+                        onClick={() => setStudioViewMode('grid')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          studioViewMode === 'grid'
+                            ? 'bg-crimson-600 text-white shadow-md'
+                            : 'text-ink-400 hover:text-white'
+                        }`}
+                      >
+                        <Building2 className="w-3.5 h-3.5" />
+                        <span>Tarjetas</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStudioViewMode('map')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          studioViewMode === 'map'
+                            ? 'bg-crimson-600 text-white shadow-md'
+                            : 'text-ink-400 hover:text-white'
+                        }`}
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Mapa Interactivo</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {studioViewMode === 'map' ? (
+                    <StudioMapView
+                      studios={studios.map(s => ({
+                        ...s,
+                        artists_count: artists.filter(a => a.studio_id === s.id).length
+                      }))}
+                      onSelectStudio={(st) => {
+                        const fullStudio = studios.find(s => s.id === st.id) || st;
+                        setSelectedStudioForBrowsing(fullStudio);
+                        setArtistSearchTerm('');
+                        setSpecialtyFilter('all');
+                      }}
+                      onBookAtStudio={(st) => {
+                        const fullStudio = studios.find(s => s.id === st.id) || st;
+                        setSelectedStudioForBrowsing(fullStudio);
+                        setArtistSearchTerm('');
+                        setSpecialtyFilter('all');
+                      }}
+                      onUpdateStudioAddress={handleUpdateStudioAddress}
+                    />
+                  ) : (
+                    /* Studios List Grid */
+                    studios.length === 0 ? (
                     <div className="text-center py-12 text-ink-400 font-mono text-sm">
                       Cargando estudios disponibles...
                     </div>
@@ -1022,7 +1094,8 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                         })}
                       </div>
                     );
-                  })()}
+                  })()
+                  )}
                 </div>
               ) : (
                 /* STEP 2B: RESIDENT ARTISTS IN SELECTED STUDIO */

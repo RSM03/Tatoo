@@ -41,8 +41,8 @@ export default function ConsentDocumentModal({
   const docId = consent.id ? consent.id.slice(0, 8).toUpperCase() : 'DOC-REG';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static">
-      <div className="bg-ink-950 border border-white/20 rounded-3xl max-w-3xl w-full p-6 sm:p-10 shadow-2xl relative my-auto print:border-none print:shadow-none print:p-6 print:bg-white print:text-black">
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static print:overflow-visible">
+      <div id="consent-printable-document" className="bg-ink-950 border border-white/20 rounded-3xl max-w-3xl w-full p-6 sm:p-10 shadow-2xl relative my-auto print:border-none print:shadow-none print:p-8 print:bg-white print:text-black">
         {/* Modal Controls (Hidden in Print) */}
         <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10 print:hidden">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
