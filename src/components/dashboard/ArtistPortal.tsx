@@ -466,16 +466,16 @@ export default function ArtistPortal({
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 w-full">
       {onBackToStudio && (
-        <div className="mb-6 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-amber-300">
-            <span className="font-bold">Consola Individual de Tatuador:</span>
-            <span className="underline font-semibold">{artist?.display_name || 'Tatuador'}</span>
+        <div className="mb-6 p-3.5 rounded-2xl bg-ink-950/80 border border-amber-500/25 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-ink-300">
+            <span>Estás en la consola de</span>
+            <span className="font-semibold text-ink-50">{artist?.display_name || 'Tatuador'}</span>
           </div>
           <button
             onClick={onBackToStudio}
             className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
           >
-            ← Volver a la Vista General del Estudio
+            ← Volver al estudio
           </button>
         </div>
       )}
@@ -483,7 +483,7 @@ export default function ArtistPortal({
       {/* Artist Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-crimson-400 font-bold">Panel del Tatuador</span>
+          <span className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium flex items-center gap-3">Panel del tatuador<span className="h-px w-10 bg-ink-600/60" /></span>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mt-1">
             {artist?.display_name || profile?.full_name || 'Tatuador'}
           </h1>
@@ -495,14 +495,14 @@ export default function ArtistPortal({
             className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors"
           >
             <Plus className="w-3.5 h-3.5 text-crimson-500" />
-            <span>+ Cita Walk-in</span>
+            <span>Cita walk-in</span>
           </button>
           <button
             onClick={() => { setModalType('break'); setIsModalOpen(true); }}
             className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors"
           >
             <Coffee className="w-3.5 h-3.5 text-amber-400" />
-            <span>+ Descanso / Vacaciones</span>
+            <span>Descanso o vacaciones</span>
           </button>
         </div>
       </div>
@@ -516,7 +516,7 @@ export default function ArtistPortal({
           }`}
         >
           <Calendar className="w-4 h-4 text-crimson-500" />
-          <span>Agenda & Citas ({appointments.length})</span>
+          <span>Agenda ({appointments.length})</span>
         </button>
 
         <button
@@ -526,7 +526,7 @@ export default function ArtistPortal({
           }`}
         >
           <MessageSquare className="w-4 h-4 text-amber-400" />
-          <span>Bandeja de Chats ({chats.length})</span>
+          <span>Chats ({chats.length})</span>
         </button>
 
         <button
@@ -536,7 +536,7 @@ export default function ArtistPortal({
           }`}
         >
           <Sliders className="w-4 h-4 text-blue-400" />
-          <span>Reglas de Presupuesto (IA)</span>
+          <span>Presupuestos</span>
         </button>
 
         <button
@@ -546,7 +546,7 @@ export default function ArtistPortal({
           }`}
         >
           <Camera className="w-4 h-4 text-emerald-400" />
-          <span>Plantillas de Curación</span>
+          <span>Curación</span>
         </button>
 
         <button
@@ -556,7 +556,7 @@ export default function ArtistPortal({
           }`}
         >
           <Share2 className="w-4 h-4 text-purple-400" />
-          <span>Sección Share & Newsletter</span>
+          <span>Galería y newsletter</span>
         </button>
 
         <button
@@ -566,7 +566,7 @@ export default function ArtistPortal({
           }`}
         >
           <ShoppingBag className="w-4 h-4 text-pink-400" />
-          <span>Tienda & Productos</span>
+          <span>Tienda</span>
         </button>
       </div>
 

@@ -36,19 +36,20 @@ export default function SharesPage() {
     <div className="max-w-7xl mx-auto px-4 py-12 w-full">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-12">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-purple-400 mb-3">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Flashes Disponibles & Diseños Recientes</span>
+        <div className="flex items-center justify-center gap-4 mb-5 text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium">
+          <span className="h-px w-10 bg-ink-600/60" />
+          <span>Galería</span>
+          <span className="h-px w-10 bg-ink-600/60" />
         </div>
-        <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">Galería Share</h1>
-        <p className="text-sm text-ink-400 mt-2">
-          Explora los últimos trabajos y flashes exclusivos de nuestros artistas. Todos los meses enviamos las novedades en la newsletter.
+        <h1 className="font-display text-4xl sm:text-5xl font-bold text-white">Flashes y trabajos <span className="italic font-semibold text-crimson-300">recientes</span></h1>
+        <p className="text-base text-ink-400 mt-4">
+          Diseños listos para tatuar y los últimos trabajos de nuestros artistas. Si te gusta uno, pídelo directamente.
         </p>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-crimson-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : shares.length === 0 ? (
         <div className="glass-panel p-16 text-center rounded-3xl border border-white/5 max-w-lg mx-auto">
@@ -59,7 +60,7 @@ export default function SharesPage() {
             href="/register?role=artist"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-xs font-bold"
           >
-            <span>Publicar como Tatuador</span>
+            <span>Publicar mis flashes</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -75,7 +76,7 @@ export default function SharesPage() {
                 />
                 {s.is_flash && (
                   <span className="absolute top-3 left-3 bg-crimson-600/90 text-white font-bold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full backdrop-blur-md">
-                    Flash Disponible
+                    Disponible
                   </span>
                 )}
                 {s.price_hint && (

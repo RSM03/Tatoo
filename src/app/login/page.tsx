@@ -54,8 +54,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-crimson-600 to-amber-500 mx-auto flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-crimson-600/30 mb-4">
-            T
+          <div className="w-14 h-16 mx-auto flex items-center justify-center mb-2">
+            <span className="logo-t text-[72px] text-ink-50">T</span>
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">Iniciar Sesión</h1>
           <p className="text-sm text-ink-400 mt-1.5">Accede a tu panel según tu perfil en la plataforma</p>
@@ -82,7 +82,7 @@ export default function LoginPage() {
             onClick={() => setSelectedRole('client')}
             className={`flex flex-col items-center gap-1 py-3 px-3 rounded-xl text-xs font-semibold transition-all ${
               selectedRole === 'client'
-                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm'
+                ? 'bg-crimson-600/20 text-crimson-300 border border-crimson-500/30 shadow-sm'
                 : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >

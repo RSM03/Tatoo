@@ -5,15 +5,12 @@
 @tailwind utilities;
 
 :root {
-  /* Unificado con --t-bg-void / --t-text-main / --t-bg-card / --t-crimson
-     de tattoo-theme.css: antes este archivo usaba un rojo distinto
-     (#e63946) al del sistema de marca (#dc2626). Ahora es un único rojo. */
-  --background: #08090b;
-  --foreground: #f5f5f7;
-  --card-bg: #111318;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --primary-accent: #dc2626;
-  --primary-accent-hover: #ef4444;
+  --background: #141311;
+  --foreground: #efeae2;
+  --card-bg: #211f1c;
+  --border-color: rgba(255, 244, 230, 0.12);
+  --primary-accent: #2f5a47;
+  --primary-accent-hover: #4f7a64;
 }
 
 body {
@@ -21,20 +18,27 @@ body {
   background-color: transparent;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar para estética tattoo studio */
+::selection {
+  background: rgba(47, 90, 71, 0.35);
+  color: #fff;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #08090b;
+  background: #141311;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #21252d;
+  background: #3a3632;
   border-radius: 9999px;
 }
 
@@ -42,7 +46,6 @@ body {
   background: var(--primary-accent);
 }
 
-/* Ocultar scrollbar en tabs / chips */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -51,47 +54,34 @@ body {
   scrollbar-width: none;
 }
 
-/* ==============================================================================
- * ACCENTOS DE UI — Estética Tattoo Studio, versión plana / moderna
- * ============================================================================== */
-
+/* Acentos de UI */
 .glow-effect {
-  box-shadow: 0 0 18px -6px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 0 18px -6px rgba(47, 90, 71, 0.3);
 }
 
 .subtle-border {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 244, 230, 0.10);
 }
 
 .glass-panel {
-  background: rgba(13, 15, 20, 0.9);
+  background: rgba(33, 31, 28, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 244, 230, 0.12);
   box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.6);
 }
 
-/*
- * NOTA: .tattoo-card y .tattoo-card-gold vivían duplicados aquí y también en
- * tattoo-theme.css. Al importarse tattoo-theme.css arriba y definirse de nuevo
- * en este archivo con la misma especificidad, esta versión ganaba siempre por
- * orden de cascada — la de tattoo-theme.css quedaba muerta.
- * Se han quitado de aquí: tattoo-theme.css es ahora la única fuente para
- * ambas clases, para que solo haya que tocar un sitio.
- */
-
 .tattoo-gold-glow {
-  box-shadow: 0 0 16px -6px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 16px -6px rgba(179, 148, 89, 0.3);
 }
 
 .tattoo-crimson-glow {
-  box-shadow: 0 0 16px -6px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 0 16px -6px rgba(47, 90, 71, 0.3);
 }
 
 .tattoo-heading {
   font-family: var(--font-display), Georgia, serif;
   letter-spacing: -0.02em;
-  text-shadow: 0 1px 8px rgba(220, 38, 38, 0.25);
 }
 
 .tattoo-gothic-divider {
@@ -99,7 +89,7 @@ body {
   align-items: center;
   gap: 1rem;
   margin: 1.5rem 0;
-  color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 244, 230, 0.25);
 }
 
 .tattoo-gothic-divider::before,
@@ -107,12 +97,12 @@ body {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(47, 90, 71, 0.35), transparent);
 }
 
 .tattoo-slot-btn {
   background: var(--card-bg);
-  border: 1px solid rgba(220, 38, 38, 0.35);
+  border: 1px solid rgba(47, 90, 71, 0.35);
   color: #fff;
   transition: background-color 0.2s ease, border-color 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -121,5 +111,348 @@ body {
 .tattoo-slot-btn:hover {
   background: var(--primary-accent);
   border-color: var(--primary-accent-hover);
-  box-shadow: 0 0 16px -4px rgba(220, 38, 38, 0.4);
+  box-shadow: 0 0 16px -4px rgba(47, 90, 71, 0.4);
+}
+
+/* Si el usuario tiene "reducir movimiento", el fondo se queda quieto */
+@media (prefers-reduced-motion: reduce) {
+  .tatoo-bg-anim { animation: none !important; }
+}
+
+/* Sin resplandores de color: las sombras de color pasan a sombra neutra */
+[class*="shadow-crimson"], [class*="shadow-amber"], [class*="shadow-red"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.35) !important;
+}
+[class*="drop-shadow-[0_"] {
+  filter: none !important;
+}
+
+/* Tipografía de títulos: Fraunces (serif con carácter, archivos en /public/fonts) */
+@font-face { font-family: 'Fraunces'; src: url('/fonts/fraunces-latin-600-normal.woff2') format('woff2'); font-weight: 400 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('/fonts/fraunces-latin-800-normal.woff2') format('woff2'); font-weight: 700 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('/fonts/fraunces-latin-600-italic.woff2') format('woff2'); font-weight: 400 600; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('/fonts/fraunces-latin-800-italic.woff2') format('woff2'); font-weight: 700 900; font-style: italic; font-display: swap; }
+
+:root { --font-display: 'Fraunces'; }
+
+/* ==============================================================================
+ * REFINADO — menos "plantilla", más hecho a mano (solo estilo)
+ * ============================================================================== */
+
+/* 1. Nada de letra de máquina de escribir: misma letra que el resto */
+.font-mono:not(#consent-printable-document .font-mono) {
+  font-family: inherit !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* 2. Menú de arriba sin gritar: mayúscula solo al principio */
+header nav a {
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+}
+
+/* 3. Iconos de las tarjetas sin cuadradito de color */
+.tattoo-card > .w-10.h-10,
+.tattoo-card > .w-12.h-12 {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #c9bb92 !important;
+}
+
+/* 5. Un solo blanco: crema cálido en todos los textos */
+.text-white:not(#consent-printable-document *) {
+  color: #efeae2;
+}
+
+/* Logo: la T gótica de tatuaje */
+@font-face { font-family: 'Pirata One'; src: url('/fonts/pirata-one-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+.logo-t { font-family: 'Pirata One', Georgia, serif; line-height: 1; font-weight: 400; }
+
+/* Menú de arriba: enlaces limpios, sin cápsula; el activo con una línea dorada fina */
+header nav {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  gap: 2rem !important;
+}
+header nav a {
+  position: relative;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0.4rem 0 !important;
+  color: #b3aa9d !important;
+  transition: color .2s ease !important;
+}
+header nav a:hover { color: #efeae2 !important; }
+header nav a svg { display: none; }
+header nav a.bg-white\/10 { color: #efeae2 !important; }
+header nav a.bg-white\/10::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 1.5px;
+  background: #c9bb92;
+  border-radius: 2px;
+}
+
+/* Barra de arriba fundida con el fondo: sin franja ni línea de corte */
+header.glass-panel {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+header.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -28px 0;
+  z-index: -1;
+  background: rgba(19, 18, 16, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Tarjetas: cristal oscuro cálido, filo dorado fino y esquinas de lámina de flash */
+.tattoo-card, .tattoo-card-gold {
+  background: linear-gradient(180deg, rgba(30,28,25,.78) 0%, rgba(19,18,16,.82) 100%) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(201,187,146,.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,244,230,.05), 0 18px 40px -22px rgba(0,0,0,.8) !important;
+  transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease !important;
+}
+.tattoo-card:hover, .tattoo-card-gold:hover {
+  border-color: rgba(201,187,146,.42) !important;
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255,244,230,.07), 0 24px 48px -22px rgba(0,0,0,.9) !important;
+}
+.tattoo-card::before, .tattoo-card::after,
+.tattoo-card-gold::before, .tattoo-card-gold::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: rgba(201,187,146,.55);
+  border-style: solid;
+  pointer-events: none;
+}
+.tattoo-card::before, .tattoo-card-gold::before { top: 8px; left: 8px; border-width: 1px 0 0 1px; border-top-left-radius: 3px; }
+.tattoo-card::after,  .tattoo-card-gold::after  { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; border-bottom-right-radius: 3px; }
+
+
+/* ==============================================================================
+ * INTRO DE ENTRADA
+ * ============================================================================== */
+.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; cursor: pointer; }
+.tatoo-intro.is-leaving { animation: tatooIntroOut .55s ease-in forwards; }
+.tatoo-intro-bg { position: absolute; inset: -4%; background: url('/tattoo-flash-bg.jpg') center/cover; filter: brightness(2.4) contrast(1.15) sepia(.4) saturate(.85); opacity: 0; transform: scale(1.1); animation: tatooIntroBg 4s cubic-bezier(.2,.7,.2,1) .1s forwards; }
+.tatoo-intro-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.8) 100%); }
+.tatoo-intro-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 16px; }
+.tatoo-intro-stage.is-zoom { animation: tatooIntroZoom .6s cubic-bezier(.6,0,.9,.4) forwards; }
+.tatoo-intro-svg { width: min(760px, 92vw); height: auto; overflow: visible; }
+.tatoo-intro-rule { height: 1px; width: 0; margin-top: 4px; background: linear-gradient(90deg, transparent, #c9bb92, transparent); transition: width .9s cubic-bezier(.2,.7,.2,1); }
+.tatoo-intro-rule.is-on { width: min(460px, 70vw); }
+.tatoo-intro-tag { margin-top: 10px; font-size: 12.5px; letter-spacing: .5em; text-transform: uppercase; color: #cfc7bb; text-align: center; opacity: 0; transform: translateY(6px); transition: opacity .8s ease, transform .8s ease; }
+.tatoo-intro-tag.is-on { opacity: 1; transform: none; }
+@keyframes tatooIntroBg { to { opacity: .95; transform: scale(1); } }
+@keyframes tatooIntroZoom { to { transform: scale(5); opacity: 0; } }
+@keyframes tatooIntroOut { to { opacity: 0; visibility: hidden; } }
+@media (max-width: 640px) { .tatoo-intro-tag { font-size: 10px; letter-spacing: .3em; } }
+
+/* Mismo acabado que las tarjetas para las cajas de Galería y Reseñas */
+main .glass-panel:not(.bg-ink-950),
+main div.bg-gradient-to-r.from-ink-900\/90,
+main div.bg-ink-950\/70.rounded-2xl {
+  position: relative;
+  background: linear-gradient(180deg, rgba(30,28,25,.78) 0%, rgba(19,18,16,.82) 100%) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(201,187,146,.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,244,230,.05), 0 18px 40px -22px rgba(0,0,0,.8) !important;
+}
+main .glass-panel:not(.bg-ink-950)::before, main .glass-panel:not(.bg-ink-950)::after,
+main div.bg-gradient-to-r.from-ink-900\/90::before, main div.bg-gradient-to-r.from-ink-900\/90::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: rgba(201,187,146,.55);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 1;
+}
+main .glass-panel:not(.bg-ink-950)::before, main div.bg-gradient-to-r.from-ink-900\/90::before { top: 8px; left: 8px; border-width: 1px 0 0 1px; border-top-left-radius: 3px; }
+main .glass-panel:not(.bg-ink-950)::after,  main div.bg-gradient-to-r.from-ink-900\/90::after  { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; border-bottom-right-radius: 3px; }
+main .glass-panel svg.text-ink-600 { color: #8f7745 !important; }
+
+/* Selector Estudio / Cliente (login y registro): pestañas elegantes con filo dorado */
+main div.grid.grid-cols-2.bg-ink-900\/90 {
+  background: rgba(19,18,16,.6) !important;
+  border: 1px solid rgba(201,187,146,.16) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 6px !important;
+  border-radius: 14px !important;
+}
+main div.grid.grid-cols-2.bg-ink-900\/90 > button {
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  color: #8e8579 !important;
+  box-shadow: none !important;
+  transition: color .2s ease, background .2s ease, border-color .2s ease !important;
+}
+main div.grid.grid-cols-2.bg-ink-900\/90 > button svg { color: #6b645b; transition: color .2s ease; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button:hover { color: #cfc7bb !important; background: rgba(255,244,230,.03) !important; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-amber-600\/20,
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 {
+  background: linear-gradient(180deg, rgba(201,187,146,.13), rgba(201,187,146,.04)) !important;
+  border-color: rgba(201,187,146,.45) !important;
+  color: #efeae2 !important;
+  box-shadow: inset 0 1px 0 rgba(255,244,230,.06) !important;
+}
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-amber-600\/20 svg,
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 svg { color: #c9bb92; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-amber-600\/20 span:last-child,
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 span:last-child { color: #b3aa9d !important; }
+
+/* ==============================================================================
+ * PANELES (estudio, tatuador y cliente): mismo estilo que la parte pública
+ * ============================================================================== */
+/* Pestañas: texto limpio, la activa con línea dorada fina (como el menú de arriba) */
+main div.flex.flex-wrap.border-b.pb-3 {
+  gap: 1.75rem !important;
+  border-bottom-color: rgba(201,187,146,.14) !important;
+  padding-bottom: 0 !important;
+}
+main div.flex.flex-wrap.border-b.pb-3 > button {
+  position: relative;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: .75rem .1rem !important;
+  text-transform: none !important;
+  letter-spacing: .01em !important;
+  font-size: .875rem !important;
+  font-weight: 600 !important;
+  color: #8e8579 !important;
+  transform: none !important;
+}
+main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #cfc7bb !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button svg { color: currentColor !important; opacity: .8; }
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r,
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10 { color: #efeae2 !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r svg,
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10 svg { color: #c9bb92 !important; opacity: 1; }
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r::after,
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px; background: #c9bb92; border-radius: 2px;
+}
+/* Cabecera del panel de estudio con el acabado de tarjeta */
+main div.bg-ink-900\/60.rounded-3xl {
+  position: relative;
+  background: linear-gradient(180deg, rgba(30,28,25,.78) 0%, rgba(19,18,16,.82) 100%) !important;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(201,187,146,.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,244,230,.05), 0 18px 40px -22px rgba(0,0,0,.8) !important;
+}
+/* Selectores y campos del panel en tono cálido */
+main select { background-color: rgba(19,18,16,.85) !important; border-color: rgba(201,187,146,.2) !important; }
+
+/* Legibilidad en paneles: las pestañas van sobre una franja de cristal oscuro */
+main div.flex.flex-wrap.border-b.pb-3 {
+  background: linear-gradient(180deg, rgba(24,23,21,.86), rgba(19,18,16,.86));
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(201,187,146,.14) !important;
+  border-radius: 12px;
+  padding: 0 1.25rem !important;
+}
+main div.flex.flex-wrap.border-b.pb-3 > button { color: #b3aa9d !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #efeae2 !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r::after,
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10::after { bottom: 0; }
+/* Cualquier texto que quede directamente sobre el fondo lleva una sombra suave que lo separa de los dibujos */
+main p, main span, main label, main h1, main h2, main h3 { text-shadow: 0 1px 10px rgba(0,0,0,.65); }
+.tattoo-card *, .glass-panel *, button *, input, select, textarea { text-shadow: none; }
+
+/* Legibilidad: las cajas oscuras semitransparentes de los paneles se vuelven casi sólidas */
+main [class^="bg-ink-950/"], main [class*=" bg-ink-950/"],
+main [class^="bg-ink-900/"], main [class*=" bg-ink-900/"] {
+  background-color: rgba(19,18,16,.88) !important;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+main [class*=" bg-crimson-950/"], main [class^="bg-crimson-950/"] {
+  background: linear-gradient(rgba(47,90,71,.16), rgba(47,90,71,.16)), rgba(19,18,16,.9) !important;
+}
+
+/* ==============================================================================
+ * MÓVIL: todo se ve y se usa bien en pantallas pequeñas (solo estilo)
+ * ============================================================================== */
+@media (max-width: 767px) {
+  html, body { overflow-x: hidden; }
+  /* Barra de arriba: logo, idioma y botones en una fila; el menú debajo, centrado */
+  header.glass-panel { padding: .6rem .9rem !important; }
+  header.glass-panel > div { flex-wrap: wrap; row-gap: .35rem; column-gap: .5rem; }
+  header.glass-panel > div > a:first-child { gap: .5rem !important; min-width: 0; }
+  header.glass-panel .logo-t { white-space: nowrap; }
+  header.glass-panel > div > a:first-child > div:first-child { width: 1.8rem !important; height: 2.4rem !important; }
+  header.glass-panel > div > a:first-child > div:first-child .logo-t { font-size: 40px !important; }
+  header.glass-panel > div > a:first-child .logo-t.text-\[30px\] { font-size: 24px !important; }
+  header.glass-panel > div > div:last-child { gap: .4rem !important; }
+  header.glass-panel > div > div:last-child a, header.glass-panel > div > div:last-child button { white-space: nowrap; font-size: .8rem !important; }
+  header.glass-panel > div > div:last-child a svg { display: none; }
+  header.glass-panel > div > div:last-child > button:first-child { padding: .3rem .5rem !important; }
+  header.glass-panel > div > div:last-child a[href="/login"] { padding: .3rem .35rem !important; }
+  header.glass-panel > div > div:last-child a[href="/register"] { padding: .4rem .75rem !important; }
+  header nav {
+    display: flex !important;
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 1.4rem !important;
+    padding: 0 !important;
+  }
+  header nav a { font-size: .8rem !important; }
+
+  /* Pestañas de los paneles: una sola fila que se desliza con el dedo */
+  main div.flex.flex-wrap.border-b.pb-3 {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    gap: 1.25rem !important;
+    padding: 0 1rem !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  main div.flex.flex-wrap.border-b.pb-3::-webkit-scrollbar { display: none; }
+  main div.flex.flex-wrap.border-b.pb-3 > button { white-space: nowrap; flex-shrink: 0; font-size: .82rem !important; }
+
+  /* Tarjetas y cajas con un poco menos de relleno para aprovechar la pantalla */
+  main .glass-panel.p-16 { padding: 2.25rem 1.25rem !important; }
+  main .tattoo-card.p-8, main .tattoo-card.p-10 { padding: 1.5rem !important; }
+  main h1 { word-break: normal; overflow-wrap: anywhere; }
+  footer { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+@media (max-width: 767px) {
+  header.glass-panel > div > div:last-child { margin-left: auto; }
+  header.glass-panel > div > div:last-child > button:first-child svg { display: none; }
+  header.glass-panel > div > div:last-child > button:first-child { padding: .25rem .45rem !important; font-size: .72rem !important; }
+  header.glass-panel > div > div:last-child a { font-size: .76rem !important; }
+  header.glass-panel > div > div:last-child a[href="/register"] { padding: .38rem .65rem !important; }
+}
+@media (max-width: 360px) {
+  header.glass-panel > div > div:last-child > button:first-child { display: none; }
+}
+
+/* Usuario conectado (arriba a la derecha): discreto; en el móvil solo la inicial */
+@media (max-width: 767px) {
+  header .user-chip > span { display: none; }
+  header .user-chip { padding: .25rem !important; border-color: transparent !important; }
 }

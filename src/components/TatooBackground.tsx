@@ -2,76 +2,43 @@
 
 import React from 'react';
 
+/**
+ * Fondo "Flash de estudio"
+ * Láminas de tatuaje en relieve (dragón, koi, calavera, tigre, golondrina...)
+ * a los lados, centro limpio para el contenido. Tono cálido y muy suave para
+ * que se lea cómodo durante horas.
+ */
 export default function TatooBackground() {
   return (
-    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden select-none">
-      {/* 1. Deep Obsidian Base Void */}
-      <div className="absolute inset-0 bg-[#050608]" />
+    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden select-none" aria-hidden="true">
+      {/* 1. Base carbón cálido */}
+      <div className="absolute inset-0 bg-[#131210]" />
 
-      {/* 2. Studio Interior Atmosphere Layer */}
+      {/* 2. Lámina de tatuajes en relieve */}
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-[0.20] mix-blend-screen scale-105"
+        className="absolute inset-0 bg-cover bg-center max-md:bg-[length:auto_100%] max-md:bg-[position:22%_center] max-md:opacity-80"
         style={{
-          backgroundImage: "url('/tattoo-studio-bg.jpg')",
-          maskImage: 'radial-gradient(ellipse at 50% 40%, black 30%, transparent 85%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, black 30%, transparent 85%)'
+          backgroundImage: "url('/tattoo-flash-bg.jpg')",
+          filter: 'brightness(2.2) contrast(1.12) sepia(0.3) saturate(0.9)',
         }}
       />
 
-      {/* 3. High-Definition Tattoo Linework & Smoke Swirls */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-[0.32] mix-blend-screen scale-110 transition-transform duration-1000 ease-out"
-        style={{
-          backgroundImage: "url('/tattoo-smoke-bg.jpg')",
-          maskImage: 'radial-gradient(ellipse at 50% 30%, black 35%, transparent 80%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at 50% 30%, black 35%, transparent 80%)'
-        }}
+      {/* 3. Toque cálido y un susurro de verde botella */}
+      <div
+        className="absolute inset-0 mix-blend-soft-light"
+        style={{ background: 'linear-gradient(180deg, rgba(176,148,102,0.18) 0%, rgba(47,90,71,0.12) 100%)' }}
       />
 
-      {/* 4. Vivid Atmospheric Glowing Light Orbs */}
-      {/* Orb 1: Intense Blood Crimson Ink Pool */}
-      <div className="absolute -top-[10%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-crimson-600/25 blur-[120px] animate-float-slow" />
-
-      {/* Orb 2: Warm Incandescent Studio Filament Amber */}
-      <div className="absolute -bottom-[10%] -right-[10%] w-[55vw] h-[55vw] rounded-full bg-amber-500/20 blur-[130px] animate-float-reverse" />
-
-      {/* Orb 3: Deep Blood Velvet Heart Core */}
-      <div className="absolute top-[35%] right-[25%] w-[40vw] h-[40vw] rounded-full bg-crimson-700/18 blur-[140px] animate-pulse-slow" />
-
-      {/* Orb 4: Antique Gold Studio Accent */}
-      <div className="absolute bottom-[25%] left-[20%] w-[35vw] h-[35vw] rounded-full bg-amber-600/12 blur-[110px] animate-float-slow" />
-
-      {/* 5. Tattoo Studio Watermark Matrix (Geometric & Needle Points) */}
-      <svg
-        className="absolute inset-0 w-full h-full opacity-[0.06] text-crimson-400"
-        xmlns="http://www.w3.org/2000/svg"
-        width="100%"
-        height="100%"
-      >
-        <defs>
-          <pattern id="tattoo-grid-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
-            <circle cx="40" cy="40" r="1.5" fill="currentColor" />
-            <path d="M 40 0 L 40 10 M 40 70 L 40 80 M 0 40 L 10 40 M 70 40 L 80 40" stroke="currentColor" strokeWidth="0.8" fill="none" />
-            {/* Subtle diamond point */}
-            <path d="M 38 40 L 40 38 L 42 40 L 40 42 Z" fill="currentColor" opacity="0.7" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#tattoo-grid-pattern)" />
-      </svg>
-
-      {/* 6. Subtle Gothic Corner Filigree Accents */}
-      <div className="absolute top-0 left-0 w-48 h-48 border-t-2 border-l-2 border-crimson-500/20 opacity-40 pointer-events-none rounded-tl-3xl m-3" />
-      <div className="absolute top-0 right-0 w-48 h-48 border-t-2 border-r-2 border-amber-500/20 opacity-40 pointer-events-none rounded-tr-3xl m-3" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 border-b-2 border-l-2 border-amber-500/20 opacity-40 pointer-events-none rounded-bl-3xl m-3" />
-      <div className="absolute bottom-0 right-0 w-48 h-48 border-b-2 border-r-2 border-crimson-500/20 opacity-40 pointer-events-none rounded-br-3xl m-3" />
-
-      {/* 7. Deep Studio Vignette Frame */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050608]/75 via-transparent to-[#050608]/85" />
-      <div 
+      {/* 4. Centro más oscuro para que el texto se lea perfecto */}
+      <div
         className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(circle at 50% 45%, transparent 35%, rgba(5, 6, 8, 0.85) 100%)'
-        }}
+        style={{ background: 'radial-gradient(ellipse 45% 60% at 50% 45%, rgba(19,18,16,0.55) 0%, transparent 100%)' }}
+      />
+
+      {/* 5. Viñeta suave en bordes */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(12,11,10,0.6) 100%)' }}
       />
     </div>
   );

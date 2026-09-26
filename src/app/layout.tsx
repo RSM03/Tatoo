@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import TatooBackground from '@/components/TatooBackground';
+import IntroSplash from '@/components/IntroSplash';
 
 export const metadata: Metadata = {
   title: 'Tatoo AI — Asistente Inteligente para Estudios y Tatuadores',
@@ -18,18 +19,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="dark">
-      <body className="bg-[#060709] text-ink-100 min-h-screen flex flex-col antialiased selection:bg-crimson-600 selection:text-white relative">
+      <body className="bg-[#141311] text-ink-100 min-h-screen flex flex-col antialiased selection:bg-crimson-600 selection:text-white relative">
         <TatooBackground />
+        <IntroSplash />
         <Navbar />
         <main className="flex-1 flex flex-col relative z-0">
           {children}
         </main>
-        <footer className="border-t border-white/5 py-8 px-4 text-center text-xs text-ink-500 bg-ink-900/50">
+        <footer className="py-8 px-4 text-center text-xs text-ink-500">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded bg-crimson-600 flex items-center justify-center text-white text-xs font-bold">T</div>
-              <span className="font-semibold text-ink-300">Tatoo AI Platform</span>
-              <span>— El ecosistema inteligente para el arte corporal</span>
+              <span className="logo-t text-[22px] text-ink-100">T</span>
+              <span className="font-semibold text-ink-300">Tatoo AI</span>
+              <span>— Agenda y gestión para estudios de tatuaje</span>
             </div>
             <p className="text-ink-500">
               © {new Date().getFullYear()} Tatoo AI. Diseñado para estudios, tatuadores y clientes.

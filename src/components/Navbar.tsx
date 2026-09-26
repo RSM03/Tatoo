@@ -62,9 +62,9 @@ export default function Navbar() {
     switch (role) {
       case 'studio':
       case 'artist':
-        return <span className="bg-amber-500/20 text-amber-300 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-amber-500/40 font-bold shadow-sm flex items-center gap-1"><span>⚡</span> Estudio & Tatuadores</span>;
+        return <span className="text-[11px] text-ink-400 font-medium">· Estudio</span>;
       default:
-        return <span className="bg-crimson-600/25 text-crimson-300 text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border border-crimson-500/40 font-bold shadow-sm flex items-center gap-1"><span>🩸</span> Cliente</span>;
+        return <span className="text-[11px] text-ink-400 font-medium">· Cliente</span>;
     }
   };
 
@@ -73,21 +73,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand Logo - Marked Tattoo Crest */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-crimson-700 via-crimson-600 to-amber-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-crimson-600/40 group-hover:scale-105 transition-all border border-crimson-400/40">
-            <span className="font-serif">T</span>
-            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-ink-950 border border-amber-400/80 flex items-center justify-center text-[7px] text-amber-300 font-bold">
-              ✦
-            </div>
+          <div className="relative w-10 h-11 flex items-center justify-center">
+            <span className="logo-t text-[52px] text-ink-50">T</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <span>TATOO</span>
-              <span className="text-[10px] font-mono font-bold tracking-widest uppercase bg-crimson-600/30 text-crimson-300 px-2 py-0.5 rounded-md border border-crimson-500/40 shadow-inner">
-                AI STUDIO
-              </span>
+            <span className="logo-t text-[30px] text-ink-50">
+              Tatoo <span className="text-amber-400">AI</span>
             </span>
-            <span className="text-[9px] text-ink-400 tracking-widest uppercase font-mono font-semibold">
-              Arte Corporal & Agenda Inteligente
+            <span className="text-[11px] text-ink-500 mt-1 hidden sm:block">
+              Agenda para estudios de tatuaje
             </span>
           </div>
         </Link>
@@ -97,7 +91,7 @@ export default function Navbar() {
           <Link
             href="/"
             className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-              pathname === '/' ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30' : 'text-ink-400 hover:text-white hover:bg-white/5'
+              pathname === '/' ? 'bg-white/10 text-ink-50' : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >
             {t.nav.home}
@@ -105,7 +99,7 @@ export default function Navbar() {
           <Link
             href="/shares"
             className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-              pathname === '/shares' ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30' : 'text-ink-400 hover:text-white hover:bg-white/5'
+              pathname === '/shares' ? 'bg-white/10 text-ink-50' : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Image className="w-3.5 h-3.5" />
@@ -114,7 +108,7 @@ export default function Navbar() {
           <Link
             href="/reviews"
             className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-              pathname === '/reviews' ? 'bg-crimson-600 text-white shadow-md shadow-crimson-600/30' : 'text-ink-400 hover:text-white hover:bg-white/5'
+              pathname === '/reviews' ? 'bg-white/10 text-ink-50' : 'text-ink-400 hover:text-white hover:bg-white/5'
             }`}
           >
             {t.nav.reviews}
@@ -137,9 +131,9 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-xl text-sm font-medium text-white transition-all hover:border-crimson-500/40"
+                className="user-chip flex items-center gap-2 bg-transparent hover:bg-white/5 border border-amber-500/20 px-3 py-1.5 rounded-xl text-sm font-medium text-white transition-colors hover:border-amber-500/40"
               >
-                <div className="w-6 h-6 rounded-full bg-crimson-600/30 text-crimson-500 flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-full bg-ink-950 border border-amber-500/40 text-amber-300 flex items-center justify-center text-sm logo-t">
                   {profile?.full_name?.charAt(0) || 'U'}
                 </div>
                 <span>{profile?.full_name || t.nav.dashboard}</span>
@@ -164,7 +158,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/register"
-                className="flex items-center gap-1.5 bg-crimson-600 hover:bg-crimson-500 text-white text-sm font-semibold px-4 py-1.5 rounded-xl shadow-lg shadow-crimson-600/25 transition-all hover:scale-105"
+                className="flex items-center gap-1.5 bg-crimson-600 hover:bg-crimson-700 text-ink-50 text-sm font-semibold px-4 py-1.5 rounded-xl shadow-sm transition-colors"
               >
                 <span>{t.nav.register}</span>
               </Link>

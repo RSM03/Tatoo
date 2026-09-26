@@ -556,25 +556,22 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-crimson-400 font-bold bg-crimson-500/10 px-2.5 py-0.5 rounded-full border border-crimson-500/20 flex items-center gap-1.5">
-              <Flame className="w-3 h-3 text-crimson-400" />
-              Tattoo Client Atelier
-            </span>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400/80 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 hidden sm:inline-flex">
-              ⚡ Blackwork & Custom Ink
+            <span className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium flex items-center gap-3">
+              Tu panel
+              <span className="h-px w-10 bg-ink-600/60" />
             </span>
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white">
             Hola, {profile?.full_name || 'Coleccionista de Tinta'}
           </h1>
           <p className="text-xs text-ink-400 mt-1 max-w-xl">
-            Gestiona tus citas con aguja y tinta, resuelve dudas con el asistente del artista y realiza seguimiento fotográfico de tu cicatrización.
+            Aquí tienes tus citas, el chat con tu tatuador y el seguimiento de tu curación.
           </p>
         </div>
 
         <button
           onClick={() => setIsBookingOpen(true)}
-          className="relative z-10 flex items-center gap-2 bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-lg shadow-crimson-600/30 transition-all hover:scale-105 border border-crimson-500/40"
+          className="relative z-10 flex items-center gap-2 bg-crimson-600 hover:bg-crimson-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md transition-colors border border-crimson-500/40"
         >
           <Plus className="w-4 h-4" />
           <span>Solicitar Cita de Tatuaje</span>
@@ -592,7 +589,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Calendar className="w-4 h-4 text-white" />
-          <span>Mis Citas Activas ({appointments.filter(a => a.status !== 'cancelled').length})</span>
+          <span>Mis citas ({appointments.filter(a => a.status !== 'cancelled').length})</span>
         </button>
 
         <button
@@ -604,7 +601,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Clock className="w-4 h-4 text-ink-300" />
-          <span>Historial / Canceladas ({appointments.filter(a => a.status === 'cancelled').length})</span>
+          <span>Historial ({appointments.filter(a => a.status === 'cancelled').length})</span>
         </button>
 
         <button
@@ -615,8 +612,8 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               : 'text-ink-400 hover:text-white hover:bg-white/5 border border-transparent'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-white" />
-          <span>Chat con Tatuador & Asistente IA</span>
+          <MessageSquare className="w-4 h-4 text-white" />
+          <span>Chat con tu tatuador</span>
         </button>
 
         <button
@@ -628,7 +625,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <ShoppingBag className="w-4 h-4 text-emerald-400" />
-          <span>Tienda & Cuidados</span>
+          <span>Tienda y cuidados</span>
         </button>
       </div>
 

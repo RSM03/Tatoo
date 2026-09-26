@@ -297,7 +297,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
       {/* Studio Header with Active Persona Switcher */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 bg-ink-900/60 p-5 rounded-3xl border border-white/5">
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold">Panel de Estudio</span>
+          <span className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium flex items-center gap-3">Panel del estudio<span className="h-px w-10 bg-ink-600/60" /></span>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mt-0.5">
             {studio?.name || 'Mi Estudio de Tatuaje'}
           </h1>
@@ -318,11 +318,11 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
               }}
               className="px-3 py-1.5 rounded-xl bg-ink-900 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-amber-500 cursor-pointer"
             >
-              <option value="studio">🏢 Vista General del Estudio</option>
-              <optgroup label="Tatuadores del Estudio:">
+              <option value="studio">Vista general del estudio</option>
+              <optgroup label="Tatuadores">
                 {artists.map((a) => (
                   <option key={a.id} value={a.id}>
-                    🎨 {a.display_name} (Consola Tatuador)
+                    {a.display_name}
                   </option>
                 ))}
               </optgroup>
@@ -335,7 +335,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
             title="Añadir nuevo tatuador al estudio"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Tatuador</span>
+            <span>Tatuador</span>
           </button>
         </div>
       </div>
@@ -349,7 +349,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Users className="w-4 h-4 text-amber-400" />
-          <span>Tatuadores del Estudio ({artists.length})</span>
+          <span>Tatuadores ({artists.length})</span>
         </button>
 
         <button
@@ -359,7 +359,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Clock className="w-4 h-4 text-crimson-500" />
-          <span>Horario de Apertura</span>
+          <span>Horario</span>
         </button>
 
         <button
@@ -369,7 +369,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <MapPin className="w-4 h-4 text-emerald-400" />
-          <span>Ubicación y Mapa</span>
+          <span>Ubicación</span>
         </button>
 
         <button
@@ -379,7 +379,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Mail className="w-4 h-4 text-blue-400" />
-          <span>Plantillas de Email & Descuentos</span>
+          <span>Emails y descuentos</span>
         </button>
 
         <button
@@ -389,7 +389,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
           }`}
         >
           <Star className="w-4 h-4 text-amber-400" />
-          <span>Reseñas de Clientes ({reviews.length})</span>
+          <span>Reseñas ({reviews.length})</span>
         </button>
       </div>
 

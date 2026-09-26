@@ -130,22 +130,22 @@ export default function ReviewsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 bg-gradient-to-r from-ink-900/90 via-ink-950 to-ink-900/90 p-6 rounded-3xl border border-white/10 shadow-xl">
         <div>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 mb-2 font-mono">
-            <Star className="w-3.5 h-3.5 fill-amber-400" />
-            <span>Reseñas de Estudios & Tatuadores Verificadas</span>
+          <div className="flex items-center gap-4 mb-3 text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium">
+            <span>Reseñas</span>
+            <span className="h-px w-10 bg-ink-600/60" />
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">Experiencias y Opiniones</h1>
-          <p className="text-xs text-ink-400 mt-1 max-w-xl">
-            Descubre las valoraciones de nuestros clientes sobre la higiene, instalaciones del estudio, trato del equipo y calidad del arte en piel.
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">Lo que dicen <span className="italic font-semibold text-crimson-300">los clientes</span></h1>
+          <p className="text-sm text-ink-400 mt-2 max-w-xl">
+            Opiniones de clientes reales sobre el trato, la higiene y el resultado.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-lg shadow-crimson-600/30 transition-all hover:scale-105 shrink-0 border border-crimson-500/30"
+          className="flex items-center gap-2 bg-crimson-600 hover:bg-crimson-700 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-md transition-colors shrink-0 border border-crimson-500/30"
         >
           <Plus className="w-4 h-4" />
-          <span>Escribir Reseña al Estudio</span>
+          <span>Escribir una reseña</span>
         </button>
       </div>
 
@@ -153,7 +153,7 @@ export default function ReviewsPage() {
       <div className="flex flex-wrap items-center gap-2 mb-8 p-3 rounded-2xl bg-ink-950/70 border border-white/5">
         <span className="text-xs font-mono font-bold text-ink-400 uppercase tracking-wider px-2 flex items-center gap-1.5">
           <Filter className="w-3.5 h-3.5 text-crimson-500" />
-          <span>Filtrar por Estudio:</span>
+          <span>Filtrar por estudio:</span>
         </span>
 
         <button
