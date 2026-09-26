@@ -1674,7 +1674,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       {/* BOOKING MODAL */}
       {isBookingOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg p-6 sm:p-8 rounded-3xl border border-crimson-500/30 bg-ink-950/95 relative shadow-2xl">
+          <div className="booking-modal glass-panel w-full max-w-lg p-6 sm:p-8 rounded-3xl border border-amber-500/25 bg-ink-950/95 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsBookingOpen(false)}
               className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
@@ -1682,12 +1682,12 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 text-crimson-400 text-xs font-mono font-bold uppercase mb-1">
-              <Calendar className="w-4 h-4" />
-              <span>Agenda del Estudio</span>
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium mb-2">
+              <span>Nueva cita</span>
+              <span className="h-px w-10 bg-ink-600/60" />
             </div>
-            <h2 className="font-display text-2xl font-bold text-white mb-1">Reservar Cita</h2>
-            <p className="text-xs text-ink-400 mb-6">Elige estudio, artista y selecciona el tipo de sesión</p>
+            <h2 className="font-display text-2xl font-bold text-white mb-1">Pide tu <span className="italic font-semibold text-crimson-300">cita</span></h2>
+            <p className="text-sm text-ink-400 mb-6">Elige estudio, tatuador y qué quieres hacerte.</p>
 
             <form onSubmit={handleCreateBooking} className="space-y-4 text-sm">
               <div>
@@ -1718,12 +1718,12 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   onClick={() => setBookingType('design_consultation')}
                   className={`p-3.5 rounded-2xl border text-xs font-bold text-left transition-all ${
                     bookingType === 'design_consultation'
-                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50 shadow-md shadow-blue-500/10'
+                      ? 'bg-amber-500/10 text-ink-50 border-amber-500/50'
                       : 'bg-ink-900 text-ink-400 border-white/5'
                   }`}
                 >
-                  <span className="block font-bold mb-0.5">📜 Consulta de Diseño</span>
-                  <span className="text-[10px] font-normal text-ink-400">30-45 min para planificar boceto</span>
+                  <span className="block font-bold mb-0.5">Consulta de diseño</span>
+                  <span className="text-[11px] font-normal text-ink-400">30–45 min para preparar el boceto</span>
                 </button>
 
                 <button
@@ -1731,20 +1731,20 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   onClick={() => setBookingType('tattoo_session')}
                   className={`p-3.5 rounded-2xl border text-xs font-bold text-left transition-all ${
                     bookingType === 'tattoo_session'
-                      ? 'bg-crimson-600/20 text-crimson-400 border-crimson-500/50 shadow-md shadow-crimson-600/10'
+                      ? 'bg-amber-500/10 text-ink-50 border-amber-500/50'
                       : 'bg-ink-900 text-ink-400 border-white/5'
                   }`}
                 >
-                  <span className="block font-bold mb-0.5">🩸 Sesión de Tatuaje</span>
-                  <span className="text-[10px] font-normal text-ink-400">Aguja y tinta en cabina</span>
+                  <span className="block font-bold mb-0.5">Sesión de tatuaje</span>
+                  <span className="text-[11px] font-normal text-ink-400">El día que te tatúas</span>
                 </button>
               </div>
 
               {bookingType === 'tattoo_session' && (
                 <div className="bg-ink-900/60 p-3.5 rounded-2xl border border-white/5 space-y-2">
                   <div className="flex items-center justify-between text-xs text-ink-300">
-                    <span className="font-semibold uppercase tracking-wider text-[11px]">Tamaño de Pieza & Duración</span>
-                    <span className="font-mono text-crimson-400 font-bold">{bookingDurationHours}h de sesión</span>
+                    <span className="font-semibold uppercase tracking-wider text-[11px]">Tamaño y duración</span>
+                    <span className="text-amber-300 font-semibold">{bookingDurationHours} h de sesión</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                     {[
@@ -1760,12 +1760,12 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                         onClick={() => setBookingDurationHours(opt.hours)}
                         className={`p-2 rounded-xl text-left border transition-all text-xs ${
                           bookingDurationHours === opt.hours
-                            ? 'bg-crimson-600/20 border-crimson-500 text-white font-bold shadow-sm'
+                            ? 'bg-amber-500/10 border-amber-500/50 text-white font-bold'
                             : 'bg-ink-950/60 border-white/5 text-ink-400 hover:text-white'
                         }`}
                       >
                         <div className="truncate font-semibold">{opt.label}</div>
-                        <div className="text-[10px] text-ink-400 font-mono">{opt.time}</div>
+                        <div className="text-[11px] text-ink-400">{opt.time}</div>
                       </button>
                     ))}
                   </div>
@@ -1796,12 +1796,12 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Descripción de la pieza / Zona anatómica</label>
+                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Qué te quieres hacer y dónde</label>
                 <textarea
                   rows={2}
                   value={bookingDescription}
                   onChange={(e) => setBookingDescription(e.target.value)}
-                  placeholder="Ej: Daga con serpiente neotradicional en antebrazo derecho..."
+                  placeholder="Ej.: una daga con serpiente en el antebrazo derecho"
                   className="w-full px-4 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
                 />
               </div>
@@ -1809,9 +1809,9 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               <button
                 type="submit"
                 disabled={bookingSubmitting}
-                className="w-full py-3.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white font-bold text-sm shadow-lg shadow-crimson-600/30 transition-all hover:scale-[1.02]"
+                className="w-full py-3.5 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white font-bold text-sm shadow-md transition-colors"
               >
-                {bookingSubmitting ? 'Confirmando...' : 'Confirmar Reserva de Cita'}
+                {bookingSubmitting ? 'Confirmando…' : 'Confirmar cita'}
               </button>
             </form>
           </div>
@@ -1829,9 +1829,9 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 text-amber-400 text-xs font-mono font-bold uppercase mb-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Validez Sanitaria & RGPD</span>
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium mb-2">
+              <span>Antes de tu cita</span>
+              <span className="h-px w-10 bg-ink-600/60" />
             </div>
             <h2 className="font-display text-2xl font-bold text-white mb-2">Consentimiento Informado</h2>
             <p className="text-xs text-ink-400 mb-6">

@@ -456,3 +456,13 @@ main [class*=" bg-crimson-950/"], main [class^="bg-crimson-950/"] {
   header .user-chip > span { display: none; }
   header .user-chip { padding: .25rem !important; border-color: transparent !important; }
 }
+
+/* Ventanas emergentes (pedir cita, consentimiento...): siempre por encima de la barra de arriba */
+main.relative.z-0 { z-index: auto !important; }
+.fixed.inset-0.z-50 { z-index: 70 !important; }
+.fixed.inset-0.z-50 > .glass-panel { max-height: 90vh; overflow-y: auto; scrollbar-width: thin; }
+.fixed.inset-0.z-50 > .glass-panel::before, .fixed.inset-0.z-50 > .glass-panel::after { display: none !important; }
+.booking-modal select, .booking-modal input, .booking-modal textarea {
+  background: rgba(19,18,16,.9) !important; border-color: rgba(201,187,146,.18) !important; color-scheme: dark;
+}
+.booking-modal select:focus, .booking-modal input:focus, .booking-modal textarea:focus { border-color: rgba(201,187,146,.55) !important; }
