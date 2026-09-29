@@ -540,7 +540,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         )
       );
       setCancelModalApp(null);
-      alert('❌ Tu cita ha sido cancelada correctamente y el hueco ha quedado liberado en la agenda.');
+      alert('Tu cita ha sido cancelada correctamente y el hueco ha quedado liberado en la agenda.');
     } catch (err: any) {
       alert(`Error al cancelar: ${err.message}`);
     } finally {
@@ -656,33 +656,31 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                 const isSigned = app.consent_forms && app.consent_forms.length > 0;
 
                 return (
-                  <div key={app.id} className="glass-panel p-6 rounded-3xl border border-white/10 bg-ink-900/60 hover:border-crimson-500/40 transition-all flex flex-col justify-between group">
+                  <div key={app.id} className="glass-panel p-6 rounded-3xl border border-white/10 bg-ink-900/60 hover:border-amber-500/40 transition-colors flex flex-col justify-between group">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
-                          app.appointment_type === 'design_consultation'
-                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                            : 'bg-crimson-500/15 text-crimson-400 border-crimson-500/30'
-                        }`}>
-                          {app.appointment_type === 'design_consultation' ? '📜 Consulta Diseño' : '🩸 Sesión Tatuaje'}
+                        <span className="text-[11px] uppercase tracking-[0.25em] text-ink-400 font-medium flex items-center gap-3">
+                          {app.appointment_type === 'design_consultation' ? 'Consulta de diseño' : 'Sesión de tatuaje'}
+                          <span className="h-px w-8 bg-ink-600/60" />
                         </span>
 
-                        <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-md bg-white/5 text-ink-300 border border-white/5">
-                          {app.status === 'confirmed' ? '✅ Confirmada' : app.status === 'pending' ? '⏳ Pendiente' : app.status}
+                        <span className={`text-xs font-medium flex items-center gap-1.5 ${app.status === 'confirmed' ? 'text-crimson-300' : 'text-amber-300'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${app.status === 'confirmed' ? 'bg-crimson-500' : 'bg-amber-400'}`} />
+                          {app.status === 'confirmed' ? 'Confirmada' : app.status === 'pending' ? 'Pendiente' : app.status}
                         </span>
                       </div>
 
-                      <h3 className="font-display text-lg font-bold text-white mb-1.5 group-hover:text-crimson-400 transition-colors">
+                      <h3 className="font-display text-xl font-bold text-white mb-1.5">
                         {app.title || 'Cita con ' + app.artists?.display_name}
                       </h3>
                       <p className="text-xs text-ink-400 mb-4">
-                        Artista: <strong className="text-ink-200">{app.artists?.display_name}</strong> · Estudio: <strong className="text-ink-200">{app.studios?.name}</strong> ({app.studios?.address})
+                        Con <strong className="text-ink-200">{app.artists?.display_name}</strong> en <strong className="text-ink-200">{app.studios?.name}</strong> · {app.studios?.address}
                       </p>
 
-                      <div className="flex items-center gap-4 text-xs text-ink-200 mb-4 bg-ink-950/80 p-3.5 rounded-2xl border border-white/5 font-mono">
+                      <div className="flex items-center gap-5 text-sm text-ink-100 mb-4 bg-ink-950/80 p-3.5 rounded-2xl border border-white/5">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-crimson-500" />
-                          <span>{startDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          <Calendar className="w-4 h-4 text-amber-400" />
+                          <span className="first-letter:uppercase">{startDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-amber-400" />
@@ -709,8 +707,8 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                             </button>
                           </div>
                         ) : (
-                          <span className="flex items-center gap-1.5 text-amber-400 font-semibold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                            <AlertTriangle className="w-3.5 h-3.5" /> Consentimiento pendiente
+                          <span className="text-ink-400">
+                            Falta firmar el consentimiento
                           </span>
                         )}
                       </div>
@@ -719,7 +717,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                         {!isSigned && (
                           <button
                             onClick={() => setSelectedConsentApp(app)}
-                            className="flex items-center gap-1.5 text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-xl transition-all hover:scale-105"
+                            className="flex items-center gap-1.5 text-xs font-bold bg-crimson-600 hover:bg-crimson-700 text-white border border-crimson-500/40 px-3 py-1.5 rounded-xl transition-colors"
                           >
                             <FileSignature className="w-3.5 h-3.5" />
                             <span>Firmar</span>
@@ -738,8 +736,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                           className="flex items-center gap-1 text-xs font-semibold bg-white/5 hover:bg-white/10 text-ink-200 hover:text-white border border-white/10 px-2.5 py-1.5 rounded-xl transition-all"
                           title="Ver agenda pública del artista"
                         >
-                          <Calendar className="w-3.5 h-3.5 text-crimson-400" />
-                          <span>Agenda</span>
+                          <span>Ver agenda</span>
                         </button>
 
                         <button
@@ -754,7 +751,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                           className="flex items-center gap-1 text-xs font-semibold bg-white/5 hover:bg-white/10 text-ink-200 hover:text-white border border-white/10 px-2.5 py-1.5 rounded-xl transition-all"
                           title="Cambiar fecha u hora de la cita"
                         >
-                          <span>✏️ Cambiar</span>
+                          <span>Cambiar fecha</span>
                         </button>
 
                         <button
@@ -763,10 +760,10 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                             setCancelModalApp(app);
                             setCancelReason('Imprevisto laboral o personal');
                           }}
-                          className="flex items-center gap-1 text-xs font-semibold bg-crimson-600/10 hover:bg-crimson-600/20 text-crimson-400 hover:text-crimson-300 border border-crimson-500/20 px-2.5 py-1.5 rounded-xl transition-all"
+                          className="flex items-center gap-1 text-xs font-semibold text-ink-400 hover:text-red-300 px-2 py-1.5 transition-colors"
                           title="Cancelar esta cita"
                         >
-                          <span>❌ Cancelar</span>
+                          <span>Cancelar</span>
                         </button>
                       </div>
                     </div>
@@ -806,10 +803,10 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border bg-white/5 text-ink-400 border-white/10">
-                          {app.appointment_type === 'design_consultation' ? '📜 Consulta Diseño' : '🩸 Sesión Tatuaje'}
+                          {app.appointment_type === 'design_consultation' ? 'Consulta de diseño' : 'Sesión de tatuaje'}
                         </span>
                         <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/30">
-                          ❌ Cancelada
+                          Cancelada
                         </span>
                       </div>
 
@@ -823,7 +820,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                       <div className="flex items-center gap-4 text-xs text-ink-400 mb-4 bg-ink-950/90 p-3 rounded-xl border border-white/5 font-mono">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-3.5 h-3.5 text-ink-500" />
-                          <span>{startDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          <span>{startDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-3.5 h-3.5 text-ink-500" />
@@ -1282,7 +1279,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                                   title="Ver calendario público con privacidad"
                                 >
                                   <Calendar className="w-3.5 h-3.5 text-crimson-400" />
-                                  <span>Ver Agenda</span>
+                                  <span>Ver agenda</span>
                                 </button>
                                 <button
                                   type="button"
@@ -1308,34 +1305,35 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
             </div>
           ) : (
             /* VIEW 3: DEDICATED 1:1 CHAT WITH SELECTED ARTIST */
-            <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden flex flex-col h-[740px] bg-ink-950/70 shadow-2xl relative">
+            <div className="chat-light rounded-3xl border border-white/10 overflow-hidden flex flex-col h-[740px] shadow-2xl relative">
               {/* Chat Header */}
-              <div className="p-4 border-b border-white/10 bg-ink-900/95 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+              <div className="chat-head p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-crimson-600 via-crimson-500 to-amber-500 flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-crimson-600/30">
+                  <div className="w-11 h-11 rounded-full bg-ink-950 border border-amber-500/50 flex items-center justify-center text-amber-300 text-xl logo-t">
                     {selectedChatArtist.display_name?.charAt(0) || 'A'}
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span>Chat con {selectedChatArtist.display_name}</span>
+                    <h3 className="text-base font-bold flex items-center gap-2 chat-title">
+                      <span>{selectedChatArtist.display_name}</span>
                       {activeChat?.ai_enabled ? (
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 font-mono">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                          IA Activa (Supervisada)
+                        <span className="text-[11px] font-medium flex items-center gap-1.5 chat-status">
+                          <span className="w-2 h-2 rounded-full bg-crimson-500" />
+                          Responde al momento
                         </span>
                       ) : (
-                        <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold font-mono">
-                          ● Tatuador en directo
+                        <span className="text-[11px] font-medium flex items-center gap-1.5 chat-status">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          {selectedChatArtist.display_name} está conectado
                         </span>
                       )}
                     </h3>
                     <p className="text-[11px] text-ink-400">
                       {studios.find(s => s.id === selectedChatArtist.studio_id)?.name ? (
-                        <span className="text-crimson-400 font-medium mr-1.5">
+                        <span className="font-medium mr-1.5">
                           {studios.find(s => s.id === selectedChatArtist.studio_id)?.name} •
                         </span>
                       ) : null}
-                      Especialidades: {selectedChatArtist.specialties?.join(', ') || 'Todo estilo'}
+                      {selectedChatArtist.specialties?.join(' · ') || 'Todos los estilos'}
                     </p>
                   </div>
                 </div>
@@ -1349,7 +1347,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     title="Ver calendario con huecos libres y citas ocupadas anónimas"
                   >
                     <Calendar className="w-3.5 h-3.5 text-crimson-400" />
-                    <span>Ver Agenda</span>
+                    <span>Ver agenda</span>
                   </button>
 
                   {/* Clear Chat button */}
@@ -1368,89 +1366,87 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-ink-200 hover:text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors"
                   >
                     <Repeat className="w-3.5 h-3.5 text-crimson-500" />
-                    <span>Cambiar Tatuador</span>
+                    <span>Cambiar tatuador</span>
                   </button>
                 </div>
               </div>
 
               {/* Quick Action Prompt Chips */}
-              <div className="px-4 py-2.5 bg-ink-900/40 border-b border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <div className="chat-chips px-4 py-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <button
                   onClick={() => handleSendMessage(undefined, undefined, '¿Qué huecos y horarios tienes disponibles para una cita?')}
-                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-crimson-500/10 hover:bg-crimson-500/20 text-crimson-300 hover:text-white border border-crimson-500/30 transition-colors flex items-center gap-1 font-medium"
+                  className="chat-chip text-xs whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors flex items-center gap-1 font-medium"
                 >
-                  <span>🗓️ Ver disponibilidad</span>
+                  <span>Ver huecos libres</span>
                 </button>
                 <button
                   onClick={() => handleSendMessage(undefined, undefined, 'Quiero cambiar la fecha u hora de mi cita agendada')}
-                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 hover:text-white border border-blue-500/30 transition-colors flex items-center gap-1 font-medium"
+                  className="chat-chip text-xs whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors flex items-center gap-1 font-medium"
                 >
-                  <span>🔄 Modificar mi cita</span>
+                  <span>Cambiar mi cita</span>
                 </button>
                 <button
                   onClick={() => handleSendMessage(undefined, undefined, 'Quiero cancelar mi cita próxima')}
-                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-white border border-red-500/30 transition-colors flex items-center gap-1 font-medium"
+                  className="chat-chip text-xs whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors flex items-center gap-1 font-medium"
                 >
-                  <span>❌ Cancelar mi cita</span>
+                  <span>Cancelar mi cita</span>
                 </button>
                 <button
                   onClick={() => handleSendMessage(undefined, undefined, '¿Qué citas tengo agendadas en mi cuenta?')}
-                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
+                  className="chat-chip text-xs whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors flex items-center gap-1 font-medium"
                 >
-                  <span>📅 Mis citas agendadas</span>
+                  <span>Mis citas</span>
                 </button>
                 <button
                   onClick={() => handleSendMessage(undefined, undefined, '¿Cuánto costaría aproximadamente un tatuaje de 15 cm a color en el antebrazo?')}
-                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1"
+                  className="chat-chip text-xs whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors flex items-center gap-1 font-medium"
                 >
-                  <span>💰 Presupuesto 15cm color</span>
+                  <span>Precio de un tatuaje</span>
                 </button>
                 <button
                   onClick={() => handleSendMessage(undefined, undefined, 'Quiero hablar con el tatuador')}
-                  className="text-xs whitespace-nowrap px-3 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white border border-amber-500/30 transition-colors flex items-center gap-1"
+                  className="chat-chip text-xs whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors flex items-center gap-1 font-medium"
                 >
-                  <span>🧑‍🎨 Hablar con el tatuador</span>
+                  <span>Hablar con {selectedChatArtist.display_name}</span>
                 </button>
               </div>
 
               {/* Messages Area */}
               <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
                 {/* Transparent Initial Welcome Banner (pinned) */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-ink-900 via-ink-950 to-ink-900 border border-crimson-500/30 text-xs space-y-2.5 shadow-lg">
-                  <div className="flex items-center gap-2 font-bold text-white text-sm">
-                    <Bot className="w-4 h-4 text-crimson-500" />
-                    <span>Asistente Virtual Oficial de {selectedChatArtist.display_name}</span>
+                <div className="chat-welcome p-5 rounded-2xl text-sm space-y-3">
+                  <div className="font-display text-lg font-bold">
+                    <span>Hola, bienvenido al estudio de {selectedChatArtist.display_name}</span>
                   </div>
-                  <p className="text-ink-300 leading-relaxed">
-                    Estás en el canal directo con el asistente de <strong>{selectedChatArtist.display_name}</strong>. Desde este chat puedes hacer todo directamente:
+                  <p className="leading-relaxed">
+                    Escríbenos lo que necesites y te contestamos al momento. Por aquí puedes:
                   </p>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-ink-300 font-medium">
                     <li className="flex items-center gap-1.5">
-                      <span className="text-amber-400">💰</span>
-                      <span><strong>Presupuestos por medidas:</strong> Indica centímetros (ej: "15 cm en antebrazo").</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span><strong>Pedir precio:</strong> dinos el tamaño y la zona (por ejemplo, 15 cm en el antebrazo).</span>
                     </li>
                     <li className="flex items-center gap-1.5">
-                      <span className="text-crimson-400">📅</span>
-                      <span><strong>Agendar o modificar citas:</strong> Consulta huecos libres, reserva o cambia fechas.</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span><strong>Pedir o cambiar cita:</strong> te enseñamos los huecos libres.</span>
                     </li>
                     <li className="flex items-center gap-1.5">
-                      <span className="text-emerald-400">🩹</span>
-                      <span><strong>Revisar curación:</strong> Pulsa 📷 para analizar que no haya infección.</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span><strong>Enseñar tu curación:</strong> mándanos una foto con el botón de la cámara.</span>
                     </li>
                     <li className="flex items-center gap-1.5">
-                      <span className="text-blue-400">🧑‍🎨</span>
-                      <span><strong>Pausa y trato humano:</strong> Escribe "Quiero hablar con el tatuador".</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span><strong>Hablar con {selectedChatArtist.display_name}:</strong> pídelo y te atiende él en persona.</span>
                     </li>
                   </ul>
-                  <div className="pt-2 border-t border-white/5 text-[11px] text-amber-400/90 flex items-center gap-1.5 font-mono">
-                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                    <span>Transparencia: {selectedChatArtist.display_name} supervisa este chat y puede intervenir personalmente en cualquier momento.</span>
+                  <div className="pt-3 text-xs flex items-center gap-1.5 chat-note">
+                    <span>Te responde el asistente del estudio. {selectedChatArtist.display_name} lee todas las conversaciones y puede contestarte él cuando quiera.</span>
                   </div>
                 </div>
 
                 {loadingChat && (
-                  <div className="text-center py-12 text-xs font-mono text-ink-400">
-                    Cargando historial con {selectedChatArtist.display_name}...
+                  <div className="text-center py-12 text-xs text-ink-500">
+                    Cargando la conversación con {selectedChatArtist.display_name}...
                   </div>
                 )}
 
@@ -1462,14 +1458,14 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     <div key={msg.id} className={`flex flex-col ${isClient ? 'items-end' : 'items-start'}`}>
                       <div className={`max-w-[88%] sm:max-w-[78%] p-4 rounded-2xl text-sm leading-relaxed ${
                         isClient
-                          ? 'bg-crimson-600 text-white rounded-br-xs shadow-md shadow-crimson-600/20'
+                          ? 'bubble-me rounded-br-md'
                           : isAi
-                          ? 'bg-ink-900 border border-white/10 text-ink-100 rounded-bl-xs shadow-md'
-                          : 'bg-amber-600/20 border border-amber-500/30 text-amber-200 rounded-bl-xs'
+                          ? 'bubble-them rounded-bl-md'
+                          : 'bubble-artist rounded-bl-md'
                       }`}>
                         {/* Role Label */}
-                        <span className="block text-[10px] uppercase font-mono font-bold tracking-wider mb-1 opacity-75">
-                          {isClient ? 'Tú (Cliente)' : isAi ? `✦ Asistente de ${selectedChatArtist.display_name}` : `⚡ ${selectedChatArtist.display_name} (Intervención)`}
+                        <span className="block text-[11px] font-semibold mb-1 opacity-70">
+                          {isClient ? 'Tú' : isAi ? `Estudio de ${selectedChatArtist.display_name}` : selectedChatArtist.display_name}
                         </span>
 
                         {/* Attached Image */}
@@ -1484,14 +1480,13 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
 
                         {/* Interactive Available Slots Quick-Picker Chips */}
                         {msg.available_slots && msg.available_slots.length > 0 && (
-                          <div className="mt-3 p-4 rounded-3xl bg-ink-950/95 border border-crimson-500/50 text-xs space-y-3 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-crimson-500 to-transparent" />
+                          <div className="mt-3 p-4 rounded-2xl chat-slots text-xs space-y-3 relative overflow-hidden">
+                            
                             <div className="flex items-center justify-between">
-                              <div className="text-xs font-mono font-bold text-crimson-400 flex items-center gap-2 uppercase tracking-wider">
-                                <span className="w-2 h-2 rounded-full bg-crimson-500 animate-ping" />
-                                <span>Huecos Libres en Agenda (1 Clic para Agendar)</span>
+                              <div className="text-sm font-semibold flex items-center gap-2">
+                                <span>Huecos libres</span>
                               </div>
-                              <span className="text-[10px] text-ink-400 font-mono">Disponibilidad en directo</span>
+                              <span className="text-[11px] opacity-60">Toca uno para reservarlo</span>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                               {msg.available_slots.map((slot: any, sIdx: number) => (
@@ -1505,7 +1500,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                                     <Clock className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
                                     <span className="capitalize">{slot.label}</span>
                                   </div>
-                                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-white/10 text-white group-hover:bg-white group-hover:text-ink-950 transition-colors">
+                                  <span className="text-[11px] px-2 py-0.5 rounded-md">
                                     Reservar →
                                   </span>
                                 </button>
@@ -1518,7 +1513,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                         {(msg.createdAppointment || msg.created_appointment) && (
                           <div className="mt-3 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-xs space-y-1.5 shadow-lg">
                             <div className="font-bold text-emerald-400 flex items-center gap-1.5 text-sm">
-                              <span>✅ Cita Agendada en el Calendario</span>
+                              <span>Cita guardada en el calendario</span>
                             </div>
                             <div className="text-ink-200">
                               <strong>Tipo:</strong> {(msg.createdAppointment || msg.created_appointment).appointment_type === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'}
@@ -1563,7 +1558,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                         {(msg.cancelled_appointment_id || msg.cancelledAppointmentId) && (
                           <div className="mt-3 p-3.5 rounded-2xl bg-red-950/40 border border-red-500/40 text-xs space-y-1.5 shadow-lg">
                             <div className="font-bold text-red-400 flex items-center gap-1.5 text-sm">
-                              <span>❌ Cita Cancelada</span>
+                              <span>Cita cancelada</span>
                             </div>
                             <div className="text-ink-200">
                               Tu cita ha sido cancelada correctamente y el hueco ha quedado liberado en la agenda.
@@ -1600,7 +1595,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                         )}
                       </div>
 
-                      <span className="text-[10px] text-ink-500 mt-1 px-1 font-mono">
+                      <span className="text-[10px] mt-1 px-1 chat-time">
                         {new Date(msg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -1610,13 +1605,13 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                 {/* Live Typing Indicator */}
                 {isAiThinking && (
                   <div className="flex flex-col items-start">
-                    <div className="p-3.5 rounded-2xl bg-ink-900 border border-crimson-500/30 text-ink-300 rounded-bl-xs flex items-center gap-3 shadow-lg">
+                    <div className="bubble-them p-3.5 rounded-2xl rounded-bl-md flex items-center gap-3">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-2 h-2 rounded-full bg-crimson-500 animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span className="text-xs font-mono text-ink-400">El Asistente de {selectedChatArtist.display_name} está respondiendo...</span>
+                      <span className="text-xs chat-time">Escribiendo…</span>
                     </div>
                   </div>
                 )}
@@ -1625,10 +1620,10 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               </div>
 
               {/* Input Area */}
-              <form onSubmit={(e) => handleSendMessage(e)} className="p-3.5 border-t border-white/10 bg-ink-900/95 backdrop-blur-md flex items-center gap-2">
+              <form onSubmit={(e) => handleSendMessage(e)} className="chat-input p-3.5 flex items-center gap-2">
                 {/* Camera Button */}
-                <label className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white cursor-pointer transition-colors border border-white/5 flex items-center justify-center shrink-0" title="Subir foto de tu tatuaje para análisis o referencia">
-                  <Camera className="w-5 h-5 text-crimson-500" />
+                <label className="chat-cam p-3 rounded-full cursor-pointer transition-colors flex items-center justify-center shrink-0" title="Mandar una foto de tu tatuaje">
+                  <Camera className="w-5 h-5" />
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                 </label>
 
@@ -1636,14 +1631,14 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={`Escribe a ${selectedChatArtist.display_name} (ej: 'Quiero cita para este viernes a las 11:00' o '15cm antebrazo')...`}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-ink-950 border border-white/10 text-sm text-white placeholder-ink-500 focus:outline-none focus:border-crimson-500 transition-colors"
+                  placeholder={`Escribe un mensaje a ${selectedChatArtist.display_name}…`}
+                  className="chat-field flex-1 px-5 py-3 rounded-full text-sm focus:outline-none transition-colors"
                 />
 
                 <button
                   type="submit"
                   disabled={sendingMsg || (!inputText.trim())}
-                  className="p-3 rounded-xl bg-crimson-600 hover:bg-crimson-500 disabled:opacity-40 text-white transition-all shadow-md shadow-crimson-600/30 shrink-0"
+                  className="p-3 rounded-full bg-crimson-600 hover:bg-crimson-700 disabled:opacity-40 text-white transition-colors shrink-0"
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -1921,7 +1916,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       {/* RESCHEDULE APPOINTMENT MODAL */}
       {rescheduleModalApp && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-blue-500/30 bg-ink-950/95 relative shadow-2xl">
+          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-[#c9bb92]/25 bg-ink-950/95 relative shadow-2xl">
             <button
               onClick={() => setRescheduleModalApp(null)}
               className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
@@ -1929,46 +1924,46 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-mono font-bold uppercase mb-1">
-              <Calendar className="w-4 h-4" />
-              <span>Agenda y Calendario</span>
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-ink-400 mb-3">
+              <span>Cambiar fecha</span>
+              <span className="h-px w-10 bg-ink-600/60" />
             </div>
-            <h2 className="font-display text-2xl font-bold text-white mb-1">Modificar Fecha de Cita</h2>
-            <p className="text-xs text-ink-400 mb-5">
-              Cita de <strong>{rescheduleModalApp.artists?.display_name || 'tu artista'}</strong> ({rescheduleModalApp.appointment_type === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'})
+            <h2 className="font-display text-3xl font-medium text-white mb-2">Cambia tu <em className="italic text-crimson-400">cita</em></h2>
+            <p className="text-sm text-ink-300 mb-6">
+              Tu {rescheduleModalApp.appointment_type === 'design_consultation' ? 'consulta de diseño' : 'sesión de tatuaje'} con <span className="text-white">{rescheduleModalApp.artists?.display_name || 'tu tatuador'}</span>. Elige otro día y te lo confirmamos.
             </p>
 
             <form onSubmit={handleRescheduleAppointment} className="space-y-4 text-sm">
               <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Nueva Fecha</label>
+                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Nuevo día</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   <button
                     type="button"
                     onClick={() => applyQuickRescheduleDate(1)}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-ink-300 hover:text-white border border-white/10 transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/10 text-xs text-ink-200 hover:text-white border border-white/10 transition-colors"
                   >
                     Mañana
                   </button>
                   <button
                     type="button"
                     onClick={() => applyNextDayOfWeek(5)}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-ink-300 hover:text-white border border-white/10 transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/10 text-xs text-ink-200 hover:text-white border border-white/10 transition-colors"
                   >
-                    Próx. Viernes
+                    El viernes
                   </button>
                   <button
                     type="button"
                     onClick={() => applyNextDayOfWeek(6)}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-ink-300 hover:text-white border border-white/10 transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/10 text-xs text-ink-200 hover:text-white border border-white/10 transition-colors"
                   >
-                    Próx. Sábado
+                    El sábado
                   </button>
                   <button
                     type="button"
                     onClick={() => applyQuickRescheduleDate(7)}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-ink-300 hover:text-white border border-white/10 transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/10 text-xs text-ink-200 hover:text-white border border-white/10 transition-colors"
                   >
-                    +7 Días
+                    En una semana
                   </button>
                 </div>
                 <input
@@ -1977,25 +1972,25 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   min={new Date().toISOString().split('T')[0]}
                   value={rescheduleDate}
                   onChange={(e) => setRescheduleDate(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Nueva Hora</label>
+                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Hora</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {['10:00', '11:30', '15:00', '16:30', '18:00'].map((timeStr) => (
                     <button
                       key={timeStr}
                       type="button"
                       onClick={() => setRescheduleTime(timeStr)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
                         rescheduleTime === timeStr
-                          ? 'bg-blue-600 text-white border-blue-500'
-                          : 'bg-white/5 text-ink-300 hover:text-white border-white/10 hover:bg-white/10'
+                          ? 'bg-crimson-600 text-white border-crimson-500'
+                          : 'bg-white/[0.04] text-ink-200 hover:text-white border-white/10 hover:bg-white/10'
                       }`}
                     >
-                      {timeStr}h
+                      {timeStr}
                     </button>
                   ))}
                 </div>
@@ -2004,18 +1999,18 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   required
                   value={rescheduleTime}
                   onChange={(e) => setRescheduleTime(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Motivo del cambio (opcional)</label>
+                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">¿Quieres contarle algo? <span className="normal-case tracking-normal text-ink-500">(opcional)</span></label>
                 <input
                   type="text"
                   value={rescheduleReason}
                   onChange={(e) => setRescheduleReason(e.target.value)}
-                  placeholder="Ej: Imprevisto laboral, cambio de turno..."
-                  className="w-full px-4 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                  placeholder="Por ejemplo: me ha surgido algo en el trabajo"
+                  className="w-full px-4 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
                 />
               </div>
 
@@ -2030,9 +2025,9 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                 <button
                   type="submit"
                   disabled={rescheduleSubmitting}
-                  className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02]"
+                  className="flex-1 py-3 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white font-semibold text-sm transition-colors"
                 >
-                  {rescheduleSubmitting ? 'Actualizando...' : 'Guardar Nueva Fecha'}
+                  {rescheduleSubmitting ? 'Guardando…' : 'Guardar nueva fecha'}
                 </button>
               </div>
             </form>
@@ -2043,7 +2038,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       {/* CANCEL APPOINTMENT MODAL */}
       {cancelModalApp && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-crimson-500/40 bg-ink-950/95 relative shadow-2xl">
+          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-[#c9bb92]/25 bg-ink-950/95 relative shadow-2xl">
             <button
               onClick={() => setCancelModalApp(null)}
               className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
@@ -2051,22 +2046,22 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 text-crimson-400 text-xs font-mono font-bold uppercase mb-1">
-              <AlertTriangle className="w-4 h-4 text-crimson-500" />
-              <span>Cancelación de Cita</span>
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-ink-400 mb-3">
+              <span>Cancelar cita</span>
+              <span className="h-px w-10 bg-ink-600/60" />
             </div>
-            <h2 className="font-display text-2xl font-bold text-white mb-1">¿Deseas cancelar tu cita?</h2>
-            <p className="text-xs text-ink-400 mb-4">
-              Cita de <strong>{cancelModalApp.artists?.display_name || 'tu artista'}</strong> programada para el{' '}
+            <h2 className="font-display text-3xl font-medium text-white mb-2">¿Seguro que quieres <em className="italic text-crimson-400">cancelar</em>?</h2>
+            <p className="text-sm text-ink-300 mb-5">
+              Tienes cita con <span className="text-white">{cancelModalApp.artists?.display_name || 'tu tatuador'}</span> el{' '}
               <span className="text-white font-semibold">
-                {new Date(cancelModalApp.start_time).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date(cancelModalApp.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}h
+                {new Date(cancelModalApp.start_time).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date(cancelModalApp.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
               </span>.
             </p>
 
             {/* Retention Suggestion */}
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 mb-4 text-xs">
-              <p className="text-amber-300 font-semibold mb-1">💡 ¿Te viene mal la fecha u hora?</p>
-              <p className="text-ink-300 mb-2">No necesitas cancelar tu cita; puedes reprogramarla gratis a cualquier otro día disponible.</p>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-[#c9bb92]/20 mb-5 text-sm">
+              <p className="font-display text-lg text-white mb-1">¿Solo te viene mal el día?</p>
+              <p className="text-ink-300 mb-3">Puedes cambiar la fecha sin coste y mantener tu hueco con el tatuador.</p>
               <button
                 type="button"
                 onClick={() => {
@@ -2078,16 +2073,16 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   setRescheduleDate(curDate);
                   setRescheduleTime(curTime);
                 }}
-                className="w-full py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold border border-amber-500/30 transition-all text-xs flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white font-semibold transition-colors text-sm flex items-center justify-center gap-1.5"
               >
-                <span>✏️ Reprogramar en lugar de cancelar</span>
+                <span>Cambiar la fecha</span>
               </button>
             </div>
 
             <form onSubmit={handleConfirmCancel} className="space-y-4 text-sm">
               <div>
                 <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">
-                  Motivo de la cancelación
+                  ¿Por qué cancelas?
                 </label>
                 <select
                   value={cancelReason}
@@ -2108,14 +2103,14 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                   onClick={() => setCancelModalApp(null)}
                   className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white font-semibold text-sm transition-all"
                 >
-                  Mantener Cita
+                  Mantener mi cita
                 </button>
                 <button
                   type="submit"
                   disabled={cancelSubmitting}
-                  className="flex-1 py-3 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white font-bold text-sm shadow-lg shadow-crimson-600/30 transition-all hover:scale-[1.02]"
+                  className="flex-1 py-3 rounded-xl border border-[#c98a78]/40 text-[#e0a896] hover:bg-[#c98a78]/10 font-semibold text-sm transition-colors"
                 >
-                  {cancelSubmitting ? 'Cancelando...' : 'Confirmar Cancelación'}
+                  {cancelSubmitting ? 'Cancelando…' : 'Sí, cancelar'}
                 </button>
               </div>
             </form>

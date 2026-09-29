@@ -139,26 +139,23 @@ export default function PublicArtistAgenda({
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-crimson-600 to-amber-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-crimson-600/30">
+          <div className="w-12 h-12 rounded-full bg-ink-950 border border-amber-500/50 flex items-center justify-center text-amber-300 text-2xl logo-t">
             {artist.display_name?.charAt(0) || 'A'}
           </div>
 
           <div>
             <div className="flex items-center gap-2">
               <h2 className="font-display text-xl font-bold text-white">
-                Agenda de {artist.display_name}
+                Agenda de <span className="italic font-semibold text-crimson-300">{artist.display_name}</span>
               </h2>
               {studio?.name && (
                 <span className="text-xs text-ink-400 font-medium">
-                  · {studio.name} ({studio.city || 'Estudio'})
+                  · {studio.name}{studio.city ? `, ${studio.city}` : ''}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 text-xs text-ink-400 mt-0.5">
-              <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Vista pública protegida (GDPR)
-              </span>
-              <span>· Especialidades: {artist.specialties?.join(', ') || 'Todo estilo'}</span>
+              <span>{artist.specialties?.join(' · ') || 'Todos los estilos'}</span>
             </div>
           </div>
         </div>
@@ -166,10 +163,10 @@ export default function PublicArtistAgenda({
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenChat}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-transparent hover:bg-white/5 text-ink-100 border border-amber-500/30 hover:border-amber-500/60 text-sm font-semibold transition-colors"
           >
             <MessageSquare className="w-4 h-4" />
-            <span>Chatear con {artist.display_name}</span>
+            <span>Escribir a {artist.display_name}</span>
           </button>
 
           <button
@@ -177,10 +174,10 @@ export default function PublicArtistAgenda({
               const todayIso = new Date().toISOString().split('T')[0];
               onBookSlot(todayIso, '11:00');
             }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-xs font-bold transition-all shadow-md shadow-crimson-600/30 hover:scale-[1.02]"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white text-sm font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Pedir Cita</span>
+            <span>Pedir cita</span>
           </button>
         </div>
       </div>
@@ -258,13 +255,13 @@ export default function PublicArtistAgenda({
         <div className="flex items-center gap-2">
           <Lock className="w-4 h-4 text-amber-400 shrink-0" />
           <span>
-            Las citas de otros clientes aparecen marcadas como <strong>"Horario Ocupado"</strong> para preservar la privacidad de datos. Tus propias citas aparecen resaltadas en <strong>verde</strong>.
+            Las citas de otros clientes salen como <strong>"Ocupado"</strong>, sin datos. Las tuyas salen en <strong>verde</strong>.
           </span>
         </div>
         <div className="flex items-center gap-3 shrink-0 text-[11px] font-semibold">
-          <span className="flex items-center gap-1 text-emerald-400">● Tu cita</span>
-          <span className="flex items-center gap-1 text-ink-400">● Ocupado</span>
-          <span className="flex items-center gap-1 text-amber-400">● Descanso</span>
+          <span className="flex items-center gap-1.5 text-ink-200"><span className="w-2 h-2 rounded-full bg-crimson-500" />Tu cita</span>
+          <span className="flex items-center gap-1.5 text-ink-400"><span className="w-2 h-2 rounded-full bg-ink-500" />Ocupado</span>
+          <span className="flex items-center gap-1.5 text-ink-400"><span className="w-2 h-2 rounded-full bg-amber-500" />Descanso</span>
         </div>
       </div>
 
@@ -282,7 +279,7 @@ export default function PublicArtistAgenda({
                 key={idx}
                 className={`rounded-3xl border p-3.5 flex flex-col justify-between min-h-[420px] transition-all ${
                   isToday
-                    ? 'bg-crimson-950/20 border-crimson-500/40 shadow-xl shadow-crimson-950/20'
+                    ? 'bg-ink-950/80 border-amber-500/40'
                     : isPast
                     ? 'bg-ink-950/40 border-white/5 opacity-60'
                     : 'bg-ink-950/70 border-white/5 hover:border-white/10'
@@ -291,23 +288,22 @@ export default function PublicArtistAgenda({
                 <div>
                   {/* Day Header */}
                   <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-white/10">
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-300">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-400">
                       {dayDate.toLocaleDateString('es-ES', { weekday: 'short' })}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-sm font-bold ${isToday ? 'text-crimson-400 font-extrabold' : 'text-white'}`}>
+                      <span className={`font-display text-lg font-bold ${isToday ? 'text-amber-300' : 'text-white'}`}>
                         {dayDate.getDate()}
                       </span>
-                      {isToday && <span className="w-1.5 h-1.5 rounded-full bg-crimson-500 animate-ping" />}
+                      {isToday && <span className="text-[10px] text-amber-300/80">hoy</span>}
                     </div>
                   </div>
 
                   {/* Appointments / Occupied Blocks */}
                   <div className="space-y-2">
                     {dayAppointments.length === 0 ? (
-                      <div className="text-center py-10 text-[11px] text-emerald-400/80 font-mono flex flex-col items-center gap-1">
-                        <span>✨ Agenda disponible</span>
-                        <span className="text-[10px] text-ink-500">Huecos libres para reservar</span>
+                      <div className="text-center py-10 text-xs text-ink-400 flex flex-col items-center gap-1">
+                        <span>Libre</span>
                       </div>
                     ) : (
                       dayAppointments.map(app => {
@@ -320,16 +316,16 @@ export default function PublicArtistAgenda({
                           return (
                             <div
                               key={app.id}
-                              className="p-2.5 rounded-2xl border border-emerald-500/40 bg-emerald-950/30 text-emerald-300 text-xs leading-snug shadow-md"
+                              className="p-2.5 rounded-xl border border-crimson-500/60 bg-crimson-600/25 text-crimson-300 text-xs leading-snug"
                             >
-                              <div className="flex items-center justify-between font-mono text-[10px] font-bold mb-1">
+                              <div className="flex items-center justify-between text-[11px] font-semibold mb-1">
                                 <span>
                                   {start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                <span>⭐ TU CITA</span>
+                                <span>Tu cita</span>
                               </div>
                               <div className="font-bold text-white text-xs">
-                                {app.title || (app.appointment_type === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje')}
+                                {app.title || (app.appointment_type === 'design_consultation' ? 'Consulta de diseño' : 'Sesión de tatuaje')}
                               </div>
                             </div>
                           );
@@ -341,13 +337,12 @@ export default function PublicArtistAgenda({
                               key={app.id}
                               className="p-2.5 rounded-2xl border border-amber-500/20 bg-amber-950/20 text-amber-300/80 text-xs leading-snug"
                             >
-                              <div className="flex items-center justify-between font-mono text-[10px] opacity-75 mb-0.5">
+                              <div className="flex items-center justify-between text-[11px] opacity-80 mb-0.5">
                                 <span>
                                   {start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                <span>☕</span>
                               </div>
-                              <div className="font-semibold text-amber-200/90 text-xs">Descanso / Pausa</div>
+                              <div className="font-semibold text-amber-200/90 text-xs">Descanso</div>
                             </div>
                           );
                         }
@@ -358,14 +353,14 @@ export default function PublicArtistAgenda({
                             key={app.id}
                             className="p-2.5 rounded-2xl border border-white/10 bg-white/5 text-ink-300 text-xs leading-snug"
                           >
-                            <div className="flex items-center justify-between font-mono text-[10px] text-ink-400 mb-0.5">
+                            <div className="flex items-center justify-between text-[11px] text-ink-400 mb-0.5">
                               <span>
                                 {start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               <Lock className="w-3 h-3 text-ink-500" />
                             </div>
                             <div className="font-semibold text-ink-200 text-xs">
-                              {app.appointment_type === 'design_consultation' ? '📜 Consulta Reservada' : '🩸 Sesión Reservada'}
+                              Ocupado
                             </div>
                           </div>
                         );
@@ -379,10 +374,10 @@ export default function PublicArtistAgenda({
                   <button
                     type="button"
                     onClick={() => onBookSlot(dayIso, '11:00')}
-                    className="mt-3 w-full py-2 rounded-xl bg-crimson-600/20 hover:bg-crimson-600 text-crimson-300 hover:text-white border border-crimson-500/30 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                    className="mt-3 w-full py-2 rounded-xl bg-transparent hover:bg-crimson-600 text-ink-300 hover:text-white border border-white/10 hover:border-crimson-500 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Reservar este día</span>
+                    <span>Reservar</span>
                   </button>
                 )}
               </div>
@@ -394,7 +389,7 @@ export default function PublicArtistAgenda({
       {/* MONTH VIEW (FULL BOARD) */}
       {calendarView === 'month' && (
         <div className="glass-panel p-5 rounded-3xl border border-white/10 shadow-2xl bg-ink-950/70">
-          <div className="grid grid-cols-7 gap-2 pb-3 mb-3 border-b border-white/10 text-center font-mono text-xs font-bold text-ink-400">
+          <div className="grid grid-cols-7 gap-2 pb-3 mb-3 border-b border-white/10 text-center text-xs font-bold text-ink-400">
             <div>LUN</div>
             <div>MAR</div>
             <div>MIÉ</div>
@@ -433,11 +428,11 @@ export default function PublicArtistAgenda({
                   } ${isToday ? 'border-crimson-500/40 bg-crimson-950/20' : ''}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`font-mono text-xs font-bold ${isToday ? 'text-crimson-400' : 'text-white'}`}>
+                    <span className={`text-xs font-bold ${isToday ? 'text-crimson-400' : 'text-white'}`}>
                       {dayNum}
                     </span>
                     {hasMyAppointment && (
-                      <span className="text-[10px] text-emerald-400 font-bold">⭐ TU CITA</span>
+                      <span className="text-[10px] text-crimson-300 font-semibold">Tu cita</span>
                     )}
                   </div>
 
@@ -447,7 +442,7 @@ export default function PublicArtistAgenda({
                       return (
                         <div
                           key={aIdx}
-                          className={`text-[9px] px-1.5 py-0.5 rounded truncate font-mono ${
+                          className={`text-[9px] px-1.5 py-0.5 rounded truncate ${
                             isMy
                               ? 'bg-emerald-500/20 text-emerald-300 font-bold'
                               : 'bg-white/5 text-ink-400'
@@ -458,7 +453,7 @@ export default function PublicArtistAgenda({
                       );
                     })}
                     {dayAppointments.length > 2 && (
-                      <span className="text-[9px] text-ink-500 font-mono block">
+                      <span className="text-[9px] text-ink-500 block">
                         +{dayAppointments.length - 2} más
                       </span>
                     )}

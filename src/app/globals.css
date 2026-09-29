@@ -466,3 +466,42 @@ main.relative.z-0 { z-index: auto !important; }
   background: rgba(19,18,16,.9) !important; border-color: rgba(201,187,146,.18) !important; color-scheme: dark;
 }
 .booking-modal select:focus, .booking-modal input:focus, .booking-modal textarea:focus { border-color: rgba(201,187,146,.55) !important; }
+/* ==============================================================================
+ * CHAT CON EL TATUADOR: oscuro como el resto, con la barra de escribir en blanco
+ * ============================================================================== */
+.chat-light { background: rgba(19,18,16,.92); color: #efeae2; border-color: rgba(201,187,146,.18) !important; backdrop-filter: blur(8px); }
+.chat-light * { text-shadow: none !important; }
+.chat-light .chat-head { background: rgba(28,26,24,.95); border-bottom: 1px solid rgba(201,187,146,.14); }
+.chat-light .chat-title { color: #efeae2; }
+.chat-light .chat-head p { color: #8e8579 !important; }
+.chat-light .chat-status { color: #b3aa9d; }
+.chat-light .chat-head button { background: transparent !important; border: 1px solid rgba(201,187,146,.22) !important; color: #cfc7bb !important; }
+.chat-light .chat-head button svg { color: #c9bb92 !important; }
+.chat-light .chat-head button:hover { border-color: rgba(201,187,146,.5) !important; color: #fff !important; }
+.chat-light .chat-chips { background: rgba(24,23,21,.9); border-bottom: 1px solid rgba(201,187,146,.1); }
+.chat-light .chat-chip { background: transparent; border: 1px solid rgba(201,187,146,.22); color: #cfc7bb; }
+.chat-light .chat-chip:hover { border-color: #c9bb92; color: #fff; }
+.chat-light .chat-welcome { background: rgba(33,31,28,.8); border: 1px solid rgba(201,187,146,.16); color: #cfc7bb; }
+.chat-light .chat-welcome .font-display { color: #efeae2; }
+.chat-light .chat-welcome ul { color: #cfc7bb !important; }
+.chat-light .chat-welcome strong { color: #efeae2; }
+.chat-light .chat-note { color: #8e8579; border-top: 1px solid rgba(201,187,146,.12); }
+.chat-light .bubble-me { background: #2f5a47; color: #fff; }
+.chat-light .bubble-them { background: #26231f; color: #efeae2; border: 1px solid rgba(201,187,146,.14); }
+.chat-light .bubble-artist { background: #3a3122; color: #f3ead8; border: 1px solid rgba(201,187,146,.35); }
+.chat-light .bubble-them *, .chat-light .bubble-artist * { color: inherit !important; }
+.chat-light .bubble-them strong, .chat-light .bubble-artist strong { color: #e3cf9a !important; font-weight: 700; }
+.chat-light .chat-time { color: #8e8579; }
+.chat-light .chat-slots { background: rgba(19,18,16,.7); border: 1px solid rgba(201,187,146,.18); color: #efeae2; }
+.chat-light .chat-slots .tattoo-slot-btn { background: rgba(33,31,28,.9) !important; border: 1px solid rgba(201,187,146,.22) !important; color: #efeae2 !important; box-shadow: none !important; }
+.chat-light .chat-slots .tattoo-slot-btn:hover { border-color: #c9bb92 !important; }
+.chat-light .chat-slots .tattoo-slot-btn > span:last-child { background: #2f5a47; color: #fff; }
+.chat-light .chat-slots .tattoo-slot-btn .capitalize { text-transform: none; }
+.chat-light .chat-slots .tattoo-slot-btn .capitalize::first-letter { text-transform: uppercase; }
+/* barra de escribir en blanco */
+.chat-light .chat-input { background: rgba(28,26,24,.95); border-top: 1px solid rgba(201,187,146,.14); }
+.chat-light .chat-field { background: #fbf9f5; border: 1px solid #e3dbcd; color: #1c1a18; }
+.chat-light .chat-field::placeholder { color: #9a9086; }
+.chat-light .chat-field:focus { border-color: #2f5a47; box-shadow: 0 0 0 3px rgba(47,90,71,.25); }
+.chat-light .chat-cam { background: #fbf9f5; color: #5b544b; border: 1px solid #e3dbcd; }
+.chat-light .chat-cam:hover { background: #fff; color: #2f5a47; }
