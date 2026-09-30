@@ -56,8 +56,7 @@ export async function POST(req: NextRequest) {
       display_name: displayName?.trim() || existingArtist.display_name,
       hourly_rate: parsedHourlyRate,
       minimum_fee: parsedMinFee,
-      pricing_rules: updatedPricingRules,
-      updated_at: new Date().toISOString()
+      pricing_rules: updatedPricingRules
     };
 
     if (Array.isArray(specialties)) {

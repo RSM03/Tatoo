@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Bot, User, Clock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Sparkles, Send, Bot, User, Clock, CheckCircle2, AlertCircle, RefreshCw, RotateCcw } from 'lucide-react';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 interface ArtistCopilotChatProps {
@@ -17,35 +17,94 @@ interface CopilotMessage {
   createdAt: string;
 }
 
+const buildWelcomeMessage = (artistName?: string): CopilotMessage => ({
+  id: 'welcome',
+  sender: 'ai',
+  text: `¡Hola, **${artistName || 'Tatuador'}**! 👋 Soy tu Copilot personal de Tatoo.\n\nPuedo ayudarte a gestionar tu trabajo diario sin rodeos:\n\n• 📅 **Consultar tu agenda:** Pregúntame qué citas tienes hoy, mañana o esta semana.\n• ➕ **Crear citas:** Pídeme que agende una cita (ej: *"crea una cita para mañana a las 11 con Laura"*).\n• 🔒 **Bloquear descansos:** Pídeme que bloquee huecos para comidas o descansos (ej: *"bloquea mañana de 14:00 a 15:30 para comer"*).\n• 📋 **Consentimientos legales:** Pregúntame quién no ha firmado su consentimiento informado.\n• ❓ **Dudas sobre la app:** Pregúntame cómo configurar tarifas, cómo descargar PDF de consentimientos o cómo funciona la suscripción de 50€/mes con Stripe.\n\n¿En qué te ayudo ahora?`,
+  createdAt: new Date().toISOString()
+});
+
 export default function ArtistCopilotChat({
   artist,
   appointments,
   onRefreshAppointments
 }: ArtistCopilotChatProps) {
-  const [messages, setMessages] = useState<CopilotMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'ai',
-      text: `¡Hola, **${artist?.display_name || 'Tatuador'}**! 👋 Soy tu Copilot personal de Tatoo.\n\nPuedo ayudarte a gestionar tu trabajo diario sin rodeos:\n\n• 📅 **Consultar tu agenda:** Pregúntame qué citas tienes hoy, mañana o esta semana.\n• 🔒 **Bloquear descansos:** Pídeme que bloquee huecos para comidas o descansos (ej: *"bloquea mañana de 14:00 a 15:30 para comer"*).\n• 📋 **Consentimientos legales:** Pregúntame quién no ha firmado su consentimiento informado.\n• ❓ **Dudas sobre la app:** Pregúntame cómo configurar tarifas, cómo descargar PDF de consentimientos o cómo funciona la suscripción de 50€/mes con Stripe.\n\n¿En qué te ayudo ahora?`,
-      createdAt: new Date().toISOString()
+  const [messages, setMessages] = useState<CopilotMessage[]>(() => {
+    if (typeof window !== 'undefined' && artist?.id) {
+      try {
+        const saved = localStorage.getItem(`tatoo_copilot_chat_${artist.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading saved copilot chat', e);
+      }
     }
-  ]);
+    return [buildWelcomeMessage(artist?.display_name)];
+  });
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Sync state if artist changes
+  useEffect(() => {
+    if (!artist?.id || typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem(`tatoo_copilot_chat_${artist.id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Error loading copilot chat for artist', e);
+    }
+    setMessages([buildWelcomeMessage(artist?.display_name)]);
+  }, [artist?.id, artist?.display_name]);
+
+  // Persist messages whenever updated
+  useEffect(() => {
+    if (!artist?.id || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(`tatoo_copilot_chat_${artist.id}`, JSON.stringify(messages));
+    } catch (e) {
+      console.warn('Error saving copilot chat', e);
+    }
+  }, [messages, artist?.id]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  const handleResetChat = () => {
+    if (window.confirm('¿Quieres reiniciar la conversación con tu Copilot?')) {
+      if (artist?.id && typeof window !== 'undefined') {
+        localStorage.removeItem(`tatoo_copilot_chat_${artist.id}`);
+      }
+      setMessages([
+        {
+          id: 'welcome-' + Date.now(),
+          sender: 'ai',
+          text: `¡Hola, **${artist?.display_name || 'Tatuador'}**! Conversación reiniciada. ¿En qué te ayudo hoy con tu agenda o tus clientes?`,
+          createdAt: new Date().toISOString()
+        }
+      ]);
+    }
+  };
+
   const quickPrompts = [
     '📅 ¿Qué citas tengo hoy?',
+    '➕ Crea una cita para mañana a las 11',
     '⏰ ¿Cuál es mi próxima cita?',
     '📋 ¿Quién no ha firmado el consentimiento?',
     '🔒 Bloquear 1 hora mañana para descanso',
-    '💶 ¿Cómo configuro mis tarifas?',
-    '💳 ¿Cómo funciona la suscripción de 50€/mes con Stripe?'
+    '💶 ¿Cómo configuro mis tarifas?'
   ];
 
   const handleSend = async (textToSend?: string) => {
@@ -64,13 +123,20 @@ export default function ArtistCopilotChat({
     setLoading(true);
 
     try {
+      // Send the last 8 messages for context so the LLM remembers previous turns
+      const conversationHistory = messages.slice(-8).map(m => ({
+        role: m.sender === 'artist' ? 'user' : 'assistant',
+        content: m.text
+      }));
+
       const res = await fetch('/api/chat/artist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           artistId: artist?.id,
           studioId: artist?.studio_id,
-          content: text
+          content: text,
+          history: conversationHistory
         })
       });
 
@@ -87,7 +153,7 @@ export default function ArtistCopilotChat({
         }
       ]);
 
-      if (data.data?.newBlock && onRefreshAppointments) {
+      if ((data.data?.newBlock || data.data?.newAppointment) && onRefreshAppointments) {
         onRefreshAppointments();
       }
     } catch (err: any) {
@@ -121,20 +187,29 @@ export default function ArtistCopilotChat({
               </span>
             </h2>
             <p className="text-xs text-ink-400">
-              Gestión directa de tu agenda, descansos, consentimientos informados y soporte de la app
+              Gestión directa de tu agenda, citas, descansos, consentimientos y soporte de la app
             </p>
           </div>
         </div>
 
-        {onRefreshAppointments && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onRefreshAppointments()}
+            onClick={handleResetChat}
             className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-ink-400 hover:text-white transition-colors"
-            title="Sincronizar agenda"
+            title="Reiniciar conversación"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RotateCcw className="w-4 h-4" />
           </button>
-        )}
+          {onRefreshAppointments && (
+            <button
+              onClick={() => onRefreshAppointments()}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-ink-400 hover:text-white transition-colors"
+              title="Sincronizar agenda"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Quick Prompts */}

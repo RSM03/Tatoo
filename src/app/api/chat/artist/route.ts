@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { artistId, content, studioId } = body;
+    const { artistId, content, studioId, history } = body;
 
     if (!content || !content.trim()) {
       return NextResponse.json({ error: 'El mensaje es obligatorio.' }, { status: 400 });
@@ -83,8 +83,38 @@ export async function POST(req: NextRequest) {
         }).join('\n')
       : 'No tienes citas agendadas a partir de hoy.';
 
+    // Precompute upcoming 7 days in the current year
+    const calendarWeekReference = [0, 1, 2, 3, 4, 5, 6, 7].map(dayOffset => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + dayOffset);
+      const iso = toLocalIsoDate(d);
+      const weekdayName = d.toLocaleDateString('es-ES', { weekday: 'long' });
+      const label = dayOffset === 0 ? 'Hoy' : (dayOffset === 1 ? 'Mañana' : `Este ${weekdayName}`);
+      return `- ${label}: ${iso}`;
+    }).join('\n');
+
     // 3. Define Artist Copilot Tools
     const ARTIST_TOOLS = [
+      {
+        type: 'function',
+        function: {
+          name: 'create_artist_appointment',
+          description: 'Crea y agenda formalmente una nueva cita de tatuaje o consulta en la agenda del tatuador para mañana, hoy o una fecha y hora específicas.',
+          parameters: {
+            type: 'object',
+            properties: {
+              date: { type: 'string', description: 'Fecha de la cita (ej: mañana, hoy, este viernes, YYYY-MM-DD)' },
+              start_time: { type: 'string', description: 'Hora de inicio en formato HH:MM (ej: 11:00, 16:30). Por defecto 11:00.' },
+              duration_hours: { type: 'number', description: 'Duración en horas de la sesión (ej: 1, 2, 2.5, 4). Por defecto 2.5 horas.' },
+              client_name: { type: 'string', description: 'Nombre del cliente (ej: Pedro, Lucía) o "Cliente" si no se especifica.' },
+              client_phone: { type: 'string', description: 'Teléfono de contacto opcional.' },
+              appointment_type: { type: 'string', enum: ['tattoo_session', 'design_consultation', 'touch_up'], description: 'Tipo de cita. Por defecto "tattoo_session".' },
+              description: { type: 'string', description: 'Descripción o temática del tatuaje si se menciona (ej: "Lobo en antebrazo", "Lettering").' }
+            },
+            required: ['date']
+          }
+        }
+      },
       {
         type: 'function',
         function: {
@@ -170,25 +200,30 @@ DATOS DEL TATUADOR:
 - Estudio: ${studioName}
 - Tarifa mínima base: ${artist?.minimum_fee || 60}€
 - Tarifa por hora: ${artist?.hourly_rate || 80}€
-- Fecha y hora actual: ${now.toLocaleString('es-ES')}
+- Fecha y hora actual: ${now.toLocaleString('es-ES')} (${todayIso})
+
+CALENDARIO DE REFERENCIA ESTA SEMANA:
+${calendarWeekReference}
 
 CITAS REALES REGISTRADAS EN TU AGENDA (A PARTIR DE HOY):
 ${agendaText}
 
 REGLAS CRÍTICAS:
 1. Sé conciso, profesional, dinámico y muy útil para el tatuador.
-2. Puedes consultar citas, bloquear descansos, cancelar citas y verificar quién ha firmado el consentimiento.
-3. Puedes resolver CUALQUIER duda sobre cómo usar la app:
-   - Configuración de tarifas (pestaña 'Presupuestos').
-   - Consentimiento informado (cómo se firma con el dedo/ratón y cómo se descarga en PDF oficial de 1 página con firma nítida).
-   - Suscripción para estudios con Stripe (50€/mes con tarjeta, acceso para todos los tatuadores, gestión en el portal de Stripe).
-   - Subida de diseños flashes con descuento (pestaña 'Galería y newsletter').
-   - Ubicación del estudio en el mapa interactivo CARTO.
-4. REGLA DE COMPRENSIÓN: Si no entiendes lo que el tatuador solicita, díselo claramente ("Disculpa, no he entendido qué deseas hacer...") y dale sugerencias directas. NUNCA respondas con un saludo inicial ni mensaje genérico de bienvenida.`;
+2. CREACIÓN DE CITAS: Cuando el tatuador te pida crear o agendar una cita (ej: "crea una cita para mañana", "agenda a las 11:00 con Pedro", "pon una cita mañana"), USA INMEDIATAMENTE la herramienta 'create_artist_appointment'.
+3. DESCANSO: Usa 'block_break_time' para descansos o comidas.
+4. CONSULTAS: Puedes consultar citas ('get_artist_agenda'), cancelar/mover ('cancel_or_reschedule_appointment') y verificar quién ha firmado el consentimiento ('check_client_consents').
+5. Puedes resolver CUALQUIER duda sobre cómo usar la app (tarifas, consentimientos legales en PDF de 1 página con firma nítida, suscripción de 50€/mes con Stripe, mapa, etc.).
+6. REGLA DE COMPRENSIÓN: Si no entiendes lo que el tatuador solicita, díselo claramente ("Disculpa, no he entendido qué deseas hacer...") y dale sugerencias directas. NUNCA respondas con un saludo inicial ni mensaje genérico de bienvenida.`;
 
-    const workingMessages: ChatMessage[] = [
-      { role: 'user', content: content.trim() }
-    ];
+    let workingMessages: ChatMessage[] = [];
+    if (Array.isArray(history) && history.length > 0) {
+      workingMessages = history.slice(-8).map((h: any) => ({
+        role: h.role === 'user' ? 'user' : 'assistant',
+        content: typeof h.content === 'string' ? h.content : (h.text || '')
+      }));
+    }
+    workingMessages.push({ role: 'user', content: content.trim() });
 
     const firstCall = await callEdenAIWithTools({
       messages: workingMessages,
@@ -221,7 +256,55 @@ REGLAS CRÍTICAS:
 
         let executionOutput: any = {};
 
-        if (fnName === 'get_artist_agenda') {
+        if (fnName === 'create_artist_appointment') {
+          const targetDate = parseRelativeDate(args.date || 'mañana', now);
+          const startTime = args.start_time || '11:00';
+          const durationHours = Number(args.duration_hours) || 2.5;
+          const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
+          const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
+          const clientName = args.client_name || 'Cliente';
+          const titleText = args.description ? `Tatuaje: ${args.description} (${clientName})` : `Cita con ${clientName}`;
+
+          const { data: newApp, error: appErr } = await supabase
+            .from('appointments')
+            .insert({
+              artist_id: artist.id,
+              studio_id: artist.studio_id,
+              title: titleText,
+              walk_in_name: clientName,
+              walk_in_phone: args.client_phone || null,
+              appointment_type: args.appointment_type || 'tattoo_session',
+              start_time: startIso,
+              end_time: endIso,
+              status: 'confirmed',
+              description: args.description || null
+            })
+            .select(`
+              id,
+              title,
+              start_time,
+              end_time,
+              status,
+              appointment_type,
+              walk_in_name
+            `)
+            .single();
+
+          if (appErr) {
+            executionOutput = { success: false, error: appErr.message };
+          } else {
+            executionOutput = {
+              success: true,
+              appointment_id: newApp.id,
+              date: targetDate,
+              time: startTime,
+              client_name: clientName,
+              duration_hours: durationHours,
+              details: `Cita confirmada en la agenda oficial para el ${targetDate} a las ${startTime} (${durationHours}h)`
+            };
+            toolResultData = { newAppointment: newApp };
+          }
+        } else if (fnName === 'get_artist_agenda') {
           executionOutput = {
             agenda: agendaText,
             total_upcoming: appsList.length,
@@ -333,12 +416,44 @@ REGLAS CRÍTICAS:
     } else if (firstCall.content) {
       replyText = firstCall.content;
     } else {
-      replyText = `Disculpa, no he terminado de entender tu solicitud. Como tu asistente de tatuador puedo ayudarte a:\n\n` +
-        `• 📅 **Consultar tus citas de hoy o de la semana**\n` +
-        `• 🔒 **Bloquear horas para descansos o comidas** (ej: "bloquea mañana de 14 a 15h")\n` +
-        `• 📋 **Verificar qué clientes han firmado el consentimiento**\n` +
-        `• ❓ **Resolver dudas sobre la app** (tarifas, PDF de consentimiento, suscripción de 50€/mes con Stripe, etc.)\n\n` +
-        `¿Podrías especificar qué necesitas?`;
+      const lower = content.toLowerCase();
+      if ((lower.includes('crea') || lower.includes('agenda') || lower.includes('reserva') || lower.includes('pon')) && (lower.includes('cita') || lower.includes('sesion') || lower.includes('sesión') || lower.includes('mañana') || lower.includes('hoy'))) {
+        const targetDate = parseRelativeDate(content, now);
+        const startTime = '11:00';
+        const durationHours = 2.5;
+        const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
+        const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
+
+        const { data: newApp } = await supabase
+          .from('appointments')
+          .insert({
+            artist_id: artist.id,
+            studio_id: artist.studio_id,
+            title: 'Cita con Cliente',
+            walk_in_name: 'Cliente',
+            appointment_type: 'tattoo_session',
+            start_time: startIso,
+            end_time: endIso,
+            status: 'confirmed'
+          })
+          .select(`id, title, start_time, end_time, status, appointment_type, walk_in_name`)
+          .single();
+
+        if (newApp) {
+          toolResultData = { newAppointment: newApp };
+          replyText = `✅ ¡Cita creada y confirmada con éxito para el **${targetDate} a las ${startTime}** (duración ${durationHours}h)! Ya está guardada y visible en tu agenda.`;
+        } else {
+          replyText = `⚠️ No se pudo registrar la cita automáticamente. Por favor, indícame la fecha y hora.`;
+        }
+      } else {
+        replyText = `Disculpa, no he terminado de entender tu solicitud. Como tu asistente de tatuador puedo ayudarte a:\n\n` +
+          `• 📅 **Crear y agendar citas** (ej: "crea una cita para mañana a las 11:00")\n` +
+          `• 🗓️ **Consultar tus citas de hoy o de la semana**\n` +
+          `• 🔒 **Bloquear horas para descansos o comidas** (ej: "bloquea mañana de 14 a 15h")\n` +
+          `• 📋 **Verificar qué clientes han firmado el consentimiento**\n` +
+          `• ❓ **Resolver dudas sobre la app** (tarifas, PDF de consentimiento, suscripción de 50€/mes con Stripe, etc.)\n\n` +
+          `¿Podrías especificar qué necesitas?`;
+      }
     }
 
     return NextResponse.json({
