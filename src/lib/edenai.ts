@@ -130,11 +130,17 @@ export async function callEdenAIWithTools(params: {
   }
 
   try {
+    // Standard OpenAI chat completions format expects instructions as a system message at the top
+    const formattedMessages: ChatMessage[] = [...params.messages];
+    if (params.instructions && !formattedMessages.some(m => m.role === 'system')) {
+      formattedMessages.unshift({ role: 'system', content: params.instructions });
+    }
+
     const payload: any = {
       model,
-      messages: params.messages,
+      messages: formattedMessages,
       stream: false,
-      temperature: params.temperature ?? 0.7,
+      temperature: params.temperature ?? 0.5,
     };
 
     if (params.instructions) {
@@ -164,18 +170,38 @@ export async function callEdenAIWithTools(params: {
     }
 
     const data = await response.json();
-    const message = data?.choices?.[0]?.message;
+    const message = data?.choices?.[0]?.message 
+      || data?.openai?.choices?.[0]?.message 
+      || data?.openai?.message;
 
-    // Check if tool_calls returned
-    if (message?.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    // Check for structured tool_calls in message or root data
+    const toolCalls = message?.tool_calls 
+      || data?.choices?.[0]?.message?.tool_calls 
+      || data?.openai?.choices?.[0]?.message?.tool_calls 
+      || data?.openai?.message?.tool_calls 
+      || data?.tool_calls;
+
+    if (toolCalls && Array.isArray(toolCalls) && toolCalls.length > 0) {
+      const normalizedToolCalls: ChatToolCall[] = toolCalls.map((tc: any, idx: number) => ({
+        id: tc.id || `call_${Date.now()}_${idx}`,
+        type: 'function',
+        function: {
+          name: tc.function?.name || tc.name,
+          arguments: typeof tc.function?.arguments === 'string' 
+            ? tc.function.arguments 
+            : JSON.stringify(tc.function?.arguments || tc.arguments || {})
+        }
+      }));
+
       return {
-        content: message.content || null,
-        tool_calls: message.tool_calls
+        content: message?.content || null,
+        tool_calls: normalizedToolCalls
       };
     }
 
     // Support both standard OpenAI format and EdenAI envelope
     const reply = message?.content 
+      || data?.choices?.[0]?.text
       || data?.openai?.generated_text 
       || data?.generated_text
       || (typeof data === 'string' ? data : null);

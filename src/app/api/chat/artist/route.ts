@@ -186,12 +186,12 @@ REGLAS CRÍTICAS:
    - Ubicación del estudio en el mapa interactivo CARTO.
 4. REGLA DE COMPRENSIÓN: Si no entiendes lo que el tatuador solicita, díselo claramente ("Disculpa, no he entendido qué deseas hacer...") y dale sugerencias directas. NUNCA respondas con un saludo inicial ni mensaje genérico de bienvenida.`;
 
-    const messages: ChatMessage[] = [
+    const workingMessages: ChatMessage[] = [
       { role: 'user', content: content.trim() }
     ];
 
-    const llmCall = await callEdenAIWithTools({
-      messages,
+    const firstCall = await callEdenAIWithTools({
+      messages: workingMessages,
       instructions: systemPrompt,
       tools: ARTIST_TOOLS,
       temperature: 0.4
@@ -200,102 +200,145 @@ REGLAS CRÍTICAS:
     let replyText = '';
     let toolResultData: any = null;
 
-    if (llmCall.tool_calls && llmCall.tool_calls.length > 0) {
-      const tc = llmCall.tool_calls[0];
-      const fnName = tc.function.name;
-      let args: any = {};
-      try { args = JSON.parse(tc.function.arguments); } catch {}
+    if (firstCall.tool_calls && firstCall.tool_calls.length > 0) {
+      // Record assistant tool calls in conversation
+      workingMessages.push({
+        role: 'assistant',
+        content: firstCall.content || null,
+        tool_calls: firstCall.tool_calls
+      });
 
-      if (fnName === 'get_artist_agenda') {
-        replyText = `📅 **Tu Agenda Próxima:**\n\n${agendaText}\n\n¿Quieres que bloquee algún hueco o modifique alguna cita?`;
-      } else if (fnName === 'block_break_time') {
-        const targetDate = parseRelativeDate(args.date || 'hoy', now);
-        const startTime = args.start_time || '14:00';
-        const durationHours = args.duration_hours || 1;
-        const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
-        const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
-
-        const { data: newBlock, error: blockErr } = await supabase
-          .from('appointments')
-          .insert({
-            artist_id: artist.id,
-            studio_id: artist.studio_id,
-            title: `🔒 ${args.reason || 'Descanso / No disponible'}`,
-            appointment_type: 'break',
-            start_time: startIso,
-            end_time: endIso,
-            status: 'confirmed'
-          })
-          .select()
-          .maybeSingle();
-
-        if (blockErr) {
-          replyText = `⚠️ No se pudo registrar el bloqueo: ${blockErr.message}`;
-        } else {
-          replyText = `✅ **¡Hueco bloqueado con éxito!**\n\n• **Día:** ${targetDate}\n• **Horario:** ${startTime} (${durationHours}h)\n• **Motivo:** ${args.reason || 'Descanso'}\n\nTu agenda ya no mostrará disponibilidad a los clientes en ese intervalo.`;
-          toolResultData = { newBlock };
+      for (const tc of firstCall.tool_calls) {
+        const fnName = tc.function.name;
+        let args: any = {};
+        try {
+          args = typeof tc.function.arguments === 'string'
+            ? JSON.parse(tc.function.arguments)
+            : (tc.function.arguments || {});
+        } catch {
+          args = {};
         }
-      } else if (fnName === 'check_client_consents') {
-        const queryName = (args.client_name || '').toLowerCase();
-        const matching = appsList.filter(a => {
-          const clientName = (a as any).clients?.profiles?.full_name?.toLowerCase() || '';
-          return !queryName || clientName.includes(queryName);
-        });
 
-        if (matching.length === 0) {
-          replyText = `No he encontrado citas con ese nombre para verificar el consentimiento.`;
-        } else {
-          const lines = matching.map(a => {
+        let executionOutput: any = {};
+
+        if (fnName === 'get_artist_agenda') {
+          executionOutput = {
+            agenda: agendaText,
+            total_upcoming: appsList.length,
+            requested_date: args.date || 'hoy'
+          };
+        } else if (fnName === 'block_break_time') {
+          const targetDate = parseRelativeDate(args.date || 'hoy', now);
+          const startTime = args.start_time || '14:00';
+          const durationHours = args.duration_hours || 1;
+          const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
+          const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
+
+          const { data: newBlock, error: blockErr } = await supabase
+            .from('appointments')
+            .insert({
+              artist_id: artist.id,
+              studio_id: artist.studio_id,
+              title: `🔒 ${args.reason || 'Descanso / No disponible'}`,
+              appointment_type: 'break',
+              start_time: startIso,
+              end_time: endIso,
+              status: 'confirmed'
+            })
+            .select()
+            .maybeSingle();
+
+          if (blockErr) {
+            executionOutput = { success: false, error: blockErr.message };
+          } else {
+            executionOutput = {
+              success: true,
+              date: targetDate,
+              start_time: startTime,
+              duration_hours: durationHours,
+              reason: args.reason || 'Descanso',
+              block_id: newBlock?.id
+            };
+            toolResultData = { newBlock };
+          }
+        } else if (fnName === 'check_client_consents') {
+          const queryName = (args.client_name || '').toLowerCase();
+          const matching = appsList.filter(a => {
+            const clientName = (a as any).clients?.profiles?.full_name?.toLowerCase() || '';
+            return !queryName || clientName.includes(queryName);
+          });
+
+          const consentsStatus = matching.map(a => {
             const name = (a as any).clients?.profiles?.full_name || 'Cliente';
             const signed = (a as any).consent_forms && (a as any).consent_forms.length > 0;
             const time = new Date(a.start_time).toLocaleString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-            return `• **${name}** (${time}): ${signed ? '✅ **Consentimiento FIRMADO** (listo para tatuar)' : '⚠️ **PENDIENTE DE FIRMA** (el cliente debe firmar antes de la sesión)'}`;
+            return {
+              client_name: name,
+              appointment_time: time,
+              is_signed: signed,
+              status: signed ? 'firmado_valido' : 'pendiente_firma'
+            };
           });
-          replyText = `📋 **Estado de Consentimientos Informados:**\n\n${lines.join('\n')}\n\nPuedes ver o imprimir el documento legal en PDF desde el icono de documento en tu agenda.`;
+
+          executionOutput = {
+            total_checked: matching.length,
+            records: consentsStatus
+          };
+        } else if (fnName === 'cancel_or_reschedule_appointment') {
+          const action = args.action || 'cancel';
+          const queryId = (args.appointment_id || '').toLowerCase();
+          const targetApp = appsList.find(a => a.id.toLowerCase().includes(queryId) || (a.id.slice(0, 8) === queryId));
+
+          if (!targetApp) {
+            executionOutput = { success: false, error: 'No se encontró la cita solicitada en la agenda.' };
+          } else if (action === 'cancel') {
+            await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', targetApp.id);
+            executionOutput = { success: true, action: 'cancelled', appointment_id: targetApp.id, title: targetApp.title };
+          } else {
+            const newDate = parseRelativeDate(args.new_date || 'mañana', now);
+            const newTime = args.new_time || '11:00';
+            const startIso = new Date(`${newDate}T${newTime}:00`).toISOString();
+            const endIso = new Date(new Date(startIso).getTime() + 2 * 3600000).toISOString();
+            await supabase.from('appointments').update({ start_time: startIso, end_time: endIso, status: 'confirmed' }).eq('id', targetApp.id);
+            executionOutput = { success: true, action: 'rescheduled', appointment_id: targetApp.id, new_date: newDate, new_time: newTime };
+          }
+        } else if (fnName === 'get_app_faq') {
+          executionOutput = {
+            topic: args.topic || 'general',
+            rates_pricing: `Tarifa mínima: ${artist?.minimum_fee || 60}€, precio/hora: ${artist?.hourly_rate || 80}€/h. Se configuran en la pestaña Presupuestos.`,
+            consent_legal_pdf: 'Consentimiento con firma digital procesada a tinta oscura (#0f172a). Descarga/impresión limpia en 1 sola página A4 sin páginas en blanco.',
+            stripe_subscription: 'Suscripción para estudios a 50€/mes con Stripe para acceso total ilimitado a todos los tatuadores del estudio.',
+            calendar_breaks: 'Los descansos y comidas bloquean la disponibilidad pública de la agenda.',
+            shares_flashes: 'Subida de flashes y diseños disponibles en la pestaña Galería y newsletter con envío automático mensual.'
+          };
         }
-      } else if (fnName === 'get_app_faq') {
-        const topic = args.topic || 'general';
-        if (topic === 'consent_legal_pdf') {
-          replyText = `📜 **Consentimiento Legal & PDF de 1 Página:**\n\n` +
-            `• Los clientes pueden firmar desde su panel con el dedo o ratón.\n` +
-            `• El sistema optimiza automáticamente la firma a tinta negra (#0f172a).\n` +
-            `• Al pulsar *Imprimir / Descargar PDF*, se genera en **1 sola página A4 limpia** (sin páginas en blanco previas) con los datos del estudio, DNI del cliente, IP, cuestionario médico y firma digital.`;
-        } else if (topic === 'stripe_subscription') {
-          replyText = `💳 **Suscripción de Estudio (50€/mes con Stripe):**\n\n` +
-            `• Cada estudio cuenta con una tarifa plana de 50€ al mes para tatuadores ilimitados.\n` +
-            `• Gestionado de forma segura mediante Stripe con recibos y facturas automáticas.\n` +
-            `• El dueño del estudio puede gestionar el método de pago o cancelar en cualquier momento desde *Panel del Estudio > Suscripción*.`;
-        } else if (topic === 'rates_pricing') {
-          replyText = `💶 **Configuración de Tarifas:**\n\n` +
-            `• Ve a la pestaña **Presupuestos** de tu panel de tatuador.\n` +
-            `• Puedes definir tu tarifa base mínima (${artist?.minimum_fee || 60}€), precio por hora (${artist?.hourly_rate || 80}€/h), y tarifas por tamaño (pequeño, mediano, grande, extra grande).\n` +
-            `• Tu asistente virtual usará estas reglas exactas para dar presupuestos automáticos a los clientes que te escriban.`;
-        } else {
-          replyText = `ℹ️ **Funcionalidades del Asistente:**\n\nPuedes pedirme en cualquier momento:\n• "¿Qué citas tengo hoy?"\n• "Bloquear 1 hora mañana a las 14:00 para descanso"\n• "¿Quién no ha firmado el consentimiento de hoy?"\n• "¿Cómo funciona la suscripción de 50€ del estudio?"`;
-        }
-      } else {
-        replyText = llmCall.content || 'He consultado la información solicitada.';
+
+        workingMessages.push({
+          role: 'tool',
+          tool_call_id: tc.id,
+          name: fnName,
+          content: JSON.stringify(executionOutput)
+        });
       }
-    } else if (llmCall.content) {
-      replyText = llmCall.content;
+
+      // Second Turn: LLM formulates the final conversational message based on tool output
+      const secondCall = await callEdenAIWithTools({
+        messages: workingMessages,
+        instructions: systemPrompt,
+        tools: ARTIST_TOOLS,
+        temperature: 0.4
+      });
+
+      replyText = secondCall.content || 'He procesado la gestión de tu agenda correctamente.';
+    } else if (firstCall.content) {
+      replyText = firstCall.content;
     } else {
-      // Fallback intent recognition
-      const lower = content.toLowerCase();
-      if (lower.includes('cita') || lower.includes('agenda') || lower.includes('tengo hoy') || lower.includes('proxima') || lower.includes('próxima')) {
-        replyText = `📅 **Tu Agenda Próxima:**\n\n${agendaText}\n\n¿Quieres que bloquee algún hueco o necesitas información sobre algún cliente?`;
-      } else if (lower.includes('consentimiento') || lower.includes('firma') || lower.includes('firmado') || lower.includes('pdf')) {
-        replyText = `📋 **Consentimientos de Clientes:**\n\nPuedes consultar si tus clientes han firmado el consentimiento informed legal desde aquí o revisarlo en tu agenda. Al hacer clic en el botón de consentimiento de cualquier cita, puedes imprimirlo o descargarlo en un PDF oficial de 1 página con firma nítida.`;
-      } else if (lower.includes('50') || lower.includes('stripe') || lower.includes('suscripci')) {
-        replyText = `💳 **Suscripción de Estudio en Stripe:**\n\nLa plataforma tiene un coste de **50€ al mes** por estudio. Incluye acceso para todos los tatuadores residentes, asistente virtual con IA, agenda interactiva, mapa de estudios y consentimientos legales. Se gestiona desde el panel del estudio mediante Stripe.`;
-      } else {
-        // Clear message indicating not understood
-        replyText = `Disculpa, no he terminado de entender tu solicitud. Como tu asistente de tatuador puedo ayudarte a:\n\n` +
-          `• 📅 **Consultar tus citas de hoy o de la semana**\n` +
-          `• 🔒 **Bloquear horas para descansos o comidas** (ej: "bloquea mañana de 14 a 15h")\n` +
-          `• 📋 **Verificar qué clientes han firmado el consentimiento**\n` +
-          `• ❓ **Resolver dudas sobre la app** (tarifas, PDF de consentimiento, suscripción de 50€/mes con Stripe, etc.)\n\n` +
-          `¿Podrías especificar qué necesitas?`;
-      }
+      replyText = `Disculpa, no he terminado de entender tu solicitud. Como tu asistente de tatuador puedo ayudarte a:\n\n` +
+        `• 📅 **Consultar tus citas de hoy o de la semana**\n` +
+        `• 🔒 **Bloquear horas para descansos o comidas** (ej: "bloquea mañana de 14 a 15h")\n` +
+        `• 📋 **Verificar qué clientes han firmado el consentimiento**\n` +
+        `• ❓ **Resolver dudas sobre la app** (tarifas, PDF de consentimiento, suscripción de 50€/mes con Stripe, etc.)\n\n` +
+        `¿Podrías especificar qué necesitas?`;
     }
 
     return NextResponse.json({

@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Clock, CheckCircle2, AlertTriangle, Calendar, Scissors, Tag } from 'lucide-react';
+import { X, Clock, CheckCircle2, AlertTriangle, Calendar, Scissors, Tag, ArrowRightLeft, Users } from 'lucide-react';
 
 interface EditAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   appointment: any;
+  studioArtists?: any[];
   onAppointmentUpdated: (updatedApp: any) => void;
 }
 
@@ -14,6 +15,7 @@ export default function EditAppointmentModal({
   isOpen,
   onClose,
   appointment,
+  studioArtists = [],
   onAppointmentUpdated
 }: EditAppointmentModalProps) {
   if (!isOpen || !appointment) return null;
@@ -28,6 +30,47 @@ export default function EditAppointmentModal({
   const [durationHours, setDurationHours] = useState<number>(diffHours > 0 ? diffHours : 2.5);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Reassignment state
+  const [targetArtistId, setTargetArtistId] = useState('');
+  const [reassignReason, setReassignReason] = useState('');
+  const [reassigning, setReassigning] = useState(false);
+  const [reassignSuccessMsg, setReassignSuccessMsg] = useState('');
+
+  const otherArtists = studioArtists.filter(a => a.id !== appointment.artist_id);
+
+  const handleReassign = async () => {
+    if (!targetArtistId) return;
+    setReassigning(true);
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/appointments/reassign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appointmentId: appointment.id,
+          newArtistId: targetArtistId,
+          reason: reassignReason.trim() || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Error al reasignar cita.');
+      }
+
+      setReassignSuccessMsg(`Cita reasignada con éxito a ${data.reassignedTo}`);
+      onAppointmentUpdated(data.appointment);
+      setTimeout(() => {
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setReassigning(false);
+    }
+  };
 
   const handleSave = async (overrideStatus?: string) => {
     setLoading(true);
@@ -201,6 +244,62 @@ export default function EditAppointmentModal({
               ))}
             </div>
           </div>
+
+          {/* Reasignar Cita a otro Tatuador del Estudio */}
+          {otherArtists.length > 0 && (
+            <div className="p-4 rounded-2xl bg-ink-900/80 border border-white/10 space-y-3">
+              <div className="flex items-center gap-2 text-ink-300 font-semibold uppercase tracking-wider text-[11px]">
+                <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
+                <span>Reasignar cita a otro tatuador del estudio</span>
+              </div>
+
+              {reassignSuccessMsg ? (
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{reassignSuccessMsg}</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-[10px] text-ink-400 mb-1">Nuevo tatuador responsable:</label>
+                    <select
+                      value={targetArtistId}
+                      onChange={(e) => setTargetArtistId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-ink-950 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="">Selecciona un tatuador del estudio...</option>
+                      {otherArtists.map((art) => (
+                        <option key={art.id} value={art.id}>
+                          {art.display_name} {art.specialties?.length ? `(${art.specialties.join(', ')})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {targetArtistId && (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={reassignReason}
+                        onChange={(e) => setReassignReason(e.target.value)}
+                        placeholder="Motivo opcional (ej: cambio de estilo, baja médica...)"
+                        className="w-full px-3 py-1.5 rounded-xl bg-ink-950 border border-white/10 text-white text-xs placeholder:text-ink-500"
+                      />
+                      <button
+                        type="button"
+                        disabled={reassigning}
+                        onClick={handleReassign}
+                        className="w-full py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                        <span>{reassigning ? 'Reasignando cita...' : 'Confirmar Reasignación de Cita'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Modal Actions */}

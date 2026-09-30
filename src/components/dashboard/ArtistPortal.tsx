@@ -48,6 +48,7 @@ export default function ArtistPortal({
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [artistInputText, setArtistInputText] = useState('');
   const [shares, setShares] = useState<any[]>([]);
+  const [studioArtists, setStudioArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals for appointment edition and consent form viewing
@@ -214,6 +215,15 @@ export default function ArtistPortal({
         setRednessHealingMsg(hTemplates.redness_mild?.es || 'Enrojecimiento leve propio de los primeros días.');
         setAlertInfectionMsg(hTemplates.alert_infection?.es || 'El tatuaje está supurando pus o con inflamación severa, necesitas...');
 
+        // Fetch other studio artists for reassignment
+        if (art.studio_id) {
+          const { data: stdArts } = await supabase
+            .from('artists')
+            .select('id, display_name, specialties, minimum_fee, hourly_rate')
+            .eq('studio_id', art.studio_id);
+          setStudioArtists(stdArts || []);
+        }
+
         // 2. Fetch artist appointments
         const { data: apps } = await supabase
           .from('appointments')
@@ -338,7 +348,11 @@ export default function ArtistPortal({
     try {
       const { error } = await supabase
         .from('artists')
-        .update({ pricing_rules: updatedRules })
+        .update({
+          pricing_rules: updatedRules,
+          minimum_fee: Number(minFee),
+          hourly_rate: Number(hourlyRate)
+        })
         .eq('id', artist.id);
 
       if (error) throw error;
@@ -1413,6 +1427,7 @@ export default function ArtistPortal({
         isOpen={Boolean(editingApp)}
         onClose={() => setEditingApp(null)}
         appointment={editingApp}
+        studioArtists={studioArtists}
         onAppointmentUpdated={(updated) => {
           setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
         }}

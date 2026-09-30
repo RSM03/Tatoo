@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { callEdenAI, callEdenAIWithTools, generateChatSummary, compressContext, type ChatMessage } from '@/lib/edenai';
-import { executeAiTool, detectToolIntent, AI_TOOLS, OPENAI_TOOLS, ToolExecutionContext, ToolExecutionResult } from '@/lib/ai-tools';
+import { executeAiTool, AI_TOOLS, OPENAI_TOOLS, ToolExecutionContext, ToolExecutionResult } from '@/lib/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -300,83 +300,80 @@ REGLAS FUNDAMENTALES DE HERRAMIENTAS (TOOLS):
 
 Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir en cualquier momento. Responde siempre en ${lang === 'en' ? 'Inglés' : 'Español'} de forma cercana, acogedora y profesional.`;
 
-    // 8. Agentic Tool Execution Loop with Eden AI
+    // 8. Pure Multi-turn Native Tool Calling Loop with Eden AI
     let executedToolResult: ToolExecutionResult | null = null;
     let toolExecutedName: string | null = null;
-
-    // Handle immediate image healing analysis if photo sent
-    if (imageUrl) {
-      toolExecutedName = 'analyze_healing';
-      executedToolResult = await executeAiTool('analyze_healing', { image_url: imageUrl }, toolContext);
-    }
 
     let workingMessages: ChatMessage[] = [...compressed];
     let finalReplyText = '';
 
-    // First LLM Turn (with tools schema)
+    // First LLM Turn: Send user message with native tools schema
     const firstCall = await callEdenAIWithTools({
       messages: workingMessages,
       instructions: systemPrompt,
       tools: OPENAI_TOOLS,
-      temperature: 0.5
+      temperature: 0.4
     });
 
     if (firstCall.tool_calls && firstCall.tool_calls.length > 0) {
-      // Model selected a tool!
-      const toolCall = firstCall.tool_calls[0];
-      toolExecutedName = toolCall.function.name;
-
-      let parsedArgs: any = {};
-      try {
-        parsedArgs = JSON.parse(toolCall.function.arguments);
-      } catch {
-        parsedArgs = {};
-      }
-
-      executedToolResult = await executeAiTool(toolCall.function.name, parsedArgs, toolContext);
-
-      // Append assistant message with tool_calls and tool result message
+      // The LLM natively decided which tool(s) to invoke based on tool definitions
       workingMessages.push({
         role: 'assistant',
-        content: null,
+        content: firstCall.content || null,
         tool_calls: firstCall.tool_calls
       });
 
-      workingMessages.push({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        name: toolCall.function.name,
-        content: JSON.stringify(executedToolResult.result)
-      });
+      // Execute each tool call in application Tool Registry
+      for (const toolCall of firstCall.tool_calls) {
+        toolExecutedName = toolCall.function.name;
 
-      // Second LLM Turn: model formulates natural response based on real tool execution data
+        let parsedArgs: any = {};
+        try {
+          parsedArgs = typeof toolCall.function.arguments === 'string'
+            ? JSON.parse(toolCall.function.arguments)
+            : (toolCall.function.arguments || {});
+        } catch (parseErr) {
+          console.error('[EdenAI Tools] Error parsing tool call JSON arguments:', parseErr);
+          parsedArgs = {};
+        }
+
+        // If analyzing healing and image was provided in body, fallback image_url if omitted
+        if (toolCall.function.name === 'analyze_healing' && imageUrl && !parsedArgs.image_url) {
+          parsedArgs.image_url = imageUrl;
+        }
+
+        executedToolResult = await executeAiTool(toolCall.function.name, parsedArgs, toolContext);
+
+        // Append structured tool execution result for the LLM
+        workingMessages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          name: toolCall.function.name,
+          content: JSON.stringify(executedToolResult.result)
+        });
+      }
+
+      // Second LLM Turn: Eden AI synthesizes natural language response using tool results
       const secondCall = await callEdenAIWithTools({
         messages: workingMessages,
         instructions: systemPrompt,
         tools: OPENAI_TOOLS,
-        temperature: 0.5
+        temperature: 0.4
       });
 
-      finalReplyText = secondCall.content || executedToolResult.displayText || 'He gestionado tu petición.';
+      finalReplyText = secondCall.content || executedToolResult?.displayText || 'He gestionado tu solicitud con éxito.';
     } else if (firstCall.content) {
+      // The LLM answered directly (conversational guidance, clarifications or general advice)
       finalReplyText = firstCall.content;
     } else {
-      // Fallback deterministic intent if Eden AI didn't return text
-      const fallbackDecision = detectToolIntent(content || '', imageUrl);
-      if (fallbackDecision) {
-        toolExecutedName = fallbackDecision.tool;
-        executedToolResult = await executeAiTool(fallbackDecision.tool, fallbackDecision.arguments, toolContext);
-        finalReplyText = executedToolResult.displayText || 'He procesado tu solicitud.';
-      } else {
-        // Clear non-understanding response: NEVER the default welcome message!
-        finalReplyText = 'Disculpa, no he terminado de entender tu consulta o mensaje. Como asistente del estudio puedo ayudarte a:\n\n' +
-          '• 📅 **Consultar disponibilidad y agendar citas**\n' +
-          '• 🔄 **Reprogramar o anular citas existentes**\n' +
-          '• 💶 **Calcular presupuestos orientativos** (dime medidas aproximadas en cm y zona)\n' +
-          '• ❓ **Resolver dudas sobre la app** (firmar consentimiento, descargar PDF, mapa de estudios, etc.)\n' +
-          '• 🩹 **Revisar fotos de cicatrización**\n\n' +
-          '¿Podrías aclararme o reformular lo que necesitas?';
-      }
+      // Clear non-understanding response: NEVER the default welcome message and NO keyword scraping!
+      finalReplyText = 'Disculpa, no he terminado de entender tu consulta o mensaje. Como asistente del estudio puedo ayudarte a:\n\n' +
+        '• 📅 **Consultar disponibilidad y agendar citas**\n' +
+        '• 🔄 **Reprogramar o anular citas existentes**\n' +
+        '• 💶 **Calcular presupuestos orientativos** (dime medidas aproximadas en cm y zona)\n' +
+        '• ❓ **Resolver dudas sobre la app** (firmar consentimiento, descargar PDF, mapa de estudios, etc.)\n' +
+        '• 🩹 **Revisar fotos de cicatrización**\n\n' +
+        '¿Podrías aclararme o reformular lo que necesitas?';
     }
 
     // 9. Save AI response message

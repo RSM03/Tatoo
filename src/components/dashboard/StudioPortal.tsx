@@ -22,7 +22,11 @@ import {
   UserCheck,
   MapPin,
   CreditCard,
-  ShieldCheck
+  ShieldCheck,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  ArrowRightLeft
 } from 'lucide-react';
 import StudioMapView from '@/components/dashboard/StudioMapView';
 
@@ -99,6 +103,22 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
   const [newArtistMinFee, setNewArtistMinFee] = useState(60);
   const [newArtistInstagram, setNewArtistInstagram] = useState('');
   const [creatingArtist, setCreatingArtist] = useState(false);
+
+  // Edit Artist State
+  const [editingArtist, setEditingArtist] = useState<any>(null);
+  const [editName, setEditName] = useState('');
+  const [editSpecialties, setEditSpecialties] = useState('');
+  const [editHourlyRate, setEditHourlyRate] = useState(80);
+  const [editMinFee, setEditMinFee] = useState(60);
+  const [editInstagram, setEditInstagram] = useState('');
+  const [savingEditArtist, setSavingEditArtist] = useState(false);
+
+  // Delete Artist State (with double confirmation & safety coverage)
+  const [deletingArtist, setDeletingArtist] = useState<any>(null);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [reassignTargetArtistId, setReassignTargetArtistId] = useState<string>('');
+  const [deleteConfirmedCheckbox, setDeleteConfirmedCheckbox] = useState(false);
+  const [isDeletingArtist, setIsDeletingArtist] = useState(false);
 
   // Email Templates State
   const [reminderSubject, setReminderSubject] = useState(DEFAULT_REMINDER_SUBJECT);
@@ -280,6 +300,101 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
       alert(`Error al añadir tatuador: ${err.message}`);
     } finally {
       setCreatingArtist(false);
+    }
+  };
+
+  // Open edit artist modal
+  const handleOpenEditArtist = (art: any) => {
+    setEditingArtist(art);
+    setEditName(art.display_name || '');
+    setEditSpecialties(Array.isArray(art.specialties) ? art.specialties.join(', ') : '');
+    const currentMin = art.pricing_rules?.minimum_fee ?? art.minimum_fee ?? 60;
+    const currentHourly = art.pricing_rules?.hourly_rate ?? art.hourly_rate ?? 80;
+    setEditMinFee(currentMin);
+    setEditHourlyRate(currentHourly);
+    setEditInstagram(art.instagram_handle || '');
+  };
+
+  // Save edited artist
+  const handleSaveEditArtist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingArtist) return;
+    setSavingEditArtist(true);
+
+    try {
+      const res = await fetch('/api/artists/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistId: editingArtist.id,
+          studioId: studio?.id,
+          displayName: editName.trim(),
+          specialties: editSpecialties,
+          hourlyRate: Number(editHourlyRate),
+          minimumFee: Number(editMinFee),
+          instagramHandle: editInstagram
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Error al actualizar tatuador');
+      }
+
+      setArtists(prev => prev.map(a => a.id === data.artist.id ? data.artist : a));
+      setEditingArtist(null);
+      alert(`¡Tatuador "${data.artist.display_name}" actualizado con éxito!`);
+    } catch (err: any) {
+      alert(`Error al guardar cambios: ${err.message}`);
+    } finally {
+      setSavingEditArtist(false);
+    }
+  };
+
+  // Open delete artist modal
+  const handleOpenDeleteArtist = (art: any) => {
+    setDeletingArtist(art);
+    setDeleteStep(1);
+    setReassignTargetArtistId('');
+    setDeleteConfirmedCheckbox(false);
+  };
+
+  // Execute delete artist with double confirmation & coverage
+  const handleExecuteDeleteArtist = async () => {
+    if (!deletingArtist || !studio) return;
+    setIsDeletingArtist(true);
+
+    try {
+      const res = await fetch('/api/artists/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistId: deletingArtist.id,
+          studioId: studio.id,
+          reassignToArtistId: reassignTargetArtistId || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Error al eliminar tatuador');
+      }
+
+      setArtists(prev => prev.filter(a => a.id !== deletingArtist.id));
+      if (selectedArtistId === deletingArtist.id) {
+        setSelectedArtistId(null);
+      }
+      setDeletingArtist(null);
+
+      const coverageMsg = data.reassignedTo
+        ? `Citas y chats transferidos a ${data.reassignedTo}.`
+        : `${data.closedChatsCount} chats cerrados y citas canceladas con aviso al cliente.`;
+
+      alert(`✅ Tatuador eliminado del estudio con éxito. ${coverageMsg}`);
+    } catch (err: any) {
+      alert(`Error al eliminar tatuador: ${err.message}`);
+    } finally {
+      setIsDeletingArtist(false);
     }
   };
 
@@ -506,50 +621,79 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {artists.map((art) => (
-              <div key={art.id} className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-between hover:border-amber-500/30 transition-all">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-crimson-600 to-amber-500 text-white flex items-center justify-center font-bold text-base shadow-md">
-                      {art.display_name?.charAt(0) || 'A'}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white text-base">{art.display_name}</h3>
-                      <span className="text-xs text-ink-400">Mínimo: {art.minimum_fee}€ · Hora: {art.hourly_rate}€</span>
-                    </div>
-                  </div>
+            {artists.map((art) => {
+              const effectiveMinFee = art.pricing_rules?.minimum_fee ?? art.minimum_fee ?? 60;
+              const effectiveHourlyRate = art.pricing_rules?.hourly_rate ?? art.hourly_rate ?? 80;
 
-                  <div className="space-y-1 mb-4">
-                    <span className="text-[11px] text-ink-400 font-semibold block uppercase tracking-wider">Especialidades:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {art.specialties?.length > 0 ? (
-                        art.specialties.map((spec: string, idx: number) => (
-                          <span key={idx} className="text-[10px] bg-white/5 text-ink-300 px-2 py-0.5 rounded-md border border-white/5">
-                            {spec}
+              return (
+                <div key={art.id} className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-between hover:border-amber-500/30 transition-all group">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-crimson-600 to-amber-500 text-white flex items-center justify-center font-bold text-base shadow-md">
+                          {art.display_name?.charAt(0) || 'A'}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-white text-base">{art.display_name}</h3>
+                          <span className="text-xs text-ink-300">
+                            Mínimo: <strong className="text-amber-400 font-mono">{effectiveMinFee}€</strong> · Hora: <strong className="text-amber-400 font-mono">{effectiveHourlyRate}€/h</strong>
                           </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-ink-500">Todos los estilos</span>
-                      )}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons: Edit / Delete */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditArtist(art)}
+                          className="p-1.5 rounded-lg hover:bg-white/10 text-ink-400 hover:text-white transition-colors"
+                          title="Editar tarifas y datos del tatuador"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDeleteArtist(art)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-ink-400 hover:text-red-400 transition-colors"
+                          title="Eliminar tatuador del estudio (requiere confirmación)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 mb-4">
+                      <span className="text-[11px] text-ink-400 font-semibold block uppercase tracking-wider">Especialidades:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {art.specialties?.length > 0 ? (
+                          art.specialties.map((spec: string, idx: number) => (
+                            <span key={idx} className="text-[10px] bg-white/5 text-ink-300 px-2 py-0.5 rounded-md border border-white/5">
+                              {spec}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-ink-500">Todos los estilos</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Asistente IA Activo
-                  </span>
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Asistente IA Activo
+                    </span>
 
-                  <button
-                    onClick={() => setSelectedArtistId(art.id)}
-                    className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white transition-all shadow-md shadow-crimson-600/20"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    <span>Acceder a su Consola</span>
-                  </button>
+                    <button
+                      onClick={() => setSelectedArtistId(art.id)}
+                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white transition-all shadow-md shadow-crimson-600/20"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Acceder a su Consola</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1058,6 +1202,276 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT ARTIST */}
+      {editingArtist && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-white/10 relative">
+            <button
+              onClick={() => setEditingArtist(null)}
+              className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-amber-400 text-xs font-mono font-bold uppercase mb-1">
+              <Pencil className="w-4 h-4" />
+              <span>Editar Ajustes del Tatuador</span>
+            </div>
+            <h2 className="font-display text-xl font-bold text-white mb-4">
+              {editingArtist.display_name}
+            </h2>
+
+            <form onSubmit={handleSaveEditArtist} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-ink-300 uppercase tracking-wider mb-1">Nombre Artístico / Display Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ink-300 uppercase tracking-wider mb-1">Especialidades (separadas por comas)</label>
+                <input
+                  type="text"
+                  value={editSpecialties}
+                  onChange={(e) => setEditSpecialties(e.target.value)}
+                  placeholder="Realismo, Blackwork, Neotradicional"
+                  className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-ink-300 uppercase tracking-wider mb-1">Tarifa Mínima (€) *</label>
+                  <input
+                    type="number"
+                    required
+                    min={20}
+                    value={editMinFee}
+                    onChange={(e) => setEditMinFee(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-ink-300 uppercase tracking-wider mb-1">Precio por Hora (€) *</label>
+                  <input
+                    type="number"
+                    required
+                    min={20}
+                    value={editHourlyRate}
+                    onChange={(e) => setEditHourlyRate(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ink-300 uppercase tracking-wider mb-1">Usuario Instagram (sin @)</label>
+                <input
+                  type="text"
+                  value={editInstagram}
+                  onChange={(e) => setEditInstagram(e.target.value)}
+                  placeholder="marcos_tattoo"
+                  className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingArtist(null)}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEditArtist}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-ink-950 font-bold"
+                >
+                  {savingEditArtist ? 'Guardando...' : 'Guardar Ajustes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DELETE ARTIST WITH MANDATORY DOUBLE CONFIRMATION & CLIENT COVERAGE */}
+      {deletingArtist && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-lg p-6 sm:p-8 rounded-3xl border border-red-500/30 bg-ink-950 relative shadow-2xl">
+            <button
+              onClick={() => setDeletingArtist(null)}
+              className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* STEP 1: CLIENT COVERAGE & NOTICE MANAGEMENT */}
+            {deleteStep === 1 && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">Paso 1 de 2 · Cobertura de clientes</span>
+                    <h3 className="text-xl font-bold text-white">Desvincular a {deletingArtist.display_name}</h3>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-ink-300 space-y-2">
+                  <p className="font-semibold text-white">
+                    🛡️ Protocolo de Protección al Cliente:
+                  </p>
+                  <p>
+                    Antes de eliminar a este tatuador, el sistema cerrará manualmente todos sus canales de chat para no dejar a los clientes sin respuesta.
+                  </p>
+                  <p>
+                    ¿Qué deseas hacer con las citas activas y clientes de <strong>{deletingArtist.display_name}</strong>?
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Option A: Reassign to another artist */}
+                  {artists.filter(a => a.id !== deletingArtist.id).length > 0 && (
+                    <label className={`block p-4 rounded-2xl border cursor-pointer transition-all ${
+                      reassignTargetArtistId ? 'bg-amber-500/10 border-amber-500/40 text-white' : 'bg-ink-900 border-white/5 text-ink-300 hover:border-white/10'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-sm text-white flex items-center gap-2">
+                          <ArrowRightLeft className="w-4 h-4 text-amber-400" />
+                          Reasignar citas y cobertura a otro tatuador (Recomendado)
+                        </span>
+                      </div>
+                      <p className="text-xs text-ink-400 mb-3">
+                        Transfiere automáticamente las citas y chats al artista seleccionado, enviando un mensaje informativo al cliente para no dejarlo sin cobertura.
+                      </p>
+                      <select
+                        value={reassignTargetArtistId}
+                        onChange={(e) => setReassignTargetArtistId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-ink-950 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
+                      >
+                        <option value="">Selecciona el tatuador que asumirá la cobertura...</option>
+                        {artists.filter(a => a.id !== deletingArtist.id).map(a => (
+                          <option key={a.id} value={a.id}>
+                            {a.display_name} {a.specialties?.length ? `(${a.specialties.join(', ')})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
+                  {/* Option B: Cancel all appointments and close chats */}
+                  <label className={`block p-4 rounded-2xl border cursor-pointer transition-all ${
+                    !reassignTargetArtistId ? 'bg-red-500/10 border-red-500/40 text-white' : 'bg-ink-900 border-white/5 text-ink-400 hover:border-white/10'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-white flex items-center gap-2">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                        Cancelar todas sus citas y cerrar chats
+                      </span>
+                      <input
+                        type="radio"
+                        checked={!reassignTargetArtistId}
+                        onChange={() => setReassignTargetArtistId('')}
+                        name="delete_coverage_option"
+                      />
+                    </div>
+                    <p className="text-xs text-ink-400 mt-1">
+                      Las citas pendientes se anularán en el sistema y se cerrará el asistente IA de sus chats con un aviso formal al cliente.
+                    </p>
+                  </label>
+                </div>
+
+                <div className="pt-3 border-t border-white/10 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeletingArtist(null)}
+                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteStep(2)}
+                    className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-xs font-bold shadow-lg shadow-crimson-600/30 transition-all flex items-center gap-2"
+                  >
+                    <span>Continuar hacia la Confirmación Definitiva</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: MANDATORY SECOND CONFIRMATION ("¿Estás seguro de que quieres...?") */}
+            {deleteStep === 2 && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-red-600/20 text-red-400 flex items-center justify-center font-bold">
+                    <Trash2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-red-400 uppercase tracking-widest font-bold">Paso 2 de 2 · Segunda Confirmación Obligatoria</span>
+                    <h3 className="text-xl font-bold text-white">¿Estás seguro de que quieres eliminar a este tatuador?</h3>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-red-950/30 border border-red-500/40 text-xs space-y-2">
+                  <p className="font-bold text-red-300">
+                    ⚠️ Estás a punto de eliminar definitivamente a "{deletingArtist.display_name}".
+                  </p>
+                  <p className="text-ink-300">
+                    {reassignTargetArtistId
+                      ? `Se reasignarán todas sus citas activas y chats al tatuador seleccionado para proteger la cobertura.`
+                      : `Se cancelarán todas las citas pendientes y se cerrarán todos sus chats en la app.`}
+                  </p>
+                  <p className="text-ink-400 text-[11px]">
+                    Esta acción es irreversible y retirará el acceso a la consola del tatuador.
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer text-xs text-ink-200">
+                  <input
+                    type="checkbox"
+                    checked={deleteConfirmedCheckbox}
+                    onChange={(e) => setDeleteConfirmedCheckbox(e.target.checked)}
+                    className="mt-0.5 rounded bg-ink-950 border-white/20 text-crimson-600 focus:ring-0"
+                  />
+                  <span>
+                    He verificado los avisos y confirmo expresamente la eliminación definitiva de <strong>{deletingArtist.display_name}</strong> de mi estudio.
+                  </span>
+                </label>
+
+                <div className="pt-3 border-t border-white/10 flex justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteStep(1)}
+                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 text-xs font-semibold"
+                  >
+                    ← Volver atrás
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!deleteConfirmedCheckbox || isDeletingArtist}
+                    onClick={handleExecuteDeleteArtist}
+                    className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-bold shadow-lg shadow-red-600/30 transition-all flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>{isDeletingArtist ? 'Eliminando y asegurando clientes...' : 'Sí, eliminar tatuador definitivamente'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
