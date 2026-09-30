@@ -55,11 +55,115 @@ export interface ToolExecutionResult {
 /**
  * Format date in local YYYY-MM-DD avoiding UTC off-by-one shifts
  */
-export function toLocalIsoDate(d: Date): string {
+export function toLocalIsoDate(d: Date, timeZone = 'Europe/Madrid'): string {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = formatter.formatToParts(d);
+    let y = '', m = '', day = '';
+    for (const p of parts) {
+      if (p.type === 'year') y = p.value;
+      if (p.type === 'month') m = p.value;
+      if (p.type === 'day') day = p.value;
+    }
+    if (y && m && day) return `${y}-${m}-${day}`;
+  } catch (err) {
+    // Fallback if Intl fails
+  }
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * Converts a date string (YYYY-MM-DD) and time string (HH:MM) in Europe/Madrid timezone
+ * to a standard UTC Date object.
+ * Perfectly handles Daylight Saving Time (DST / CEST vs CET) and works identically
+ * on UTC cloud servers, Windows, Linux, and client browsers.
+ */
+export function createDateInTimezone(
+  dateStr: string,
+  timeStr: string,
+  timeZone = 'Europe/Madrid'
+): Date {
+  const [yearStr, monthStr, dayStr] = (dateStr || '').split('-');
+  const [hourStr, minStr] = (timeStr || '11:00').split(':');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+  const hour = parseInt(hourStr || '11', 10);
+  const minute = parseInt(minStr || '00', 10);
+
+  // 1. Initial guess in UTC:
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+
+  // 2. Find what time that UTC instant is in the target timezone:
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(utcGuess);
+  const partMap: Record<string, number> = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') {
+      partMap[p.type] = parseInt(p.value, 10);
+    }
+  }
+
+  let tzHour = partMap.hour === 24 ? 0 : partMap.hour;
+
+  const tzDateAsUtc = new Date(Date.UTC(
+    partMap.year,
+    partMap.month - 1,
+    partMap.day,
+    tzHour,
+    partMap.minute,
+    partMap.second || 0
+  ));
+
+  // Difference in milliseconds: offset of target timezone relative to UTC
+  const offsetMs = tzDateAsUtc.getTime() - utcGuess.getTime();
+
+  // If Madrid is UTC+2 (+7200000ms), to make 11:00 in Madrid, UTC must be 11:00 - 2h = 09:00 UTC
+  return new Date(utcGuess.getTime() - offsetMs);
+}
+
+/**
+ * Format a Date or ISO string to HH:MM in Europe/Madrid timezone
+ */
+export function formatMadridTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleTimeString('es-ES', {
+    timeZone: 'Europe/Madrid',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+/**
+ * Format a Date or ISO string to long human date in Europe/Madrid timezone
+ */
+export function formatMadridDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-ES', {
+    timeZone: 'Europe/Madrid',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
 /**
@@ -274,11 +378,92 @@ export function extractRequestedDate(
   return { targetDate: toLocalIsoDate(defaultTarget), isSpecificDay: false };
 }
 
+export interface ParsedTimeInfo {
+  startTime: string; // "HH:MM"
+  durationHours?: number; // e.g. 2
+  endTime?: string; // "HH:MM"
+}
+
 /**
- * Parses an explicit time (e.g. "11:00", "16:30", "a las 5 de la tarde")
+ * Intelligent parser that extracts explicit time information, including ranges like
+ * "de 11 a 13", "de 11:00 a 13:00", "de 11h a 13h", "a las 11", etc.
+ */
+export function parseExplicitTimeDetails(text: string): ParsedTimeInfo | null {
+  const lower = (text || '').toLowerCase().trim();
+
+  // Range pattern: "de 11 a 13", "de 11:00 a 13:00", "de 11h a 13h", "11 a 13", "11:00 a 13:00"
+  const rangeMatch = lower.match(/(?:de\s+)?\b([01]?\d|2[0-3])(?::([0-5]\d))?\s*(?:h|horas)?\s*(?:a|hasta|-)\s*([01]?\d|2[0-3])(?::([0-5]\d))?\s*(?:h|horas)?\b/i);
+  if (rangeMatch) {
+    let startH = parseInt(rangeMatch[1], 10);
+    const startM = rangeMatch[2] || '00';
+    let endH = parseInt(rangeMatch[3], 10);
+    const endM = rangeMatch[4] || '00';
+
+    // Afternoon adjustment if mentioned: e.g. "de 4 a 6 de la tarde"
+    if ((lower.includes('tarde') || lower.includes('pm')) && startH < 12) {
+      startH += 12;
+      if (endH < 12) endH += 12;
+    }
+
+    if (endH > startH || (endH === startH && parseInt(endM, 10) > parseInt(startM, 10))) {
+      const startMinTotal = startH * 60 + parseInt(startM, 10);
+      const endMinTotal = endH * 60 + parseInt(endM, 10);
+      const diffHours = (endMinTotal - startMinTotal) / 60;
+
+      return {
+        startTime: `${String(startH).padStart(2, '0')}:${startM}`,
+        endTime: `${String(endH).padStart(2, '0')}:${endM}`,
+        durationHours: Math.round(diffHours * 100) / 100
+      };
+    }
+  }
+
+  // Single time with colon: "11:30", "09:00", "16:00"
+  const colMatch = lower.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (colMatch) {
+    const h = parseInt(colMatch[1], 10);
+    const m = colMatch[2];
+    return {
+      startTime: `${String(h).padStart(2, '0')}:${m}`
+    };
+  }
+
+  // Single hour pattern: "a las 11", "a las 5 de la tarde", "17h", "16 horas", "a las 11:00"
+  const hMatch = lower.match(/(?:a\s+las|a\s+la|alas|de|desde)?\s*(\d{1,2})\s*(?:h|horas|pm|am|de\s+la\s+tarde|de\s+la\s+mañana)?/i);
+  if (hMatch) {
+    let hour = parseInt(hMatch[1], 10);
+    if (hour >= 0 && hour <= 24) {
+      if ((lower.includes('tarde') || lower.includes('pm')) && hour < 12) {
+        hour += 12;
+      }
+      if (!lower.includes(hour + ' cm') && !lower.includes(hour + 'cm')) {
+        if (
+          lower.includes('a las ' + hour) ||
+          lower.includes('alas ' + hour) ||
+          lower.includes(hour + 'h') ||
+          lower.includes(hour + ' horas') ||
+          lower.includes(hour + ':00') ||
+          lower.includes('de ' + hour)
+        ) {
+          return {
+            startTime: `${String(hour).padStart(2, '0')}:00`
+          };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Parses an explicit time (e.g. "11:00", "16:30", "a las 5 de la tarde", "de 11 a 13")
  * Returns null if no explicit time is specified in the text.
  */
 export function parseExplicitTime(text: string): string | null {
+  const details = parseExplicitTimeDetails(text);
+  if (details?.startTime) return details.startTime;
+
   const lower = (text || '').toLowerCase();
 
   // Pattern 1: HH:MM or H:MM (e.g. 11:30, 9:00, 16:00)
@@ -537,9 +722,8 @@ export async function executeAiTool(
         const durationHours = toolArgs.duration_hours ? Number(toolArgs.duration_hours) : (appointmentType === 'design_consultation' ? 0.75 : 2.5);
 
         // Fetch existing appointments for this artist starting from target date
-        const startDateObj = new Date(`${parsedDateStr}T00:00:00`);
-        const endDateObj = new Date(startDateObj);
-        endDateObj.setDate(endDateObj.getDate() + (isSpecificDay ? 1 : 4));
+        const startDateObj = createDateInTimezone(parsedDateStr, '00:00', 'Europe/Madrid');
+        const endDateObj = new Date(startDateObj.getTime() + (isSpecificDay ? 1 : 4) * 24 * 60 * 60 * 1000);
 
         const { data: existingApps } = await supabase
           .from('appointments')
@@ -580,18 +764,18 @@ export async function executeAiTool(
         const maxDaysToCheck = isSpecificDay ? 1 : 3;
 
         for (let dayOffset = 0; dayOffset < maxDaysToCheck && availableSlots.length < 4; dayOffset++) {
-          const curDay = new Date(startDateObj);
-          curDay.setDate(curDay.getDate() + dayOffset);
+          const curDay = new Date(startDateObj.getTime() + dayOffset * 24 * 60 * 60 * 1000);
 
           // Skip Sundays (day 0)
-          if (curDay.getDay() === 0) continue;
+          if (curDay.getUTCDay() === 0) continue;
 
           const dateIso = toLocalIsoDate(curDay);
 
           for (const timeStr of slotCandidates) {
             if (availableSlots.length >= 4) break;
 
-            const slotStart = new Date(`${dateIso}T${timeStr}:00`).getTime();
+            const slotStartDt = createDateInTimezone(dateIso, timeStr, 'Europe/Madrid');
+            const slotStart = slotStartDt.getTime();
             const slotEnd = slotStart + durationHours * 60 * 60 * 1000;
 
             // Don't offer past slots
@@ -600,14 +784,15 @@ export async function executeAiTool(
             // Check collision with busy list
             const hasOverlap = busyList.some((b: any) => slotStart < b.end && slotEnd > b.start);
             if (!hasOverlap) {
-              const dayShort = new Date(slotStart).toLocaleDateString('es-ES', {
+              const dayShort = curDay.toLocaleDateString('es-ES', {
+                timeZone: 'Europe/Madrid',
                 weekday: 'short',
                 day: 'numeric',
                 month: 'short'
               });
 
               availableSlots.push({
-                datetime: new Date(slotStart).toISOString(),
+                datetime: slotStartDt.toISOString(),
                 date: dateIso,
                 time: timeStr,
                 label: `${dayShort} ${timeStr}h`,
@@ -658,10 +843,11 @@ export async function executeAiTool(
         const appointmentType = toolArgs.appointment_type || 'tattoo_session';
         const { targetDate } = extractRequestedDate(toolArgs.date, context.userMessage);
         const parsedDateStr = targetDate;
-        const timeStr = parseExplicitTime(context.userMessage || '') || toolArgs.time || '11:00';
+        const timeDetails = parseExplicitTimeDetails(context.userMessage || '');
+        const timeStr = timeDetails?.startTime || parseExplicitTime(context.userMessage || '') || toolArgs.time || '11:00';
         const description = toolArgs.description || 'Cita confirmada a través del Asistente IA';
 
-        const startDateTime = new Date(`${parsedDateStr}T${timeStr}:00`);
+        const startDateTime = createDateInTimezone(parsedDateStr, timeStr, 'Europe/Madrid');
         if (isNaN(startDateTime.getTime())) {
           return {
             success: false,
@@ -671,24 +857,28 @@ export async function executeAiTool(
           };
         }
 
-        const durationHours = toolArgs.duration_hours ? Number(toolArgs.duration_hours) : (appointmentType === 'design_consultation' ? 0.75 : 2.5);
+        const durationHours = timeDetails?.durationHours
+          ? timeDetails.durationHours
+          : (toolArgs.duration_hours ? Number(toolArgs.duration_hours) : (appointmentType === 'design_consultation' ? 0.75 : 2.5));
         const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
 
         // Collision check
         const { data: conflicts } = await supabase
           .from('appointments')
-          .select('id, start_time, end_time')
+          .select('id, start_time, end_time, title')
           .eq('artist_id', context.artistId)
           .neq('status', 'cancelled')
           .lt('start_time', endDateTime.toISOString())
           .gt('end_time', startDateTime.toISOString());
 
         if (conflicts && conflicts.length > 0) {
+          const confStart = formatMadridTime(conflicts[0].start_time);
+          const confEnd = formatMadridTime(conflicts[0].end_time);
           return {
             success: false,
             tool: 'book_appointment',
-            result: { error: 'Horario ocupado', conflict: true },
-            displayText: `⚠️ Lo siento, el horario solicitado (${timeStr}h del ${parsedDateStr}) ya se encuentra reservado en la agenda de ${context.artistName || 'el artista'}. ¿Te gustaría que revisemos otros huecos libres?`
+            result: { error: 'Horario ocupado', conflict: true, conflictingRange: `${confStart} - ${confEnd}` },
+            displayText: `⚠️ Lo siento, el horario solicitado (${timeStr}h del ${parsedDateStr}) entra en conflicto con otra cita ya agendada (${confStart} - ${confEnd}) en la agenda de ${context.artistName || 'el artista'}. ¿Te gustaría que revisemos otros huecos libres?`
           };
         }
 
@@ -727,22 +917,16 @@ export async function executeAiTool(
           };
         }
 
-        const formattedDate = startDateTime.toLocaleDateString('es-ES', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long'
-        });
-        const formattedTime = startDateTime.toLocaleTimeString('es-ES', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        const formattedDate = formatMadridDate(startDateTime);
+        const formattedStartTime = formatMadridTime(startDateTime);
+        const formattedEndTime = formatMadridTime(endDateTime);
 
         return {
           success: true,
           tool: 'book_appointment',
           result: createdApp,
           createdAppointment: createdApp,
-          displayText: `📅 ¡Cita confirmada con éxito! He agendado tu **${appointmentType === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'}** para el **${formattedDate} a las ${formattedTime}h** con **${context.artistName || 'el tatuador'}**. Ya está reflejada en tu panel de citas.`
+          displayText: `📅 ¡Cita confirmada con éxito! He agendado tu **${appointmentType === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'}** para el **${formattedDate} de ${formattedStartTime} a ${formattedEndTime}** con **${context.artistName || 'el tatuador'}**. Ya está reflejada en tu panel de citas.`
         };
       } catch (err: any) {
         console.error('[AI Tool book_appointment Fatal]:', err);
@@ -831,7 +1015,6 @@ export async function executeAiTool(
         const resolvedClientId = await resolveClientId(supabase, context);
         const { targetDate } = extractRequestedDate(toolArgs.new_date, context.userMessage);
         const parsedDateStr = targetDate;
-        const timeStr = parseExplicitTime(context.userMessage || '') || toolArgs.new_time || '11:00';
 
         // 1. Locate appointment to reschedule
         let targetApp: any = null;
@@ -881,7 +1064,9 @@ export async function executeAiTool(
         }
 
         // 2. Compute new start & end time
-        const newStart = new Date(`${parsedDateStr}T${timeStr}:00`);
+        const timeDetails = parseExplicitTimeDetails(context.userMessage || '');
+        const timeStr = timeDetails?.startTime || parseExplicitTime(context.userMessage || '') || toolArgs.new_time || '11:00';
+        const newStart = createDateInTimezone(parsedDateStr, timeStr, 'Europe/Madrid');
         if (isNaN(newStart.getTime())) {
           return {
             success: false,
@@ -892,13 +1077,15 @@ export async function executeAiTool(
         }
 
         const origDurationMs = new Date(targetApp.end_time).getTime() - new Date(targetApp.start_time).getTime();
-        const durationMs = origDurationMs > 0 ? origDurationMs : (targetApp.appointment_type === 'design_consultation' ? 45 * 60 * 1000 : 180 * 60 * 1000);
+        const durationMs = timeDetails?.durationHours
+          ? timeDetails.durationHours * 3600000
+          : (origDurationMs > 0 ? origDurationMs : (targetApp.appointment_type === 'design_consultation' ? 45 * 60 * 1000 : 150 * 60 * 1000));
         const newEnd = new Date(newStart.getTime() + durationMs);
 
         // 3. Collision check (excluding current appointment)
         const { data: conflicts } = await supabase
           .from('appointments')
-          .select('id')
+          .select('id, start_time, end_time')
           .eq('artist_id', targetApp.artist_id)
           .neq('id', targetApp.id)
           .neq('status', 'cancelled')
@@ -906,11 +1093,13 @@ export async function executeAiTool(
           .gt('end_time', newStart.toISOString());
 
         if (conflicts && conflicts.length > 0) {
+          const confStart = formatMadridTime(conflicts[0].start_time);
+          const confEnd = formatMadridTime(conflicts[0].end_time);
           return {
             success: false,
             tool: 'reschedule_appointment',
-            result: { error: 'Horario ocupado', conflict: true },
-            displayText: `⚠️ Lo siento, el horario solicitado (${timeStr}h del ${parsedDateStr}) coincide con otra cita del artista. Por favor, indícame otra hora o fecha para reprogramarla.`
+            result: { error: 'Horario ocupado', conflict: true, conflictingRange: `${confStart} - ${confEnd}` },
+            displayText: `⚠️ Lo siento, el horario solicitado (${timeStr}h del ${parsedDateStr}) coincide con otra cita ya reservada (${confStart} - ${confEnd}) en la agenda del artista. Por favor, indícame otra hora o fecha para reprogramarla.`
           };
         }
 
@@ -935,22 +1124,16 @@ export async function executeAiTool(
 
         if (updateErr) throw updateErr;
 
-        const formattedDate = newStart.toLocaleDateString('es-ES', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long'
-        });
-        const formattedTime = newStart.toLocaleTimeString('es-ES', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        const formattedDate = formatMadridDate(newStart);
+        const formattedStartTime = formatMadridTime(newStart);
+        const formattedEndTime = formatMadridTime(newEnd);
 
         return {
           success: true,
           tool: 'reschedule_appointment',
           result: updatedApp,
           rescheduledAppointment: updatedApp,
-          displayText: `🔄 ¡Cita reprogramada con éxito! Tu cita con **${targetApp.artists?.display_name || context.artistName}** ha sido cambiada al **${formattedDate} a las ${formattedTime}h**. El calendario del artista ya está actualizado.`
+          displayText: `🔄 ¡Cita reprogramada con éxito! Tu cita con **${targetApp.artists?.display_name || context.artistName}** ha sido cambiada al **${formattedDate} de ${formattedStartTime} a ${formattedEndTime}**. El calendario del artista ya está actualizado.`
         };
       } catch (err: any) {
         console.error('[AI Tool reschedule_appointment Error]:', err);

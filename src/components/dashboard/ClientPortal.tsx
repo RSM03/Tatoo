@@ -91,10 +91,17 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // Quick date helpers for reschedule
+  const formatLocalIso = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const applyQuickRescheduleDate = (daysAhead: number) => {
     const d = new Date();
     d.setDate(d.getDate() + daysAhead);
-    setRescheduleDate(d.toISOString().split('T')[0]);
+    setRescheduleDate(formatLocalIso(d));
   };
 
   const applyNextDayOfWeek = (dayIdx: number) => {
@@ -102,7 +109,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
     let diff = dayIdx - d.getDay();
     if (diff <= 0) diff += 7;
     d.setDate(d.getDate() + diff);
-    setRescheduleDate(d.toISOString().split('T')[0]);
+    setRescheduleDate(formatLocalIso(d));
   };
 
   // Scalable Multi-Studio & Multi-Artist Hierarchy
@@ -666,11 +673,11 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                       <div className="flex items-center gap-5 text-sm text-ink-100 mb-4 bg-ink-950/80 p-3.5 rounded-2xl border border-white/5">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-amber-400" />
-                          <span className="first-letter:uppercase">{startDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                          <span className="first-letter:uppercase">{startDate.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'long' })}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-amber-400" />
-                          <span>{startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>{startDate.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </div>
                     </div>
@@ -1505,7 +1512,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                               <strong>Tipo:</strong> {(msg.createdAppointment || msg.created_appointment).appointment_type === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje'}
                             </div>
                             <div className="text-ink-200 font-mono text-[11px]">
-                              <strong>Fecha y Hora:</strong> {new Date((msg.createdAppointment || msg.created_appointment).start_time).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date((msg.createdAppointment || msg.created_appointment).start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}h
+                              <strong>Fecha y Hora:</strong> {new Date((msg.createdAppointment || msg.created_appointment).start_time).toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date((msg.createdAppointment || msg.created_appointment).start_time).toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })}h
                             </div>
                             <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between">
                               <span className="text-[10px] text-emerald-400/80">Reflejada en tu pestaña Mis Citas</span>
@@ -1526,7 +1533,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                               <span>🔄 Cita Reprogramada con Éxito</span>
                             </div>
                             <div className="text-ink-200 font-mono text-[11px]">
-                              <strong>Nueva Fecha y Hora:</strong> {new Date((msg.rescheduledAppointment || msg.rescheduled_appointment).start_time).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date((msg.rescheduledAppointment || msg.rescheduled_appointment).start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}h
+                              <strong>Nueva Fecha y Hora:</strong> {new Date((msg.rescheduledAppointment || msg.rescheduled_appointment).start_time).toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'long' })} a las {new Date((msg.rescheduledAppointment || msg.rescheduled_appointment).start_time).toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })}h
                             </div>
                             <div className="pt-2 border-t border-blue-500/20 flex items-center justify-between">
                               <span className="text-[10px] text-blue-400/80">Calendario actualizado</span>

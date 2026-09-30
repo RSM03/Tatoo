@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
       .gt('end_time', startDt.toISOString());
 
     if (conflicts && conflicts.length > 0) {
-      const confStart = new Date(conflicts[0].start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      const confEnd = new Date(conflicts[0].end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const confStart = new Date(conflicts[0].start_time).toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' });
+      const confEnd = new Date(conflicts[0].end_time).toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' });
       return NextResponse.json({
         error: `El tatuador ya tiene una cita reservada en este intervalo (${confStart} - ${confEnd}). No se permiten citas solapadas. Por favor, selecciona otro horario.`,
         conflict: true,

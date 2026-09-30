@@ -177,6 +177,40 @@ export default function ArtistPortal({
            d1.getDate() === d2.getDate();
   };
 
+  const formatLocalIsoDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const createMadridDate = (dateStr: string, timeStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const [h, min] = (timeStr || '11:00').split(':').map(Number);
+    const utcGuess = new Date(Date.UTC(y, m - 1, d, h, min || 0, 0));
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(utcGuess);
+      const map: Record<string, number> = {};
+      for (const p of parts) if (p.type !== 'literal') map[p.type] = Number(p.value);
+      const tzH = map.hour === 24 ? 0 : map.hour;
+      const tzDateAsUtc = new Date(Date.UTC(map.year, map.month - 1, map.day, tzH, map.minute, map.second || 0));
+      const offsetMs = tzDateAsUtc.getTime() - utcGuess.getTime();
+      return new Date(utcGuess.getTime() - offsetMs);
+    } catch {
+      return new Date(`${dateStr}T${timeStr}:00`);
+    }
+  };
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClient();
 
@@ -397,8 +431,8 @@ export default function ArtistPortal({
     if (!artist) return;
 
     try {
-      const startDateTime = new Date(`${modalDate}T${modalStartTime}:00`);
-      const endDateTime = new Date(`${modalDate}T${modalEndTime}:00`);
+      const startDateTime = createMadridDate(modalDate, modalStartTime);
+      const endDateTime = createMadridDate(modalDate, modalEndTime);
 
       const res = await fetch('/api/appointments/create', {
         method: 'POST',
@@ -662,7 +696,7 @@ export default function ArtistPortal({
                 {/* Quick Add Block Button */}
                 <button
                   onClick={() => {
-                    setModalDate(calendarDate.toISOString().split('T')[0]);
+                    setModalDate(formatLocalIsoDate(calendarDate));
                     setModalType('walk_in');
                     setIsModalOpen(true);
                   }}
@@ -731,7 +765,7 @@ export default function ArtistPortal({
                                 >
                                   <div className="flex items-center justify-between font-mono text-[10px] opacity-85 mb-1">
                                     <span>
-                                      {start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                      {start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                     <span>{isBreak ? '☕' : app.appointment_type === 'design_consultation' ? '📜' : '🩸'}</span>
                                   </div>
@@ -779,8 +813,7 @@ export default function ArtistPortal({
                       {/* Quick Add Button on this day */}
                       <button
                         onClick={() => {
-                          const iso = dayDate.toISOString().split('T')[0];
-                          setModalDate(iso);
+                          setModalDate(formatLocalIsoDate(dayDate));
                           setModalType('walk_in');
                           setIsModalOpen(true);
                         }}
@@ -827,8 +860,7 @@ export default function ArtistPortal({
                       <div
                         key={dayNum}
                         onClick={() => {
-                          const iso = thisDate.toISOString().split('T')[0];
-                          setModalDate(iso);
+                          setModalDate(formatLocalIsoDate(thisDate));
                           setModalType('walk_in');
                           setIsModalOpen(true);
                         }}

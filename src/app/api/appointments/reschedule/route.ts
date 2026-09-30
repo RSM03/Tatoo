@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createDateInTimezone } from '@/lib/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cita no encontrada.' }, { status: 404 });
     }
 
-    const newStart = new Date(`${newDate}T${newTime}:00`);
+    const newStart = createDateInTimezone(newDate, newTime, 'Europe/Madrid');
     if (isNaN(newStart.getTime())) {
       return NextResponse.json({ error: 'Fecha u hora inválida.' }, { status: 400 });
     }

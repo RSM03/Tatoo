@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { callEdenAIWithTools, type ChatMessage } from '@/lib/edenai';
-import { toLocalIsoDate, parseRelativeDate } from '@/lib/ai-tools';
+import { toLocalIsoDate, parseRelativeDate, createDateInTimezone, formatMadridTime, formatMadridDate, parseExplicitTimeDetails } from '@/lib/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -258,51 +258,77 @@ REGLAS CRÍTICAS:
 
         if (fnName === 'create_artist_appointment') {
           const targetDate = parseRelativeDate(args.date || 'mañana', now);
-          const startTime = args.start_time || '11:00';
-          const durationHours = Number(args.duration_hours) || 2.5;
-          const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
-          const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
+          const timeDetails = parseExplicitTimeDetails(content || '');
+          const startTime = timeDetails?.startTime || args.start_time || '11:00';
+          const durationHours = timeDetails?.durationHours || Number(args.duration_hours) || 2.5;
+          const startDt = createDateInTimezone(targetDate, startTime, 'Europe/Madrid');
+          const endDt = new Date(startDt.getTime() + durationHours * 3600000);
+          const startIso = startDt.toISOString();
+          const endIso = endDt.toISOString();
           const clientName = args.client_name || 'Cliente';
           const titleText = args.description ? `Tatuaje: ${args.description} (${clientName})` : `Cita con ${clientName}`;
 
-          const { data: newApp, error: appErr } = await supabase
+          // Check collisions with existing appointments
+          const { data: conflicts } = await supabase
             .from('appointments')
-            .insert({
-              artist_id: artist.id,
-              studio_id: artist.studio_id,
-              title: titleText,
-              walk_in_name: clientName,
-              walk_in_phone: args.client_phone || null,
-              appointment_type: args.appointment_type || 'tattoo_session',
-              start_time: startIso,
-              end_time: endIso,
-              status: 'confirmed',
-              description: args.description || null
-            })
-            .select(`
-              id,
-              title,
-              start_time,
-              end_time,
-              status,
-              appointment_type,
-              walk_in_name
-            `)
-            .single();
+            .select('id, start_time, end_time, title')
+            .eq('artist_id', artist.id)
+            .neq('status', 'cancelled')
+            .lt('start_time', endIso)
+            .gt('end_time', startIso);
 
-          if (appErr) {
-            executionOutput = { success: false, error: appErr.message };
-          } else {
+          if (conflicts && conflicts.length > 0) {
+            const confStart = formatMadridTime(conflicts[0].start_time);
+            const confEnd = formatMadridTime(conflicts[0].end_time);
             executionOutput = {
-              success: true,
-              appointment_id: newApp.id,
-              date: targetDate,
-              time: startTime,
-              client_name: clientName,
-              duration_hours: durationHours,
-              details: `Cita confirmada en la agenda oficial para el ${targetDate} a las ${startTime} (${durationHours}h)`
+              success: false,
+              conflict: true,
+              error: `El tatuador ya tiene una cita reservada en ese horario (${confStart} - ${confEnd}). No se pueden solapar citas en el mismo horario.`
             };
-            toolResultData = { newAppointment: newApp };
+          } else {
+            const { data: newApp, error: appErr } = await supabase
+              .from('appointments')
+              .insert({
+                artist_id: artist.id,
+                studio_id: artist.studio_id,
+                title: titleText,
+                walk_in_name: clientName,
+                walk_in_phone: args.client_phone || null,
+                appointment_type: args.appointment_type || 'tattoo_session',
+                start_time: startIso,
+                end_time: endIso,
+                status: 'confirmed',
+                description: args.description || null
+              })
+              .select(`
+                id,
+                title,
+                start_time,
+                end_time,
+                status,
+                appointment_type,
+                walk_in_name
+              `)
+              .single();
+
+            if (appErr) {
+              executionOutput = { success: false, error: appErr.message };
+            } else {
+              const formattedDate = formatMadridDate(startDt);
+              const formattedStartTime = formatMadridTime(startDt);
+              const formattedEndTime = formatMadridTime(endDt);
+
+              executionOutput = {
+                success: true,
+                appointment_id: newApp.id,
+                date: targetDate,
+                time: startTime,
+                client_name: clientName,
+                duration_hours: durationHours,
+                details: `Cita confirmada en la agenda oficial para el ${formattedDate} de ${formattedStartTime} a ${formattedEndTime} (${durationHours}h)`
+              };
+              toolResultData = { newAppointment: newApp };
+            }
           }
         } else if (fnName === 'get_artist_agenda') {
           executionOutput = {
@@ -312,10 +338,13 @@ REGLAS CRÍTICAS:
           };
         } else if (fnName === 'block_break_time') {
           const targetDate = parseRelativeDate(args.date || 'hoy', now);
-          const startTime = args.start_time || '14:00';
-          const durationHours = args.duration_hours || 1;
-          const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
-          const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
+          const timeDetails = parseExplicitTimeDetails(content || '');
+          const startTime = timeDetails?.startTime || args.start_time || '14:00';
+          const durationHours = timeDetails?.durationHours || args.duration_hours || 1;
+          const startDt = createDateInTimezone(targetDate, startTime, 'Europe/Madrid');
+          const endDt = new Date(startDt.getTime() + durationHours * 3600000);
+          const startIso = startDt.toISOString();
+          const endIso = endDt.toISOString();
 
           const { data: newBlock, error: blockErr } = await supabase
             .from('appointments')
@@ -334,13 +363,18 @@ REGLAS CRÍTICAS:
           if (blockErr) {
             executionOutput = { success: false, error: blockErr.message };
           } else {
+            const formattedDate = formatMadridDate(startDt);
+            const formattedStartTime = formatMadridTime(startDt);
+            const formattedEndTime = formatMadridTime(endDt);
+
             executionOutput = {
               success: true,
               date: targetDate,
               start_time: startTime,
               duration_hours: durationHours,
               reason: args.reason || 'Descanso',
-              block_id: newBlock?.id
+              block_id: newBlock?.id,
+              details: `Descanso bloqueado el ${formattedDate} de ${formattedStartTime} a ${formattedEndTime}`
             };
             toolResultData = { newBlock };
           }
@@ -354,7 +388,7 @@ REGLAS CRÍTICAS:
           const consentsStatus = matching.map(a => {
             const name = (a as any).clients?.profiles?.full_name || 'Cliente';
             const signed = (a as any).consent_forms && (a as any).consent_forms.length > 0;
-            const time = new Date(a.start_time).toLocaleString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const time = new Date(a.start_time).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
             return {
               client_name: name,
               appointment_time: time,
@@ -379,11 +413,21 @@ REGLAS CRÍTICAS:
             executionOutput = { success: true, action: 'cancelled', appointment_id: targetApp.id, title: targetApp.title };
           } else {
             const newDate = parseRelativeDate(args.new_date || 'mañana', now);
-            const newTime = args.new_time || '11:00';
-            const startIso = new Date(`${newDate}T${newTime}:00`).toISOString();
-            const endIso = new Date(new Date(startIso).getTime() + 2 * 3600000).toISOString();
+            const timeDetails = parseExplicitTimeDetails(content || '');
+            const newTime = timeDetails?.startTime || args.new_time || '11:00';
+            const startDt = createDateInTimezone(newDate, newTime, 'Europe/Madrid');
+            const endDt = new Date(startDt.getTime() + 2 * 3600000);
+            const startIso = startDt.toISOString();
+            const endIso = endDt.toISOString();
             await supabase.from('appointments').update({ start_time: startIso, end_time: endIso, status: 'confirmed' }).eq('id', targetApp.id);
-            executionOutput = { success: true, action: 'rescheduled', appointment_id: targetApp.id, new_date: newDate, new_time: newTime };
+            executionOutput = {
+              success: true,
+              action: 'rescheduled',
+              appointment_id: targetApp.id,
+              new_date: newDate,
+              new_time: newTime,
+              details: `Reprogramada al ${formatMadridDate(startDt)} de ${formatMadridTime(startDt)} a ${formatMadridTime(endDt)}`
+            };
           }
         } else if (fnName === 'get_app_faq') {
           executionOutput = {
@@ -419,10 +463,13 @@ REGLAS CRÍTICAS:
       const lower = content.toLowerCase();
       if ((lower.includes('crea') || lower.includes('agenda') || lower.includes('reserva') || lower.includes('pon')) && (lower.includes('cita') || lower.includes('sesion') || lower.includes('sesión') || lower.includes('mañana') || lower.includes('hoy'))) {
         const targetDate = parseRelativeDate(content, now);
-        const startTime = '11:00';
-        const durationHours = 2.5;
-        const startIso = new Date(`${targetDate}T${startTime}:00`).toISOString();
-        const endIso = new Date(new Date(startIso).getTime() + durationHours * 3600000).toISOString();
+        const timeDetails = parseExplicitTimeDetails(content);
+        const startTime = timeDetails?.startTime || '11:00';
+        const durationHours = timeDetails?.durationHours || 2.5;
+        const startDt = createDateInTimezone(targetDate, startTime, 'Europe/Madrid');
+        const endDt = new Date(startDt.getTime() + durationHours * 3600000);
+        const startIso = startDt.toISOString();
+        const endIso = endDt.toISOString();
 
         const { data: newApp } = await supabase
           .from('appointments')
@@ -441,7 +488,10 @@ REGLAS CRÍTICAS:
 
         if (newApp) {
           toolResultData = { newAppointment: newApp };
-          replyText = `✅ ¡Cita creada y confirmada con éxito para el **${targetDate} a las ${startTime}** (duración ${durationHours}h)! Ya está guardada y visible en tu agenda.`;
+          const fDate = formatMadridDate(startDt);
+          const fStart = formatMadridTime(startDt);
+          const fEnd = formatMadridTime(endDt);
+          replyText = `✅ ¡Cita creada y confirmada con éxito para el **${fDate} de ${fStart} a ${fEnd}** (${durationHours}h)! Ya está guardada y visible en tu agenda.`;
         } else {
           replyText = `⚠️ No se pudo registrar la cita automáticamente. Por favor, indícame la fecha y hora.`;
         }

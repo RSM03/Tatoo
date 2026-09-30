@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { callEdenAI, callEdenAIWithTools, generateChatSummary, compressContext, type ChatMessage } from '@/lib/edenai';
-import { executeAiTool, AI_TOOLS, OPENAI_TOOLS, ToolExecutionContext, ToolExecutionResult } from '@/lib/ai-tools';
+import { executeAiTool, AI_TOOLS, OPENAI_TOOLS, ToolExecutionContext, ToolExecutionResult, toLocalIsoDate, formatMadridDate, formatMadridTime } from '@/lib/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -240,28 +240,16 @@ export async function POST(req: NextRequest) {
 
     // 7. System Prompt with Real Temporal Context & Artist Identity
     const now = new Date();
-    const toLocalIso = (date: Date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
-    const todayIso = toLocalIso(now);
-    const todayFormatted = now.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const currentTimeFormatted = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const todayIso = toLocalIsoDate(now);
+    const todayFormatted = formatMadridDate(now);
+    const currentTimeFormatted = formatMadridTime(now);
 
     // Precompute upcoming 7 days in the current year to eliminate model cutoff hallucination
     const calendarWeekReference = [0, 1, 2, 3, 4, 5, 6, 7].map(dayOffset => {
-      const d = new Date(now);
-      d.setDate(d.getDate() + dayOffset);
-      const iso = toLocalIso(d);
-      const weekdayName = d.toLocaleDateString('es-ES', { weekday: 'long' });
-      const pretty = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+      const d = new Date(now.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+      const iso = toLocalIsoDate(d);
+      const weekdayName = d.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', weekday: 'long' });
+      const pretty = formatMadridDate(d);
       const label = dayOffset === 0 ? 'Hoy' : (dayOffset === 1 ? 'Mañana' : `Este ${weekdayName}`);
       return `- ${label} (${pretty}): ${iso}`;
     }).join('\n');
