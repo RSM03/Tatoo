@@ -188,17 +188,22 @@
       }
     },
     {
-      "name": "get_studio_products",
-      "description": "Consulta el catálogo de productos disponibles en el estudio de tatuajes (cremas aftercare, bálsamos cicatrizantes, jabones antibacterianos, láminas de protección second skin y merchandising). Úsala cuando el cliente pregunte qué cremas usar, qué productos tienen a la venta, o precios de cuidados para su tatuaje.",
+      "name": "get_app_faq",
+      "description": "Responde dudas y consultas de soporte sobre cómo funciona y cómo se usa la aplicación Tatoo tanto para clientes como para tatuadores y estudios (cómo reservar citas, cómo firmar y descargar el consentimiento informado en PDF de 1 página con firma digital nítida, cómo ver estudios en el mapa interactivo CARTO, pautas higiénicas de cicatrización recomendadas sin venta de productos, gestión de agenda, suscripción mensual de 50€/mes con Stripe para estudios, etc.).",
       "parameters": {
         "type": "object",
         "properties": {
-          "category": {
+          "topic": {
             "type": "string",
-            "enum": ["all", "aftercare", "soaps", "protection", "merch"],
-            "description": "Categoría a filtrar: 'aftercare' (cremas/bálsamos), 'soaps' (jabones neutros), 'protection' (láminas second skin), 'merch' (camisetas/merchandising) o 'all' (todo)."
+            "enum": ["appointments", "consent_pdf", "map_studios", "aftercare_rules", "artist_schedule", "stripe_subscription", "general_help"],
+            "description": "Tema de ayuda consultado."
+          },
+          "query": {
+            "type": "string",
+            "description": "Duda o pregunta concreta del usuario."
           }
-        }
+        },
+        "required": ["topic"]
       }
     }
   ]

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import ArtistPortal from '@/components/dashboard/ArtistPortal';
 import {
@@ -19,7 +20,9 @@ import {
   X,
   LogIn,
   UserCheck,
-  MapPin
+  MapPin,
+  CreditCard,
+  ShieldCheck
 } from 'lucide-react';
 import StudioMapView from '@/components/dashboard/StudioMapView';
 
@@ -64,11 +67,26 @@ Puedes solicitar cita o consultar tu idea directamente aquí:
 ¡Un abrazo del equipo de {studio_name}!`;
 
 export default function StudioPortal({ user, profile }: { user: any; profile: any }) {
-  const [activeTab, setActiveTab] = useState<'artists' | 'schedule' | 'location' | 'emails' | 'reviews'>('artists');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'artists' | 'schedule' | 'location' | 'emails' | 'subscription' | 'reviews'>('artists');
   const [studio, setStudio] = useState<any>(null);
   const [artists, setArtists] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Stripe Subscription State
+  const [subscribingStripe, setSubscribingStripe] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
+  const [showSubscribedBanner, setShowSubscribedBanner] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get('subscribed') === 'true') {
+      setShowSubscribedBanner(true);
+    }
+    if (searchParams?.get('setup_subscription') === '1') {
+      setActiveTab('subscription');
+    }
+  }, [searchParams]);
 
   // Active Persona Switcher (Studio vs specific Artist console)
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -110,6 +128,58 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
   const [savingHours, setSavingHours] = useState(false);
 
   const supabase = createClient();
+
+  const handleStripeCheckout = async () => {
+    if (!studio) return;
+    setSubscribingStripe(true);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studioId: studio.id,
+          userId: user.id,
+          userEmail: user.email,
+          studioName: studio.name
+        })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Error al iniciar checkout');
+      }
+    } catch (err: any) {
+      alert(`Error con Stripe: ${err.message}`);
+    } finally {
+      setSubscribingStripe(false);
+    }
+  };
+
+  const handleStripePortal = async () => {
+    if (!studio) return;
+    setOpeningPortal(true);
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studioId: studio.id,
+          userId: user.id
+        })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Error al abrir el portal de Stripe');
+      }
+    } catch (err: any) {
+      alert(`Error al abrir portal de facturación: ${err.message}`);
+    } finally {
+      setOpeningPortal(false);
+    }
+  };
 
   useEffect(() => {
     loadStudioData();
@@ -340,6 +410,22 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
         </div>
       </div>
 
+      {/* Stripe Subscribed Feedback Banner */}
+      {showSubscribedBanner && (
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-600/15 border border-emerald-500/40 text-emerald-300 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div>
+              <p className="font-bold text-sm text-white">¡Suscripción de Estudio Activada con Éxito!</p>
+              <p className="text-xs text-ink-300">Tu cuenta cuenta con tarifa activa de 50€/mes a través de Stripe con acceso ilimitado.</p>
+            </div>
+          </div>
+          <button onClick={() => setShowSubscribedBanner(false)} className="text-ink-400 hover:text-white p-1">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-white/10 mb-8 pb-3">
         <button
@@ -380,6 +466,16 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
         >
           <Mail className="w-4 h-4 text-blue-400" />
           <span>Emails y descuentos</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('subscription')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'subscription' ? 'bg-emerald-600/30 text-white border border-emerald-500/40' : 'text-ink-400 hover:text-white'
+          }`}
+        >
+          <CreditCard className="w-4 h-4 text-emerald-400" />
+          <span>Suscripción (50€/mes)</span>
         </button>
 
         <button
@@ -704,6 +800,138 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
               <span>{savingEmails ? 'Guardando...' : 'Guardar Plantillas y Promociones'}</span>
             </button>
           </form>
+        </div>
+      )}
+
+      {/* TAB: STRIPE SUBSCRIPTION & BILLING */}
+      {activeTab === 'subscription' && (
+        <div className="space-y-6">
+          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 bg-ink-950/70">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-white/10">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                  <CreditCard className="w-7 h-7" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-bold text-white">Suscripción Estudio Tatoo Pro</h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      {['active', 'trialing'].includes(studio?.subscription_status || 'trialing') ? 'ACTIVA' : 'PENDIENTE'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink-400 mt-1">
+                    Tarifa plana oficial para estudios de tatuajes · Facturación mensual segura con Stripe
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="font-display text-3xl font-extrabold text-white">
+                  50,00 € <span className="text-sm font-sans font-normal text-ink-400">/ mes</span>
+                </div>
+                <span className="text-[11px] text-emerald-400 font-medium">IVA incluido · Sin permanencia</span>
+              </div>
+            </div>
+
+            {/* Current Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
+              <div className="p-4 rounded-2xl bg-ink-900 border border-white/5">
+                <span className="text-[11px] font-mono text-ink-400 block uppercase mb-1">Estado de Facturación</span>
+                <span className="font-bold text-white text-sm capitalize">
+                  {studio?.subscription_status === 'active' ? '✓ Activa (Pagada)' : studio?.subscription_status === 'trialing' ? 'Prueba Activa' : 'Pendiente de Activar'}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-ink-900 border border-white/5">
+                <span className="text-[11px] font-mono text-ink-400 block uppercase mb-1">Próxima Renovación</span>
+                <span className="font-bold text-amber-300 text-sm">
+                  {studio?.current_period_end ? new Date(studio.current_period_end).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Mensual continua'}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-ink-900 border border-white/5">
+                <span className="text-[11px] font-mono text-ink-400 block uppercase mb-1">Pasarela de Pago</span>
+                <span className="font-bold text-white text-sm flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Stripe Secure Payments</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                onClick={handleStripeCheckout}
+                disabled={subscribingStripe}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all hover:scale-[1.02]"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>{subscribingStripe ? 'Conectando con Stripe...' : 'Activar / Renovar Suscripción (50€/mes)'}</span>
+              </button>
+
+              <button
+                onClick={handleStripePortal}
+                disabled={openingPortal}
+                className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white font-semibold text-sm border border-white/10 flex items-center gap-2 transition-all"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>{openingPortal ? 'Abriendo portal...' : 'Gestionar Facturación en Stripe (Recibos / Tarjeta)'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Included Features */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="glass-panel p-5 rounded-2xl border border-white/5">
+              <h3 className="font-bold text-white text-sm mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Beneficios de tu Suscripción Profesional (50€/mes)</span>
+              </h3>
+              <ul className="space-y-2.5 text-xs text-ink-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Tatuadores Ilimitados:</strong> Da de alta todos los artistas residentes y colaboradores del estudio sin costes adicionales.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Copilot IA para cada Tatuador:</strong> Cada artista cuenta con su propio asistente virtual para consultar su agenda, bloquear descansos y verificar consentimientos.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Chatbot con Inteligencia Artificial para Clientes:</strong> Atiende consultas 24/7, propone huecos libres y calcula presupuestos según medidas en cm.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Consentimientos Informados Legales:</strong> Firma digital directa en pantalla, optimización en tinta oscura (#0f172a) y generación en 1 sola página A4 oficial para impresión y descarga.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="glass-panel p-5 rounded-2xl border border-white/5">
+              <h3 className="font-bold text-white text-sm mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Herramientas de Visibilidad y Notificaciones</span>
+              </h3>
+              <ul className="space-y-2.5 text-xs text-ink-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Mapa Interactivo CARTO:</strong> Tu estudio aparece geolocalizado en el mapa mundial de alta resolución para captar clientes en tu ciudad.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Recordatorios 48h por Email:</strong> Reduce las inasistencias avisando a los clientes dos días antes con consejos higiénicos de preparación.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Flashes y Promociones:</strong> Publica diseños exclusivos del mes y fideliza con campañas de reactivación tras 4 meses.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span><strong>Cancelación Libre:</strong> Sin permanencia obligatoria. Puedes pausar o cancelar tu suscripción con un solo clic desde el portal seguro de Stripe.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 

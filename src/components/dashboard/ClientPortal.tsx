@@ -29,8 +29,7 @@ import {
   RefreshCw,
   Search,
   MapPin,
-  Building2,
-  ShoppingBag
+  Building2
 } from 'lucide-react';
 import SignaturePad from 'signature_pad';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -38,11 +37,10 @@ import PublicArtistAgenda from '@/components/dashboard/PublicArtistAgenda';
 import { compressImageForChat } from '@/lib/image-upload';
 import { ensureDarkInkSignature } from '@/lib/signature';
 import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
-import StudioShopSection from '@/components/dashboard/StudioShopSection';
 import StudioMapView from '@/components/dashboard/StudioMapView';
 
 export default function ClientPortal({ user, profile }: { user: any; profile: any }) {
-  const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history' | 'shop'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history'>('appointments');
   const [appointments, setAppointments] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [studios, setStudios] = useState<any[]>([]);
@@ -614,18 +612,6 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         >
           <MessageSquare className="w-4 h-4 text-white" />
           <span>Chat con tu tatuador</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('shop')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
-            activeTab === 'shop'
-              ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-400/50 shadow-lg shadow-emerald-600/30'
-              : 'text-ink-400 hover:text-white hover:bg-white/5 border border-transparent'
-          }`}
-        >
-          <ShoppingBag className="w-4 h-4 text-emerald-400" />
-          <span>Tienda y cuidados</span>
         </button>
       </div>
 
@@ -1645,24 +1631,6 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
               </form>
             </div>
           )}
-        </div>
-      )}
-
-      {/* TAB 3: STUDIO SHOP & AFTERCARE (TIENDA & CUIDADOS) */}
-      {activeTab === 'shop' && (
-        <div className="space-y-6">
-          <StudioShopSection
-            isArtistMode={false}
-            currentStudioId={selectedStudioId || studios[0]?.id}
-            onInquireInChat={(product) => {
-              const matchedArtist = artists.find(a => a.studio_id === (selectedStudioId || studios[0]?.id)) || artists[0];
-              if (matchedArtist) {
-                handleSelectChatArtist(matchedArtist);
-                setActiveTab('chat');
-                setInputText(`Hola, me gustaría información y disponibilidad sobre el producto: ${product.name} (${product.price}€).`);
-              }
-            }}
-          />
         </div>
       )}
 

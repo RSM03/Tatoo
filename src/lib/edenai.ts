@@ -334,9 +334,28 @@ function generateFallbackReply(messages: ChatMessage[]): string {
     return "Para revisar cómo está cicatrizando tu tatuaje, puedes subir una foto nítida y con buena luz directamente en este chat pulsando en el icono de la cámara 📷. Analizaremos el estado y te daremos las pautas personalizadas de tu tatuador.";
   }
 
-  if (text.includes('cita') || text.includes('horario') || text.includes('reservar') || text.includes('book')) {
-    return "Puedes consultar la disponibilidad y reservar cita directamente desde la pestaña 'Reservar Cita' de tu panel. Disponemos de citas para diseño y sesiones completas de tatuaje.";
+  if (text.includes('consentimiento') || text.includes('firm') || text.includes('pdf') || text.includes('descargar') || text.includes('imprimir')) {
+    return "📜 **Consentimiento Informado & Descarga en PDF:**\n\n1. Desde tu panel de cliente, pulsa en *Firmar Consentimiento* en tu cita agendada.\n2. Rellena el cuestionario sanitario y estampa tu firma digital directa con el dedo o ratón.\n3. El sistema procesa la firma en tinta oscura (#0f172a) y genera el documento en una única página A4 limpia al pulsar *Imprimir / Descargar PDF*, sin páginas en blanco previas y con plena validez legal.";
   }
 
-  return "¡Hola! Soy el asistente virtual del estudio. Puedo ayudarte a calcular presupuestos aproximados según el tamaño y diseño, revisar la curación de tu tatuaje si nos envías una foto, o ayudarte a gestionar tu cita. El tatuador también puede intervenir directamente en este chat en cualquier momento.";
+  if (text.includes('mapa') || text.includes('direcci') || text.includes('ubicaci') || text.includes('donde') || text.includes('dónde')) {
+    return "🗺️ **Mapa de Estudios:**\n\nPuedes explorar los estudios y sus direcciones reales a través del mapa interactivo con tecnología CARTO Basemaps. Desde allí puedes ver los tatuadores que atienden en cada ubicación física y consultar sus agendas.";
+  }
+
+  if (text.includes('suscripci') || text.includes('50€') || text.includes('50 euros') || text.includes('stripe') || text.includes('cuota')) {
+    return "💳 **Suscripción para Estudios (50 € / mes con Stripe):**\n\nLos estudios de tatuaje cuentan con una suscripción todo incluido de 50€ al mes gestionada de forma segura por Stripe. Incluye tatuadores ilimitados, asistente virtual de reservas, consentimientos con firma digital y mapa interactivo. Se gestiona y factura directamente desde el panel del estudio.";
+  }
+
+  if (text.includes('como funciona') || text.includes('cómo funciona') || text.includes('ayuda') || text.includes('soporte') || text.includes('que puedes hacer') || text.includes('qué puedes hacer')) {
+    return "ℹ️ **¿En qué puedo ayudarte?**\n\n• 📅 **Citas:** Pregúntame qué huecos hay libres este día o semana para reservar al instante.\n• 💶 **Presupuestos:** Indícame medidas aproximadas en cm y zona del cuerpo para una estimación.\n• 📜 **Consentimientos:** Asistencia para firmar digitalmente y descargar tu documento legal en PDF.\n• 🩹 **Curación:** Sube una foto de tu piel con el icono de la cámara 📷 para evaluar la cicatrización.\n• 🗺️ **Mapa:** Localización de estudios y contacto con artistas.";
+  }
+
+  // Clear non-understanding message: NEVER repeat the opening welcome message!
+  return "Disculpa, no he terminado de entender tu consulta o mensaje. Como asistente del estudio puedo ayudarte a:\n\n" +
+    "• 📅 **Consultar disponibilidad y agendar citas**\n" +
+    "• 🔄 **Reprogramar o anular citas existentes**\n" +
+    "• 💶 **Calcular presupuestos orientativos** (dime medidas en cm y zona)\n" +
+    "• ❓ **Resolver dudas sobre la app** (firmar consentimiento, descargar PDF, mapa, etc.)\n" +
+    "• 🩹 **Revisar fotos de cicatrización**\n\n" +
+    "¿Podrías aclararme o reformular lo que necesitas?";
 }

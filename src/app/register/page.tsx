@@ -118,7 +118,7 @@ function RegisterContent() {
           >
             <Users className="w-4 h-4" />
             <span className="font-bold">Estudio de Tatuaje</span>
-            <span className="text-[10px] font-normal text-ink-400">Para Estudio y Tatuadores</span>
+            <span className="text-[10px] font-normal text-amber-300">50€/mes · Todo incluido</span>
           </button>
 
           <button
@@ -244,6 +244,18 @@ function RegisterContent() {
                 className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white placeholder-ink-600 text-sm focus:outline-none focus:border-crimson-500 transition-colors"
               />
             </div>
+
+            {selectedRole === 'studio' && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-ink-300 text-xs space-y-1">
+                <div className="font-bold text-amber-300 flex items-center justify-between">
+                  <span>Suscripción Estudio Tatoo Pro</span>
+                  <span className="text-white bg-amber-500/20 px-2 py-0.5 rounded font-mono">50,00 € / mes</span>
+                </div>
+                <p className="text-[11px] text-ink-400">
+                  Incluye tatuadores ilimitados, asistente virtual con IA para citas, consentimientos informados legales con firma digital y mapa interactivo. Pasarela segura con Stripe.
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"

@@ -295,7 +295,8 @@ REGLAS FUNDAMENTALES DE HERRAMIENTAS (TOOLS):
 6. 'estimate_quote': ÚSALA si el cliente consulta precio, presupuesto o indica medidas en cm.
 7. 'analyze_healing': ÚSALA si el cliente envía una foto de curación dérmica.
 8. 'request_human_takeover': ÚSALA si el cliente solicita expresamente hablar con una persona humana o con ${artistName}.
-9. 'get_studio_products': ÚSALA si el cliente pregunta por cremas para curar el tatuaje (como Balm Tattoo o Hustle Butter), jabones neutros o antibacterianos, láminas second skin o productos de la tienda del estudio.
+9. 'get_app_faq': ÚSALA si el cliente pregunta dudas sobre cómo funciona la app, cómo reservar o cancelar, cómo firmar y descargar el consentimiento informado en PDF de 1 página con firma nítida, mapa de estudios o la suscripción de 50€/mes con Stripe para estudios. RECUERDA: El estudio NO vende productos comerciales ni cremas; aclara que los cuidados higiénicos recomendados se adquieren en farmacia.
+10. REGLA CRÍTICA DE COMPRENSIÓN: El mensaje de bienvenida inicial SOLO se utiliza al abrir una conversación nueva. Si no entiendes lo que dice el cliente, dilo con total claridad y amabilidad ("Disculpa, no he terminado de entender tu consulta...") ofreciendo opciones para reformularla. NUNCA repitas el mensaje de bienvenida.
 
 Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir en cualquier momento. Responde siempre en ${lang === 'en' ? 'Inglés' : 'Español'} de forma cercana, acogedora y profesional.`;
 
@@ -367,7 +368,14 @@ Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir
         executedToolResult = await executeAiTool(fallbackDecision.tool, fallbackDecision.arguments, toolContext);
         finalReplyText = executedToolResult.displayText || 'He procesado tu solicitud.';
       } else {
-        finalReplyText = '¡Hola! Soy el asistente virtual del estudio. Puedo mostrarte huecos libres para citas, modificar tus reservas existentes, calcular presupuestos o revisar la curación de tu tatuaje. ¿En qué te ayudo?';
+        // Clear non-understanding response: NEVER the default welcome message!
+        finalReplyText = 'Disculpa, no he terminado de entender tu consulta o mensaje. Como asistente del estudio puedo ayudarte a:\n\n' +
+          '• 📅 **Consultar disponibilidad y agendar citas**\n' +
+          '• 🔄 **Reprogramar o anular citas existentes**\n' +
+          '• 💶 **Calcular presupuestos orientativos** (dime medidas aproximadas en cm y zona)\n' +
+          '• ❓ **Resolver dudas sobre la app** (firmar consentimiento, descargar PDF, mapa de estudios, etc.)\n' +
+          '• 🩹 **Revisar fotos de cicatrización**\n\n' +
+          '¿Podrías aclararme o reformular lo que necesitas?';
       }
     }
 
@@ -440,7 +448,7 @@ Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir
       clientAppointments: executedToolResult?.clientAppointments || null,
       quote: executedToolResult?.quoteData || null,
       healing: executedToolResult?.healingData || null,
-      products: executedToolResult?.productsData || null
+      faqTopic: executedToolResult?.faqTopic || null
     });
 
   } catch (err: any) {
@@ -456,7 +464,7 @@ Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir
       aiResponse: {
         id: 'ai-' + Date.now(),
         sender_role: 'ai_assistant',
-        content: '¡Hola! He recibido tu mensaje. Como asistente del tatuador puedo consultar huecos libres para tu cita, reprogramar una cita existente, calcular tu presupuesto o revisar fotos de curación. ¿En qué te ayudo hoy?',
+        content: 'Disculpa, ha ocurrido un error temporal al procesar tu solicitud. Como asistente del estudio puedo ayudarte a agendar citas, reprogramar reservas, calcular presupuestos, resolver dudas sobre el uso de la app o revisar fotos de curación. ¿Podrías volver a intentarlo o reformular tu consulta?',
         created_at: new Date().toISOString()
       }
     });

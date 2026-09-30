@@ -49,7 +49,7 @@ export interface ToolExecutionResult {
   clientAppointments?: any[];
   quoteData?: any;
   healingData?: any;
-  productsData?: any[];
+  faqTopic?: string;
 }
 
 /**
@@ -472,18 +472,19 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
     };
   }
 
-  // 8. Studio Products & Aftercare intent (Creams, second-skin, antibacterial soap, merch)
-  const isProductsIntent = /(?:crema|aftercare|pomada|balsamo|bálsamo|hustle butter|balm tattoo|jabon|jabón|segunda piel|second skin|dermalize|merch|tienda|productos?|cuidados?|comprar|curar el tatuaje|jabones)/i.test(text);
-  if (isProductsIntent) {
-    let cat = 'all';
-    if (/crema|pomada|balsamo|bálsamo|aftercare|hustle/i.test(text)) cat = 'aftercare';
-    else if (/jabon|jabón|limpiar/i.test(text)) cat = 'soaps';
-    else if (/segunda piel|second skin|parche|lámina|dermalize/i.test(text)) cat = 'protection';
-    else if (/camiseta|merch|ropa/i.test(text)) cat = 'merch';
+  // 8. App Usage & FAQ Intent (How to use app, appointments, consent PDF, map, aftercare hygiene without sales, Stripe 50€/mo)
+  const isAppFaqIntent = /(?:c[oó]mo funciona|c[oó]mo usar|c[oó]mo firmo|c[oó]mo reservar|c[oó]mo cancelo|d[oó]nde est[aá] el mapa|c[oó]mo descargar el pdf|qu[eé] es tatoo|ayuda con la app|suscripci[oó]n|50€|50 euros|stripe|pasarela|crema|pomada|b[aá]lsamo|jab[oó]n|aftercare|cuidados?|qu[eé] me pongo|c[oó]mo curar|segunda piel|consentimiento|descargar pdf|imprimir)/i.test(text);
+  if (isAppFaqIntent) {
+    let topic = 'general_help';
+    if (/consentimiento|firm|pdf|imprimir|descargar|validez legal/i.test(text)) topic = 'consent_pdf';
+    else if (/mapa|direcci[oó]n|ubicaci[oó]n|estudios? en el mapa|carto/i.test(text)) topic = 'map_studios';
+    else if (/crema|pomada|b[aá]lsamo|jab[oó]n|aftercare|cuidados?|curar|segunda piel/i.test(text)) topic = 'aftercare_rules';
+    else if (/suscripci[oó]n|50€|50 euros|stripe|pasarela|pago mensual|cuota/i.test(text)) topic = 'stripe_subscription';
+    else if (/cita|reservar|reprogramar|cancelar|agenda/i.test(text)) topic = 'appointments';
 
     return {
-      tool: 'get_studio_products',
-      arguments: { category: cat }
+      tool: 'get_app_faq',
+      arguments: { topic, query: text }
     };
   }
 
@@ -1149,50 +1150,63 @@ export async function executeAiTool(
       };
     }
 
-    case 'get_studio_products': {
-      try {
-        const category = toolArgs.category || 'all';
-        let query = supabase.from('products').select('*');
-        if (context.studioId) {
-          query = query.eq('studio_id', context.studioId);
-        }
-        if (category !== 'all') {
-          query = query.eq('category', category);
-        }
+    case 'get_app_faq': {
+      const topic = toolArgs.topic || 'general_help';
+      let faqText = '';
 
-        const { data: products } = await query;
-        let productList = products || [];
+      switch (topic) {
+        case 'consent_pdf':
+          faqText = `📜 **Consentimiento Informado Legal & Descarga en PDF:**\n\n` +
+            `• **¿Cómo se firma?** Desde tu panel de cliente, pulsa en *Firmar Consentimiento* en tu cita. Podrás responder el cuestionario sanitario y estampar tu firma digital directa con el dedo o ratón.\n` +
+            `• **Tinta oscura de alta visibilidad:** El sistema procesa la firma convirtiendo los trazos en tinta oscura oficial (#0f172a) para máxima nitidez en pantalla e impresión.\n` +
+            `• **Descarga / Impresión en PDF:** Al pulsar *Imprimir / Descargar PDF*, el documento se genera de forma aislada en 1 sola página A4 oficial (sin páginas en blanco previas) listo para guardar o imprimir con plena validez jurídica.`;
+          break;
 
-        // Curated fallback seed if DB table has not been initialized
-        if (productList.length === 0) {
-          const SEED_CATALOG = [
-            { name: 'Balm Tattoo Original (30g)', price: 12.0, category: 'aftercare', description: 'Pomada cicatrizante con pantenol y dexpantenol para regeneración dérmica rápida.', in_stock: true },
-            { name: 'Hustle Butter Deluxe (150ml)', price: 24.5, category: 'aftercare', description: 'Manteca 100% vegana con karité y mango. Calma el picor y realza los colores.', in_stock: true },
-            { name: 'Jabón Espuma Antibacteriano Blue Soap (250ml)', price: 14.0, category: 'soaps', description: 'Jabón antiséptico suave con pH neutro especial para curar tatuajes recientes.', in_stock: true },
-            { name: 'Láminas Second-Skin Dermalize Pro (Pack 5)', price: 15.0, category: 'protection', description: 'Película protectora impermeable y transpirable de grado médico.', in_stock: true },
-            { name: 'Camiseta Oficial Atelier Blackwork (Edición Limitada)', price: 28.0, category: 'merch', description: '100% algodón orgánico pesado con serigrafía exclusiva del estudio.', in_stock: true }
-          ];
-          productList = category === 'all' ? SEED_CATALOG : SEED_CATALOG.filter(p => p.category === category);
-        }
+        case 'appointments':
+          faqText = `🗓️ **Gestión de Citas y Agenda:**\n\n` +
+            `• **Reservar Cita:** Puedes pedirme directamente huecos ("¿qué horarios tienes este viernes?") y te mostraré opciones libres en tiempo real para reservar con un solo clic.\n` +
+            `• **Tipos de Cita:** Disponemos de *Consulta de Diseño* (45 min para definir boceto) y *Sesión de Tatuaje* (con aguja y tinta).\n` +
+            `• **Reprogramar o Cancelar:** Pídemelo directamente en este chat (ej: "mueve mi cita al lunes a las 16:00" o "cancela mi cita") y actualizaré tu agenda al instante.`;
+          break;
 
-        const itemsText = productList.map(p => `• **${p.name}** (${p.price}€): ${p.description}`).join('\n');
-        const displayText = `🛍️ **Productos de Cuidado & Tienda del Estudio:**\n\n${itemsText}\n\nLos tenemos disponibles en el estudio para que te los lleves el día de tu cita. Si quieres, ¡puedo pedirle a ${context.artistName || 'el artista'} que te reserve uno en recepción!`;
+        case 'map_studios':
+          faqText = `🗺️ **Mapa Interactivo de Estudios (CARTO Basemaps):**\n\n` +
+            `• En la sección de búsqueda de estudios puedes ver un mapa geográfico real con todas las ubicaciones de los estudios asociados.\n` +
+            `• Cada estudio cuenta con su dirección física, coordenadas GPS exactas y listado de tatuadores residentes para que encuentres tu estudio más cercano.`;
+          break;
 
-        return {
-          success: true,
-          tool: 'get_studio_products',
-          result: { products: productList },
-          productsData: productList,
-          displayText
-        };
-      } catch (err: any) {
-        return {
-          success: false,
-          tool: 'get_studio_products',
-          result: { error: err.message },
-          displayText: 'No se pudieron consultar los productos en este momento.'
-        };
+        case 'stripe_subscription':
+          faqText = `💳 **Suscripción para Estudios (50 € / mes con Stripe):**\n\n` +
+            `• **Tarifa plana:** Los estudios de tatuaje pueden registrarse y acceder a todas las funcionalidades profesionales por **50,00 € al mes**.\n` +
+            `• **Qué incluye:** Tatuadores residentes ilimitados, asistente virtual con IA para citas y presupuestos, gestión de consentimientos informados con firma digital, mapa interactivo y plantillas de recordatorio por email.\n` +
+            `• **Gestión con Stripe:** La suscripción se tramita mediante la pasarela segura de Stripe. Desde el panel del estudio puedes descargar facturas oficiales, cambiar el método de pago o gestionar la renovación en cualquier momento.`;
+          break;
+
+        case 'aftercare_rules':
+          faqText = `🩹 **Pautas Sanitarias de Cicatrización del Tatuaje:**\n\n` +
+            `⚠️ *Nota: En el estudio no vendemos ni comercializamos productos. Todos los materiales higiénicos recomendados se adquieren en farmacias o supermercados habituales.*\n\n` +
+            `1. **Lavado:** Lava el tatuaje 2-3 veces al día con agua tibia y jabón neutro sin perfume (pH neutro de farmacia). Seca a toques suaves con papel de cocina desechable, nunca con toalla.\n` +
+            `2. **Hidratación:** Aplica una capa muy fina y transparente de pomada cicatrizante específica (como pomada con dexpantenol de farmacia). No satures la piel.\n` +
+            `3. **Protección:** No te rasques las costras ni arranques pieles. Evita inmersión en agua (bañeras, piscinas, mar o saunas) durante los primeros 20-30 días.\n` +
+            `4. **Revisión por foto:** Si tienes dudas sobre cómo evoluciona tu piel, pulsa el icono de la cámara 📷 en este chat y analizaré la foto para darte tranquilidad.`;
+          break;
+
+        default:
+          faqText = `ℹ️ **Guía y Soporte de Tatoo:**\n\n` +
+            `• **Para Clientes:** Consulta disponibilidad, calcula presupuestos en base a medidas en cm, reserva citas, firma consentimientos legales y revisa la curación por foto.\n` +
+            `• **Para Tatuadores:** Dispones de tu propio asistente virtual para consultar tu agenda diaria, bloquear horas de descanso, revisar consentimientos de clientes y configurar tus tarifas.\n` +
+            `• **Para Estudios:** Suscripción mensual de 50€/mes con Stripe para gestión integral de artistas, clientes y presencia en el mapa interactivo.\n\n` +
+            `¿Tienes alguna duda concreta sobre alguna de estas funciones?`;
+          break;
       }
+
+      return {
+        success: true,
+        tool: 'get_app_faq',
+        result: { topic, status: 'answered' },
+        faqTopic: topic,
+        displayText: faqText
+      };
     }
 
     default:

@@ -22,12 +22,12 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  ShoppingBag
+  Bot
 } from 'lucide-react';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
 import EditAppointmentModal from '@/components/dashboard/EditAppointmentModal';
-import StudioShopSection from '@/components/dashboard/StudioShopSection';
+import ArtistCopilotChat from '@/components/dashboard/ArtistCopilotChat';
 
 export default function ArtistPortal({
   user,
@@ -40,7 +40,7 @@ export default function ArtistPortal({
   artistId?: string;
   onBackToStudio?: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'chats' | 'pricing' | 'healing' | 'shares' | 'products'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'copilot' | 'chats' | 'pricing' | 'healing' | 'shares'>('calendar');
   const [artist, setArtist] = useState<any>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [chats, setChats] = useState<any[]>([]);
@@ -520,6 +520,18 @@ export default function ArtistPortal({
         </button>
 
         <button
+          onClick={() => setActiveTab('copilot')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'copilot'
+              ? 'bg-gradient-to-r from-amber-500/20 to-crimson-600/30 text-white border border-amber-500/40 shadow-sm'
+              : 'text-ink-400 hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>Copilot IA Tatuador</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('chats')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
             activeTab === 'chats' ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white'
@@ -557,16 +569,6 @@ export default function ArtistPortal({
         >
           <Share2 className="w-4 h-4 text-purple-400" />
           <span>Galería y newsletter</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            activeTab === 'products' ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white'
-          }`}
-        >
-          <ShoppingBag className="w-4 h-4 text-pink-400" />
-          <span>Tienda</span>
         </button>
       </div>
 
@@ -1263,14 +1265,13 @@ export default function ArtistPortal({
         </div>
       )}
 
-      {/* TAB 6: STUDIO SHOP & PRODUCTS (TIENDA & PRODUCTOS) */}
-      {activeTab === 'products' && (
-        <div className="space-y-6">
-          <StudioShopSection
-            isArtistMode={true}
-            currentStudioId={artist?.studio_id}
-          />
-        </div>
+      {/* TAB 2: COPILOT IA DEL TATUADOR */}
+      {activeTab === 'copilot' && (
+        <ArtistCopilotChat
+          artist={artist}
+          appointments={appointments}
+          onRefreshAppointments={loadArtistData}
+        />
       )}
 
       {/* MODAL: MANUAL WALK-IN OR BREAK BLOCK */}
