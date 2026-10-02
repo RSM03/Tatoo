@@ -1461,7 +1461,11 @@ export default function ArtistPortal({
         appointment={editingApp}
         studioArtists={studioArtists}
         onAppointmentUpdated={(updated) => {
-          setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
+          if (!updated || updated._deleted) {
+            setAppointments(prev => prev.filter(a => a.id !== (updated?.id || editingApp?.id)));
+          } else {
+            setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
+          }
         }}
       />
 

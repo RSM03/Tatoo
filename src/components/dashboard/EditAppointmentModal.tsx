@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Clock, CheckCircle2, AlertTriangle, Calendar, Scissors, Tag, ArrowRightLeft, Users } from 'lucide-react';
+import { X, Clock, CheckCircle2, AlertTriangle, Calendar, Scissors, Tag, ArrowRightLeft, Users, Trash2 } from 'lucide-react';
 
 interface EditAppointmentModalProps {
   isOpen: boolean;
@@ -29,7 +29,39 @@ export default function EditAppointmentModal({
   const [appointmentType, setAppointmentType] = useState(appointment.appointment_type || 'tattoo_session');
   const [durationHours, setDurationHours] = useState<number>(diffHours > 0 ? diffHours : 2.5);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleDelete = async () => {
+    const isBreak = appointment.appointment_type === 'break_blocked' || appointment.appointment_type === 'break';
+    const label = isBreak ? 'este descanso' : 'esta cita';
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar definitivamente ${label}? Se borrará por completo de la base de datos y esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    setDeleting(true);
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/appointments/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId: appointment.id })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Error al eliminar');
+      }
+
+      onAppointmentUpdated({ id: appointment.id, _deleted: true });
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al eliminar');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Reassignment state
   const [targetArtistId, setTargetArtistId] = useState('');
@@ -303,23 +335,36 @@ export default function EditAppointmentModal({
         </div>
 
         {/* Modal Actions */}
-        <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
+        <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white font-semibold text-xs transition-colors"
+            disabled={loading || deleting}
+            onClick={handleDelete}
+            className="px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-all flex items-center gap-1.5"
+            title="Eliminar permanentemente de la base de datos"
           >
-            Cancelar
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{deleting ? 'Borrando...' : (appointment.appointment_type === 'break_blocked' || appointment.appointment_type === 'break' ? 'Borrar descanso' : 'Borrar cita')}</span>
           </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => handleSave()}
-            className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white font-bold text-xs shadow-lg shadow-crimson-600/30 transition-all flex items-center gap-2"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-ink-300 hover:text-white font-semibold text-xs transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={loading || deleting}
+              onClick={() => handleSave()}
+              className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white font-bold text-xs shadow-lg shadow-crimson-600/30 transition-all flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

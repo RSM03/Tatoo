@@ -153,7 +153,7 @@ export default function ArtistCopilotChat({
         }
       ]);
 
-      if ((data.data?.newBlock || data.data?.newAppointment) && onRefreshAppointments) {
+      if ((data.data?.newBlock || data.data?.newAppointment || data.data?.deletedAppointmentId || data.data?.updatedAppointment) && onRefreshAppointments) {
         onRefreshAppointments();
       }
     } catch (err: any) {

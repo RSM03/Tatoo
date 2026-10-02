@@ -148,12 +148,28 @@ export async function POST(req: NextRequest) {
       {
         type: 'function',
         function: {
-          name: 'cancel_or_reschedule_appointment',
-          description: 'Cancela o reprograma una cita de la agenda del tatuador.',
+          name: 'delete_appointment_or_break',
+          description: 'Elimina o borra definitivamente y por completo una cita o descanso bloqueado del calendario y base de datos del tatuador.',
           parameters: {
             type: 'object',
             properties: {
-              action: { type: 'string', enum: ['cancel', 'reschedule'], description: 'Acción a realizar' },
+              appointment_id: { type: 'string', description: 'ID o fragmento del ID de la cita o descanso a borrar' },
+              date: { type: 'string', description: 'Fecha de la cita o descanso (ej: mañana, hoy, este viernes, YYYY-MM-DD)' },
+              start_time: { type: 'string', description: 'Hora aproximada del evento a borrar (ej: 16:00, 11:00)' },
+              reason_or_type: { type: 'string', description: 'Tipo o motivo: descanso, comida, o cita de tatuaje' }
+            }
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'cancel_or_reschedule_appointment',
+          description: 'Cancela, reprograma o borra una cita o descanso de la agenda del tatuador.',
+          parameters: {
+            type: 'object',
+            properties: {
+              action: { type: 'string', enum: ['cancel', 'reschedule', 'delete'], description: 'Acción a realizar: cancel (marcar como cancelada), reschedule (reprogramar a otra hora/día), o delete (borrar permanentemente de la base de datos)' },
               appointment_id: { type: 'string', description: 'ID o fragmento del ID de la cita' },
               new_date: { type: 'string', description: 'Nueva fecha si se reprograma' },
               new_time: { type: 'string', description: 'Nueva hora si se reprograma' },
@@ -212,7 +228,8 @@ REGLAS CRÍTICAS:
 1. Sé conciso, profesional, dinámico y muy útil para el tatuador.
 2. CREACIÓN DE CITAS: Cuando el tatuador te pida crear o agendar una cita (ej: "crea una cita para mañana", "agenda a las 11:00 con Pedro", "pon una cita mañana"), USA INMEDIATAMENTE la herramienta 'create_artist_appointment'.
 3. DESCANSO: Usa 'block_break_time' para descansos o comidas.
-4. CONSULTAS: Puedes consultar citas ('get_artist_agenda'), cancelar/mover ('cancel_or_reschedule_appointment') y verificar quién ha firmado el consentimiento ('check_client_consents').
+4. GESTIÓN Y BORRADO: Puedes consultar citas ('get_artist_agenda'), cancelar/mover ('cancel_or_reschedule_appointment'), borrar definitivamente citas o descansos bloqueados ('delete_appointment_or_break') y verificar quién ha firmado el consentimiento ('check_client_consents').
+   - Si el tatuador te pide "borra el descanso...", "elimina la cita...", "quita el bloqueo..." o similar, USA INMEDIATAMENTE 'delete_appointment_or_break'.
 5. Puedes resolver CUALQUIER duda sobre cómo usar la app (tarifas, consentimientos legales en PDF de 1 página con firma nítida, suscripción de 50€/mes con Stripe, mapa, etc.).
 6. REGLA DE COMPRENSIÓN: Si no entiendes lo que el tatuador solicita, díselo claramente ("Disculpa, no he entendido qué deseas hacer...") y dale sugerencias directas. NUNCA respondas con un saludo inicial ni mensaje genérico de bienvenida.`;
 
@@ -346,37 +363,135 @@ REGLAS CRÍTICAS:
           const startIso = startDt.toISOString();
           const endIso = endDt.toISOString();
 
-          const { data: newBlock, error: blockErr } = await supabase
+          // Check if there are conflicts with non-cancelled appointments in this slot
+          const { data: conflicts } = await supabase
             .from('appointments')
-            .insert({
-              artist_id: artist.id,
-              studio_id: artist.studio_id,
-              title: `🔒 ${args.reason || 'Descanso / No disponible'}`,
-              appointment_type: 'break',
-              start_time: startIso,
-              end_time: endIso,
-              status: 'confirmed'
-            })
-            .select()
-            .maybeSingle();
+            .select('id, start_time, end_time, title')
+            .eq('artist_id', artist.id)
+            .neq('status', 'cancelled')
+            .lt('start_time', endIso)
+            .gt('end_time', startIso);
 
-          if (blockErr) {
-            executionOutput = { success: false, error: blockErr.message };
-          } else {
-            const formattedDate = formatMadridDate(startDt);
-            const formattedStartTime = formatMadridTime(startDt);
-            const formattedEndTime = formatMadridTime(endDt);
-
+          if (conflicts && conflicts.length > 0) {
+            const confStart = formatMadridTime(conflicts[0].start_time);
+            const confEnd = formatMadridTime(conflicts[0].end_time);
             executionOutput = {
-              success: true,
-              date: targetDate,
-              start_time: startTime,
-              duration_hours: durationHours,
-              reason: args.reason || 'Descanso',
-              block_id: newBlock?.id,
-              details: `Descanso bloqueado el ${formattedDate} de ${formattedStartTime} a ${formattedEndTime}`
+              success: false,
+              conflict: true,
+              error: `Ya existe una cita o bloqueo en ese horario (${confStart} - ${confEnd}: ${conflicts[0].title || 'Ocupado'}). No se puede solapar el descanso.`
             };
-            toolResultData = { newBlock };
+          } else {
+            const { data: newBlock, error: blockErr } = await supabase
+              .from('appointments')
+              .insert({
+                artist_id: artist.id,
+                studio_id: artist.studio_id,
+                title: `🔒 ${args.reason || 'Descanso / No disponible'}`,
+                appointment_type: 'break_blocked',
+                start_time: startIso,
+                end_time: endIso,
+                status: 'confirmed'
+              })
+              .select()
+              .maybeSingle();
+
+            if (blockErr) {
+              executionOutput = { success: false, error: blockErr.message };
+            } else {
+              const formattedDate = formatMadridDate(startDt);
+              const formattedStartTime = formatMadridTime(startDt);
+              const formattedEndTime = formatMadridTime(endDt);
+
+              executionOutput = {
+                success: true,
+                date: targetDate,
+                start_time: startTime,
+                duration_hours: durationHours,
+                reason: args.reason || 'Descanso',
+                block_id: newBlock?.id,
+                details: `Descanso bloqueado el ${formattedDate} de ${formattedStartTime} a ${formattedEndTime}`
+              };
+              toolResultData = { newBlock };
+            }
+          }
+        } else if (fnName === 'delete_appointment_or_break' || (fnName === 'cancel_or_reschedule_appointment' && args.action === 'delete')) {
+          const queryId = (args.appointment_id || '').toLowerCase().trim();
+          let targetApp: any = null;
+
+          if (queryId) {
+            targetApp = appsList.find(a => a.id.toLowerCase().includes(queryId) || (a.id.slice(0, 8) === queryId));
+            if (!targetApp) {
+              const { data: foundById } = await supabase
+                .from('appointments')
+                .select('id, title, appointment_type, start_time, end_time')
+                .eq('artist_id', artist.id)
+                .ilike('id', `%${queryId}%`)
+                .limit(1)
+                .maybeSingle();
+              targetApp = foundById;
+            }
+          }
+
+          if (!targetApp) {
+            const targetDate = args.date ? parseRelativeDate(args.date, now) : (content ? parseRelativeDate(content, now) : null);
+            const timeDetails = parseExplicitTimeDetails(content || '');
+            const startTime = timeDetails?.startTime || args.start_time || null;
+
+            let query = supabase
+              .from('appointments')
+              .select('id, title, appointment_type, start_time, end_time')
+              .eq('artist_id', artist.id);
+
+            if (targetDate) {
+              query = query.gte('start_time', `${targetDate}T00:00:00Z`).lte('start_time', `${targetDate}T23:59:59Z`);
+            }
+
+            const { data: candidates } = await query;
+            if (candidates && candidates.length > 0) {
+              const isLookingForBreak = (args.reason_or_type && args.reason_or_type.toLowerCase().includes('descanso')) || (content && (content.toLowerCase().includes('descanso') || content.toLowerCase().includes('comida') || content.toLowerCase().includes('bloqueo')));
+
+              let filtered = candidates;
+              if (isLookingForBreak) {
+                const breaks = candidates.filter(c => c.appointment_type === 'break_blocked' || c.appointment_type === 'break' || (c.title && c.title.toLowerCase().includes('descanso')));
+                if (breaks.length > 0) filtered = breaks;
+              }
+
+              if (startTime) {
+                targetApp = filtered.find(c => {
+                  const mTime = formatMadridTime(c.start_time);
+                  return mTime === startTime || mTime.startsWith(startTime.slice(0, 2));
+                }) || filtered[0];
+              } else {
+                targetApp = filtered[0];
+              }
+            }
+          }
+
+          if (!targetApp) {
+            executionOutput = {
+              success: false,
+              error: 'No se encontró la cita o descanso para eliminar en la agenda. Por favor, especifica el día, la hora o el ID.'
+            };
+          } else {
+            const { error: delErr } = await supabase
+              .from('appointments')
+              .delete()
+              .eq('id', targetApp.id);
+
+            if (delErr) {
+              executionOutput = { success: false, error: delErr.message };
+            } else {
+              const fStart = formatMadridDate(targetApp.start_time);
+              const fTime = formatMadridTime(targetApp.start_time);
+              executionOutput = {
+                success: true,
+                deleted: true,
+                appointment_id: targetApp.id,
+                title: targetApp.title,
+                details: `Cita o descanso "${targetApp.title}" (${fStart} a las ${fTime}) ha sido eliminado permanentemente de la agenda y base de datos.`
+              };
+              toolResultData = { deletedAppointmentId: targetApp.id };
+            }
           }
         } else if (fnName === 'check_client_consents') {
           const queryName = (args.client_name || '').toLowerCase();
@@ -411,6 +526,7 @@ REGLAS CRÍTICAS:
           } else if (action === 'cancel') {
             await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', targetApp.id);
             executionOutput = { success: true, action: 'cancelled', appointment_id: targetApp.id, title: targetApp.title };
+            toolResultData = { updatedAppointment: { ...targetApp, status: 'cancelled' } };
           } else {
             const newDate = parseRelativeDate(args.new_date || 'mañana', now);
             const timeDetails = parseExplicitTimeDetails(content || '');
@@ -428,6 +544,7 @@ REGLAS CRÍTICAS:
               new_time: newTime,
               details: `Reprogramada al ${formatMadridDate(startDt)} de ${formatMadridTime(startDt)} a ${formatMadridTime(endDt)}`
             };
+            toolResultData = { updatedAppointment: { ...targetApp, start_time: startIso, end_time: endIso, status: 'confirmed' } };
           }
         } else if (fnName === 'get_app_faq') {
           executionOutput = {
@@ -495,11 +612,106 @@ REGLAS CRÍTICAS:
         } else {
           replyText = `⚠️ No se pudo registrar la cita automáticamente. Por favor, indícame la fecha y hora.`;
         }
+      } else if ((lower.includes('descanso') || lower.includes('comida') || lower.includes('bloquea')) && (lower.includes('pon') || lower.includes('añade') || lower.includes('bloquea') || lower.includes('crea') || lower.includes('ponme'))) {
+        const targetDate = parseRelativeDate(content, now);
+        const timeDetails = parseExplicitTimeDetails(content);
+        const startTime = timeDetails?.startTime || '16:00';
+        const durationHours = timeDetails?.durationHours || 1;
+        const startDt = createDateInTimezone(targetDate, startTime, 'Europe/Madrid');
+        const endDt = new Date(startDt.getTime() + durationHours * 3600000);
+        const startIso = startDt.toISOString();
+        const endIso = endDt.toISOString();
+
+        const { data: conflicts } = await supabase
+          .from('appointments')
+          .select('id, start_time, end_time, title')
+          .eq('artist_id', artist.id)
+          .neq('status', 'cancelled')
+          .lt('start_time', endIso)
+          .gt('end_time', startIso);
+
+        if (conflicts && conflicts.length > 0) {
+          const cStart = formatMadridTime(conflicts[0].start_time);
+          const cEnd = formatMadridTime(conflicts[0].end_time);
+          replyText = `⚠️ No se puede bloquear el descanso en ese horario porque ya tienes una cita o bloqueo reservado (${cStart} - ${cEnd}: ${conflicts[0].title || 'Ocupado'}).`;
+        } else {
+          const { data: newBlock, error: blockErr } = await supabase
+            .from('appointments')
+            .insert({
+              artist_id: artist.id,
+              studio_id: artist.studio_id,
+              title: '🔒 Descanso',
+              appointment_type: 'break_blocked',
+              start_time: startIso,
+              end_time: endIso,
+              status: 'confirmed'
+            })
+            .select()
+            .maybeSingle();
+
+          if (newBlock) {
+            toolResultData = { newBlock };
+            const fDate = formatMadridDate(startDt);
+            const fStart = formatMadridTime(startDt);
+            const fEnd = formatMadridTime(endDt);
+            replyText = `🔒 ¡Descanso bloqueado con éxito para el **${fDate} de ${fStart} a ${fEnd}** (${durationHours}h)! Ya está registrado en tu agenda.`;
+          } else {
+            replyText = `⚠️ No se pudo bloquear el descanso: ${blockErr?.message || 'Error al guardar'}`;
+          }
+        }
+      } else if ((lower.includes('borra') || lower.includes('elimina') || lower.includes('quita')) && (lower.includes('cita') || lower.includes('descanso') || lower.includes('bloqueo'))) {
+        const targetDate = parseRelativeDate(content, now);
+        const timeDetails = parseExplicitTimeDetails(content);
+        const startTime = timeDetails?.startTime || null;
+
+        let query = supabase
+          .from('appointments')
+          .select('id, title, appointment_type, start_time, end_time')
+          .eq('artist_id', artist.id);
+
+        if (targetDate) {
+          query = query.gte('start_time', `${targetDate}T00:00:00Z`).lte('start_time', `${targetDate}T23:59:59Z`);
+        }
+
+        const { data: candidates } = await query;
+        let targetApp: any = null;
+
+        if (candidates && candidates.length > 0) {
+          const isLookingForBreak = lower.includes('descanso') || lower.includes('comida') || lower.includes('bloqueo');
+          let filtered = candidates;
+          if (isLookingForBreak) {
+            const breaks = candidates.filter(c => c.appointment_type === 'break_blocked' || c.appointment_type === 'break' || (c.title && c.title.toLowerCase().includes('descanso')));
+            if (breaks.length > 0) filtered = breaks;
+          }
+          if (startTime) {
+            targetApp = filtered.find(c => {
+              const mTime = formatMadridTime(c.start_time);
+              return mTime === startTime || mTime.startsWith(startTime.slice(0, 2));
+            }) || filtered[0];
+          } else {
+            targetApp = filtered[0];
+          }
+        }
+
+        if (targetApp) {
+          const { error: delErr } = await supabase.from('appointments').delete().eq('id', targetApp.id);
+          if (!delErr) {
+            toolResultData = { deletedAppointmentId: targetApp.id };
+            const fStart = formatMadridDate(targetApp.start_time);
+            const fTime = formatMadridTime(targetApp.start_time);
+            replyText = `🗑️ Se ha eliminado permanentemente de tu agenda el evento "${targetApp.title}" (${fStart} a las ${fTime}).`;
+          } else {
+            replyText = `⚠️ Hubo un error al eliminar el evento de la agenda: ${delErr.message}`;
+          }
+        } else {
+          replyText = `No he encontrado ninguna cita o descanso en esa fecha/hora para eliminar. Por favor, indícame el día o la hora exacta.`;
+        }
       } else {
         replyText = `Disculpa, no he terminado de entender tu solicitud. Como tu asistente de tatuador puedo ayudarte a:\n\n` +
           `• 📅 **Crear y agendar citas** (ej: "crea una cita para mañana a las 11:00")\n` +
           `• 🗓️ **Consultar tus citas de hoy o de la semana**\n` +
-          `• 🔒 **Bloquear horas para descansos o comidas** (ej: "bloquea mañana de 14 a 15h")\n` +
+          `• 🔒 **Bloquear horas para descansos o comidas** (ej: "bloquea mañana de 16 a 17h")\n` +
+          `• 🗑️ **Borrar citas o descansos** (ej: "borra el descanso de mañana a las 16")\n` +
           `• 📋 **Verificar qué clientes han firmado el consentimiento**\n` +
           `• ❓ **Resolver dudas sobre la app** (tarifas, PDF de consentimiento, suscripción de 50€/mes con Stripe, etc.)\n\n` +
           `¿Podrías especificar qué necesitas?`;
