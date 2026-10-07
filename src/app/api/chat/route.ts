@@ -221,11 +221,12 @@ export async function POST(req: NextRequest) {
         .from('chat_messages')
         .select('sender_role, content, created_at')
         .eq('chat_id', actualChatId)
-        .order('created_at', { ascending: true })
-        .limit(10);
+        .order('created_at', { ascending: false })
+        .limit(12);
 
       if (dbHistory) {
-        historyMessages = dbHistory.map(m => ({
+        // Cogemos los ÚLTIMOS mensajes (antes cogía los 10 primeros y la IA no veía lo nuevo)
+        historyMessages = [...dbHistory].reverse().filter(m => (m.content || '').trim() !== '').map(m => ({
           role: m.sender_role === 'ai_assistant' ? 'assistant' : (m.sender_role === 'client' ? 'user' : 'assistant'),
           content: m.content
         }));
@@ -284,6 +285,8 @@ REGLAS FUNDAMENTALES DE HERRAMIENTAS (TOOLS):
 7. 'analyze_healing': ÚSALA si el cliente envía una foto de curación dérmica.
 8. 'request_human_takeover': ÚSALA si el cliente solicita expresamente hablar con una persona humana o con ${artistName}.
 9. 'get_app_faq': ÚSALA si el cliente pregunta dudas sobre cómo funciona la app, cómo reservar o cancelar, cómo firmar y descargar el consentimiento informado en PDF de 1 página con firma nítida, mapa de estudios o la suscripción de 50€/mes con Stripe para estudios. RECUERDA: El estudio NO vende productos comerciales ni cremas; aclara que los cuidados higiénicos recomendados se adquieren en farmacia.
+11. NUNCA INVENTES DATOS: Menciona SOLO los huecos, fechas, horas, precios y citas que te devuelvan las herramientas. Si check_availability devuelve 3 huecos, ofrece esos 3 y ninguno más. Si no devuelve huecos para un día, dilo y ofrece buscar otro día. Para dudas de la app usa la 'respuesta_oficial' de get_app_faq, sin cambiar cómo funciona.
+12. CONVERSACIÓN NORMAL: Si el cliente solo saluda, charla o pregunta algo general sobre tatuajes (estilos, dolor, cuidados, ideas), contesta tú directamente de forma natural, breve y cercana, sin usar herramientas. Usa herramientas solo cuando haga falta consultar o cambiar algo real (agenda, citas, precios). Escribe en español de España ("precio", no "costo"), con frases cortas, como una persona del estudio.
 10. REGLA CRÍTICA DE COMPRENSIÓN: El mensaje de bienvenida inicial SOLO se utiliza al abrir una conversación nueva. Si no entiendes lo que dice el cliente, dilo con total claridad y amabilidad ("Disculpa, no he terminado de entender tu consulta...") ofreciendo opciones para reformularla. NUNCA repitas el mensaje de bienvenida.
 
 Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir en cualquier momento. Responde siempre en ${lang === 'en' ? 'Inglés' : 'Español'} de forma cercana, acogedora y profesional.`;
@@ -337,7 +340,10 @@ Transparencia: Recuerda que ${artistName} supervisa este chat y puede intervenir
           role: 'tool',
           tool_call_id: toolCall.id,
           name: toolCall.function.name,
-          content: JSON.stringify(executedToolResult.result)
+          content: JSON.stringify({
+            datos: executedToolResult.result,
+            texto_de_referencia: executedToolResult.displayText || null
+          })
         });
       }
 

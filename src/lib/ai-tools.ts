@@ -167,6 +167,28 @@ export function formatMadridDate(date: Date | string): string {
 }
 
 /**
+ * Busca una palabra COMPLETA (no trozos de otras palabras). Acepta tildes y ñ.
+ * Ej: hasWord('¿sabes si hay hueco?', 'sab') -> false ; hasWord('el jueves', 'jueves') -> true
+ */
+export function hasWord(text: string, word: string): boolean {
+  const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![a-z0-9áéíóúüñ])${esc}(?![a-z0-9áéíóúüñ])`, 'i').test(text || '');
+}
+
+/** "mañana" como día (tomorrow), no "por la mañana" */
+function mentionsTomorrow(text: string): boolean {
+  const t = (text || '').toLowerCase();
+  if (hasWord(t, 'tomorrow')) return true;
+  return /(?<!\bla\s)(?<![a-z0-9áéíóúüñ])ma(?:ñ|n)ana(?![a-z0-9áéíóúüñ])/i.test(t)
+    && !/pasado\s+ma(?:ñ|n)ana/i.test(t);
+}
+
+/** "la semana que viene", "la próxima semana", "next week" */
+function mentionsNextWeek(text: string): boolean {
+  return /semana\s+que\s+viene|pr[oó]xima\s+semana|siguiente\s+semana|next\s+week/i.test(text || '');
+}
+
+/**
  * Intelligent relative date parser for natural conversational queries
  */
 export function parseRelativeDate(dateInput: string, baseDate = new Date()): string {
@@ -188,18 +210,20 @@ export function parseRelativeDate(dateInput: string, baseDate = new Date()): str
 
   // 2. Check weekdays FIRST (e.g. "este viernes", "el próximo lunes", "viernes por la mañana")
   // Weekday names MUST take precedence over "mañana" (morning vs tomorrow)
+  // Solo nombres completos: las abreviaturas (mar, sab, vie...) se confundían con
+  // palabras normales ("tomar", "sabes", "viene").
   const daysOfWeek = [
-    { names: ['domingo', 'sunday', 'dom'], dayIdx: 0 },
-    { names: ['lunes', 'monday', 'lun'], dayIdx: 1 },
-    { names: ['martes', 'tuesday', 'mar'], dayIdx: 2 },
-    { names: ['miercoles', 'miércoles', 'wednesday', 'mie', 'mié'], dayIdx: 3 },
-    { names: ['jueves', 'thursday', 'jue'], dayIdx: 4 },
-    { names: ['viernes', 'friday', 'vie'], dayIdx: 5 },
-    { names: ['sabado', 'sábado', 'saturday', 'sab', 'sáb'], dayIdx: 6 }
+    { names: ['domingo', 'sunday'], dayIdx: 0 },
+    { names: ['lunes', 'monday'], dayIdx: 1 },
+    { names: ['martes', 'tuesday'], dayIdx: 2 },
+    { names: ['miercoles', 'miércoles', 'wednesday'], dayIdx: 3 },
+    { names: ['jueves', 'thursday'], dayIdx: 4 },
+    { names: ['viernes', 'friday'], dayIdx: 5 },
+    { names: ['sabado', 'sábado', 'saturday'], dayIdx: 6 }
   ];
 
   for (const item of daysOfWeek) {
-    const matched = item.names.some(n => new RegExp(`\\b${n}\\b`, 'i').test(lower) || lower.includes(n));
+    const matched = item.names.some(n => hasWord(lower, n));
     if (matched) {
       const currentDay = baseDate.getDay();
       let diff = item.dayIdx - currentDay;
@@ -260,7 +284,7 @@ export function parseRelativeDate(dateInput: string, baseDate = new Date()): str
     return todayIso;
   }
   // Standalone mañana (NOT "por la mañana" or "en la mañana")
-  if (/(?:^|\s)(?:mañana|manana|tomorrow)(?:\s|$)/i.test(lower) && !/(?:por\s+la|en\s+la|de\s+la)\s+mañana/i.test(lower)) {
+  if (mentionsTomorrow(lower)) {
     const d = new Date(baseDate);
     d.setDate(d.getDate() + 1);
     return toLocalIsoDate(d);
@@ -299,20 +323,31 @@ export function extractRequestedDate(
   const prefText = (preferredDate || '').toLowerCase();
   const combined = `${userText} ${prefText}`;
 
+  // 0. Fecha exacta YYYY-MM-DD escrita en el mensaje (p. ej. al pulsar un botón de hueco)
+  const userIso = userText.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (userIso && parseInt(userIso[1], 10) >= baseDate.getFullYear()) {
+    return { targetDate: userIso[0], isSpecificDay: true };
+  }
+
   // 1. Check if user specified a day of the week in userMessage or preferredDate
+  // Solo nombres completos (antes "tomar" -> martes, "sabes" -> sábado, "viene" -> viernes)
   const daysOfWeek = [
-    { name: 'domingo', aliases: ['domingo', 'sunday', 'dom'], dayIdx: 0 },
-    { name: 'lunes', aliases: ['lunes', 'monday', 'lun'], dayIdx: 1 },
-    { name: 'martes', aliases: ['martes', 'tuesday', 'mar'], dayIdx: 2 },
-    { name: 'miércoles', aliases: ['miercoles', 'miércoles', 'wednesday', 'mie', 'mié'], dayIdx: 3 },
-    { name: 'jueves', aliases: ['jueves', 'thursday', 'jue'], dayIdx: 4 },
-    { name: 'viernes', aliases: ['viernes', 'friday', 'vie'], dayIdx: 5 },
-    { name: 'sábado', aliases: ['sabado', 'sábado', 'saturday', 'sab', 'sáb'], dayIdx: 6 }
+    { name: 'domingo', aliases: ['domingo', 'sunday'], dayIdx: 0 },
+    { name: 'lunes', aliases: ['lunes', 'monday'], dayIdx: 1 },
+    { name: 'martes', aliases: ['martes', 'tuesday'], dayIdx: 2 },
+    { name: 'miércoles', aliases: ['miercoles', 'miércoles', 'wednesday'], dayIdx: 3 },
+    { name: 'jueves', aliases: ['jueves', 'thursday'], dayIdx: 4 },
+    { name: 'viernes', aliases: ['viernes', 'friday'], dayIdx: 5 },
+    { name: 'sábado', aliases: ['sabado', 'sábado', 'saturday'], dayIdx: 6 }
   ];
 
+  // El día que dice el cliente manda sobre el que deduzca el modelo
+  const dayInUser = daysOfWeek.find(item => item.aliases.some(a => hasWord(userText, a)));
+  const dayInPref = dayInUser ? undefined : daysOfWeek.find(item => item.aliases.some(a => hasWord(prefText, a)));
+
   for (const item of daysOfWeek) {
-    const foundInUser = item.aliases.some(a => new RegExp(`\\b${a}\\b`, 'i').test(userText) || userText.includes(a));
-    const foundInPref = item.aliases.some(a => new RegExp(`\\b${a}\\b`, 'i').test(prefText) || prefText.includes(a));
+    const foundInUser = dayInUser === item;
+    const foundInPref = dayInPref === item;
 
     if (foundInUser || foundInPref) {
       const currentDay = baseDate.getDay();
@@ -338,7 +373,7 @@ export function extractRequestedDate(
   }
 
   // 2. Check if user specified "hoy", "mañana", "pasado mañana"
-  if (userText.includes('hoy') || prefText.includes('hoy')) {
+  if (hasWord(userText, 'hoy') || hasWord(userText, 'today') || hasWord(prefText, 'hoy')) {
     return { targetDate: toLocalIsoDate(baseDate), isSpecificDay: true, requestedDayName: 'hoy' };
   }
   if (userText.includes('pasado mañana') || userText.includes('pasado manana') || prefText.includes('pasado mañana') || prefText.includes('pasado manana')) {
@@ -346,13 +381,30 @@ export function extractRequestedDate(
     d.setDate(d.getDate() + 2);
     return { targetDate: toLocalIsoDate(d), isSpecificDay: true, requestedDayName: 'pasado mañana' };
   }
-  if (
-    (/(?:^|\s)(?:mañana|manana)(?:\s|$)/i.test(userText) && !/(?:por\s+la|en\s+la|de\s+la)\s+mañana/i.test(userText)) ||
-    (/(?:^|\s)(?:mañana|manana)(?:\s|$)/i.test(prefText) && !/(?:por\s+la|en\s+la|de\s+la)\s+mañana/i.test(prefText))
-  ) {
+  if (mentionsTomorrow(userText) || mentionsTomorrow(prefText)) {
     const d = new Date(baseDate);
     d.setDate(d.getDate() + 1);
     return { targetDate: toLocalIsoDate(d), isSpecificDay: true, requestedDayName: 'mañana' };
+  }
+
+  // 2b. "La semana que viene" / "la próxima semana" -> desde el lunes siguiente
+  if (mentionsNextWeek(userText) || mentionsNextWeek(prefText)) {
+    const d = new Date(baseDate);
+    const day = d.getDay();
+    d.setDate(d.getDate() + (day === 0 ? 1 : 8 - day));
+    return { targetDate: toLocalIsoDate(d), isSpecificDay: false };
+  }
+
+  // 2b2. Fecha con mes escrita por el cliente ("el 15 de octubre", "3 nov")
+  if (/\b\d{1,2}\s*(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|ene|feb|abr|jun|jul|ago|sept?|oct|nov|dic)\b/i.test(userText)) {
+    return { targetDate: parseRelativeDate(userText, baseDate), isSpecificDay: true };
+  }
+
+  // 2c. "Esta semana" / pregunta general -> a partir de mañana, varios días
+  if (/esta\s+semana|this\s+week/i.test(userText)) {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + 1);
+    return { targetDate: toLocalIsoDate(d), isSpecificDay: false };
   }
 
   // 3. Check ISO date YYYY-MM-DD
@@ -723,7 +775,7 @@ export async function executeAiTool(
 
         // Fetch existing appointments for this artist starting from target date
         const startDateObj = createDateInTimezone(parsedDateStr, '00:00', 'Europe/Madrid');
-        const endDateObj = new Date(startDateObj.getTime() + (isSpecificDay ? 1 : 4) * 24 * 60 * 60 * 1000);
+        const endDateObj = new Date(startDateObj.getTime() + (isSpecificDay ? 1 : 7) * 24 * 60 * 60 * 1000);
 
         const { data: existingApps } = await supabase
           .from('appointments')
@@ -761,18 +813,22 @@ export async function executeAiTool(
         const nowMs = Date.now();
 
         // If user asked for a specific day (e.g. "este viernes"), only check that single day!
-        const maxDaysToCheck = isSpecificDay ? 1 : 3;
+        // Si pregunta en general ("esta semana"), repartimos los huecos entre varios días.
+        const maxDaysToCheck = isSpecificDay ? 1 : 7;
+        const maxSlots = isSpecificDay ? 4 : 6;
+        const maxPerDay = isSpecificDay ? 4 : 2;
 
-        for (let dayOffset = 0; dayOffset < maxDaysToCheck && availableSlots.length < 4; dayOffset++) {
+        for (let dayOffset = 0; dayOffset < maxDaysToCheck && availableSlots.length < maxSlots; dayOffset++) {
           const curDay = new Date(startDateObj.getTime() + dayOffset * 24 * 60 * 60 * 1000);
 
           // Skip Sundays (day 0)
           if (curDay.getUTCDay() === 0) continue;
 
           const dateIso = toLocalIsoDate(curDay);
+          let slotsThisDay = 0;
 
           for (const timeStr of slotCandidates) {
-            if (availableSlots.length >= 4) break;
+            if (availableSlots.length >= maxSlots || slotsThisDay >= maxPerDay) break;
 
             const slotStartDt = createDateInTimezone(dateIso, timeStr, 'Europe/Madrid');
             const slotStart = slotStartDt.getTime();
@@ -791,6 +847,7 @@ export async function executeAiTool(
                 month: 'short'
               });
 
+              slotsThisDay++;
               availableSlots.push({
                 datetime: slotStartDt.toISOString(),
                 date: dateIso,
@@ -1334,7 +1391,12 @@ export async function executeAiTool(
     }
 
     case 'get_app_faq': {
-      const topic = toolArgs.topic || 'general_help';
+      const askedText = (context.userMessage || '').toLowerCase();
+      let topic = toolArgs.topic || 'general_help';
+      if (/consentimiento|firmar|firmo|firma/i.test(askedText)) topic = 'consent_pdf';
+      else if (/crema|pomada|b[aá]lsamo|jab[oó]n|cuidados?|curar|curaci[oó]n|segunda piel/i.test(askedText)) topic = 'aftercare_rules';
+      else if (/suscripci[oó]n|stripe|cuota|50\s?€|50 euros/i.test(askedText)) topic = 'stripe_subscription';
+      else if (/mapa|direcci[oó]n|ubicaci[oó]n/i.test(askedText)) topic = 'map_studios';
       let faqText = '';
 
       switch (topic) {
@@ -1386,7 +1448,7 @@ export async function executeAiTool(
       return {
         success: true,
         tool: 'get_app_faq',
-        result: { topic, status: 'answered' },
+        result: { topic, status: 'answered', respuesta_oficial: faqText },
         faqTopic: topic,
         displayText: faqText
       };
