@@ -38,6 +38,7 @@ import { compressImageForChat } from '@/lib/image-upload';
 import { ensureDarkInkSignature } from '@/lib/signature';
 import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
 import StudioMapView from '@/components/dashboard/StudioMapView';
+import BookingWizard from '@/components/dashboard/BookingWizard';
 
 export default function ClientPortal({ user, profile }: { user: any; profile: any }) {
   const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history'>('appointments');
@@ -59,12 +60,8 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedStudioId, setSelectedStudioId] = useState('');
   const [selectedArtistId, setSelectedArtistId] = useState('');
-  const [bookingType, setBookingType] = useState('tattoo_session');
-  const [bookingDurationHours, setBookingDurationHours] = useState<number>(2.5);
   const [bookingDate, setBookingDate] = useState('');
-  const [bookingTime, setBookingTime] = useState('11:00');
-  const [bookingDescription, setBookingDescription] = useState('');
-  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingTime, setBookingTime] = useState('');
 
   // View / Print Legal Consent Document Modal State
   const [viewConsentModalApp, setViewConsentModalApp] = useState<any>(null);
@@ -377,62 +374,13 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
     }
   };
 
-  // Handle New Booking Creation using server-side API (bypasses RLS recursion)
-  const handleCreateBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBookingSubmitting(true);
-
-    try {
-      const { data: clientRec } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('profile_id', user.id)
-        .maybeSingle();
-
-      let clientId = clientRec?.id;
-      if (!clientId) {
-        const { data: createdClient } = await supabase
-          .from('clients')
-          .insert({ profile_id: user.id })
-          .select('id')
-          .single();
-        clientId = createdClient?.id;
-      }
-
-      const startDateTime = new Date(`${bookingDate}T${bookingTime}:00`);
-      const durationHours = bookingType === 'design_consultation' ? 0.75 : bookingDurationHours;
-      const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
-
-      const res = await fetch('/api/appointments/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studioId: selectedStudioId,
-          artistId: selectedArtistId,
-          clientId,
-          appointmentType: bookingType,
-          title: bookingType === 'design_consultation' ? 'Consulta de Diseño' : 'Sesión de Tatuaje',
-          description: bookingDescription,
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
-          status: 'pending'
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Error al solicitar cita.');
-      }
-
-      setAppointments(prev => [...prev, data.appointment]);
-      setIsBookingOpen(false);
-      setBookingDescription('');
-      alert('⚡ ¡Cita solicitada con éxito! El estudio confirmará el espacio en su agenda.');
-    } catch (err: any) {
-      alert(`Error al reservar cita: ${err.message}`);
-    } finally {
-      setBookingSubmitting(false);
-    }
+  // Abre el asistente "Pedir cita"; opcionalmente con tatuador, estudio o hueco ya elegidos
+  const openBooking = (opts: { artistId?: string; studioId?: string; date?: string; time?: string } = {}) => {
+    setSelectedArtistId(opts.artistId || '');
+    setSelectedStudioId(opts.studioId || '');
+    setBookingDate(opts.date || '');
+    setBookingTime(opts.time || '');
+    setIsBookingOpen(true);
   };
 
   // Handle Signing Legal Consent
@@ -575,7 +523,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         </div>
 
         <button
-          onClick={() => setIsBookingOpen(true)}
+          onClick={() => openBooking()}
           className="relative z-10 flex items-center gap-2 bg-crimson-600 hover:bg-crimson-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md transition-colors border border-crimson-500/40"
         >
           <Plus className="w-4 h-4" />
@@ -635,7 +583,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                 Elige si prefieres una consulta gratuita de diseño (30-45 min) para definir tu pieza o una sesión completa de tatuaje en piel.
               </p>
               <button
-                onClick={() => setIsBookingOpen(true)}
+                onClick={() => openBooking()}
                 className="inline-flex items-center gap-2 bg-crimson-600 hover:bg-crimson-500 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-crimson-600/30 transition-all hover:scale-105"
               >
                 <Plus className="w-4 h-4" />
@@ -831,11 +779,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                     <div className="pt-3 border-t border-white/10 flex items-center justify-between">
                       <span className="text-[11px] text-ink-500">Hueco liberado</span>
                       <button
-                        onClick={() => {
-                          setSelectedArtistId(app.artist_id || '');
-                          setSelectedStudioId(app.studio_id || '');
-                          setIsBookingOpen(true);
-                        }}
+                        onClick={() => openBooking({ artistId: app.artist_id, studioId: app.studio_id })}
                         className="px-3 py-1.5 rounded-xl bg-crimson-600/20 hover:bg-crimson-600 text-crimson-300 hover:text-white font-bold text-xs border border-crimson-500/30 transition-all flex items-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -865,13 +809,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                 setAgendaArtist(null);
                 handleSelectChatArtist(art);
               }}
-              onBookSlot={(date, time) => {
-                setBookingDate(date);
-                setBookingTime(time);
-                setSelectedArtistId(agendaArtist.id);
-                if (agendaArtist.studio_id) setSelectedStudioId(agendaArtist.studio_id);
-                setIsBookingOpen(true);
-              }}
+              onBookSlot={(date, time) => openBooking({ artistId: agendaArtist.id, studioId: agendaArtist.studio_id, date, time })}
             />
           ) : !selectedChatArtist ? (
             /* VIEW 2: SCALABLE STUDIO FINDER & ARTIST DIRECTORY */
@@ -1276,11 +1214,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedArtistId(art.id);
-                                    setSelectedStudioId(selectedStudioForBrowsing.id);
-                                    setIsBookingOpen(true);
-                                  }}
+                                  onClick={() => openBooking({ artistId: art.id, studioId: selectedStudioForBrowsing.id })}
                                   className="flex-1 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                                 >
                                   <Plus className="w-3.5 h-3.5" />
@@ -1641,151 +1575,24 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
         </div>
       )}
 
-      {/* BOOKING MODAL */}
+      {/* BOOKING WIZARD (Pedir cita) */}
       {isBookingOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="booking-modal glass-panel w-full max-w-lg p-6 sm:p-8 rounded-3xl border border-amber-500/25 bg-ink-950/95 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setIsBookingOpen(false)}
-              className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-ink-400 font-medium mb-2">
-              <span>Nueva cita</span>
-              <span className="h-px w-10 bg-ink-600/60" />
-            </div>
-            <h2 className="font-display text-2xl font-bold text-white mb-1">Pide tu <span className="italic font-semibold text-crimson-300">cita</span></h2>
-            <p className="text-sm text-ink-400 mb-6">Elige estudio, tatuador y qué quieres hacerte.</p>
-
-            <form onSubmit={handleCreateBooking} className="space-y-4 text-sm">
-              <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Estudio</label>
-                <select
-                  value={selectedStudioId}
-                  onChange={(e) => setSelectedStudioId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
-                >
-                  {studios.map(s => <option key={s.id} value={s.id}>{s.name} ({s.address})</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Tatuador</label>
-                <select
-                  value={selectedArtistId}
-                  onChange={(e) => setSelectedArtistId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
-                >
-                  {artists.map(a => <option key={a.id} value={a.id}>{a.display_name} ({a.specialties?.join(', ') || 'Todo estilo'})</option>)}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setBookingType('design_consultation')}
-                  className={`p-3.5 rounded-2xl border text-xs font-bold text-left transition-all ${
-                    bookingType === 'design_consultation'
-                      ? 'bg-amber-500/10 text-ink-50 border-amber-500/50'
-                      : 'bg-ink-900 text-ink-400 border-white/5'
-                  }`}
-                >
-                  <span className="block font-bold mb-0.5">Consulta de diseño</span>
-                  <span className="text-[11px] font-normal text-ink-400">30–45 min para preparar el boceto</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setBookingType('tattoo_session')}
-                  className={`p-3.5 rounded-2xl border text-xs font-bold text-left transition-all ${
-                    bookingType === 'tattoo_session'
-                      ? 'bg-amber-500/10 text-ink-50 border-amber-500/50'
-                      : 'bg-ink-900 text-ink-400 border-white/5'
-                  }`}
-                >
-                  <span className="block font-bold mb-0.5">Sesión de tatuaje</span>
-                  <span className="text-[11px] font-normal text-ink-400">El día que te tatúas</span>
-                </button>
-              </div>
-
-              {bookingType === 'tattoo_session' && (
-                <div className="bg-ink-900/60 p-3.5 rounded-2xl border border-white/5 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-ink-300">
-                    <span className="font-semibold uppercase tracking-wider text-[11px]">Tamaño y duración</span>
-                    <span className="text-amber-300 font-semibold">{bookingDurationHours} h de sesión</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                    {[
-                      { hours: 1, label: 'Flash / Mini', time: '1h' },
-                      { hours: 1.5, label: 'Pequeño / Frase', time: '1.5h' },
-                      { hours: 2.5, label: 'Mediano / Detalle', time: '2.5h' },
-                      { hours: 4, label: 'Grande / Media Manga', time: '4h' },
-                      { hours: 5, label: 'Manga / Espalda', time: '5h' }
-                    ].map((opt) => (
-                      <button
-                        key={opt.hours}
-                        type="button"
-                        onClick={() => setBookingDurationHours(opt.hours)}
-                        className={`p-2 rounded-xl text-left border transition-all text-xs ${
-                          bookingDurationHours === opt.hours
-                            ? 'bg-amber-500/10 border-amber-500/50 text-white font-bold'
-                            : 'bg-ink-950/60 border-white/5 text-ink-400 hover:text-white'
-                        }`}
-                      >
-                        <div className="truncate font-semibold">{opt.label}</div>
-                        <div className="text-[11px] text-ink-400">{opt.time}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Fecha</label>
-                  <input
-                    type="date"
-                    required
-                    value={bookingDate}
-                    onChange={(e) => setBookingDate(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Hora</label>
-                  <input
-                    type="time"
-                    required
-                    value={bookingTime}
-                    onChange={(e) => setBookingTime(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-ink-300 uppercase tracking-wider mb-1.5">Qué te quieres hacer y dónde</label>
-                <textarea
-                  rows={2}
-                  value={bookingDescription}
-                  onChange={(e) => setBookingDescription(e.target.value)}
-                  placeholder="Ej.: una daga con serpiente en el antebrazo derecho"
-                  className="w-full px-4 py-2 rounded-xl bg-ink-900 border border-white/10 text-white text-sm focus:outline-none focus:border-crimson-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={bookingSubmitting}
-                className="w-full py-3.5 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white font-bold text-sm shadow-md transition-colors"
-              >
-                {bookingSubmitting ? 'Confirmando…' : 'Confirmar cita'}
-              </button>
-            </form>
-          </div>
-        </div>
+        <BookingWizard
+          user={user}
+          studios={studios}
+          artists={artists}
+          initial={{ studioId: selectedStudioId, artistId: selectedArtistId, date: bookingDate, time: bookingTime }}
+          onClose={() => setIsBookingOpen(false)}
+          onCreated={(appointment) => setAppointments(prev => [...prev, appointment])}
+          onSignConsent={(appointment) => {
+            setIsBookingOpen(false);
+            setSelectedConsentApp(appointment);
+          }}
+          onViewAppointments={() => {
+            setIsBookingOpen(false);
+            setActiveTab('appointments');
+          }}
+        />
       )}
 
       {/* CONSENT SIGNING MODAL WITH SIGNATURE PAD */}
@@ -1891,7 +1698,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       {/* RESCHEDULE APPOINTMENT MODAL */}
       {rescheduleModalApp && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-[#c9bb92]/25 bg-ink-950/95 relative shadow-2xl">
+          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-[#d6b27a]/25 bg-ink-950/95 relative shadow-2xl">
             <button
               onClick={() => setRescheduleModalApp(null)}
               className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
@@ -2013,7 +1820,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
       {/* CANCEL APPOINTMENT MODAL */}
       {cancelModalApp && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-[#c9bb92]/25 bg-ink-950/95 relative shadow-2xl">
+          <div className="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-[#d6b27a]/25 bg-ink-950/95 relative shadow-2xl">
             <button
               onClick={() => setCancelModalApp(null)}
               className="absolute top-5 right-5 text-ink-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
@@ -2034,7 +1841,7 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
             </p>
 
             {/* Retention Suggestion */}
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-[#c9bb92]/20 mb-5 text-sm">
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-[#d6b27a]/20 mb-5 text-sm">
               <p className="font-display text-lg text-white mb-1">¿Solo te viene mal el día?</p>
               <p className="text-ink-300 mb-3">Puedes cambiar la fecha sin coste y mantener tu hueco con el tatuador.</p>
               <button

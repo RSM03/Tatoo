@@ -11,11 +11,11 @@
 
 :root {
   /* --- FONDOS: carbón cálido --- */
-  --t-bg-void: #141311;
+  --t-bg-void: #170f0b;
   --t-bg-ink: #191816;
-  --t-bg-card: #211f1c;
+  --t-bg-card: #2b1d15;
   --t-bg-card-hover: #282522;
-  --t-bg-overlay: rgba(20, 19, 17, 0.88);
+  --t-bg-overlay: rgba(26,18,12, 0.88);
 
   /* --- ACENTOS: rojo coral + dorado latón --- */
   --t-crimson: #2f5a47;
@@ -25,7 +25,7 @@
 
   --t-gold: #b39459;
   --t-gold-bright: #cdb27a;
-  --t-gold-subtle: rgba(179, 148, 89, 0.10);
+  --t-gold-subtle: rgba(201,160,100, 0.10);
 
   --t-emerald: #10b981;
   --t-emerald-subtle: rgba(16, 185, 129, 0.10);
@@ -34,21 +34,21 @@
   --t-blue-subtle: rgba(59, 130, 246, 0.10);
 
   /* --- TEXTO: blanco roto, más suave --- */
-  --t-text-main: #efeae2;
-  --t-text-muted: #b3aa9d;
-  --t-text-dim: #8e8579;
+  --t-text-main: #f4e7d0;
+  --t-text-muted: #c8b394;
+  --t-text-dim: #a08a6c;
 
   /* --- BORDES --- */
   --t-border-subtle: rgba(255, 244, 230, 0.08);
   --t-border-distinct: rgba(255, 244, 230, 0.14);
   --t-border-accent: rgba(47, 90, 71, 0.4);
-  --t-border-gold: rgba(179, 148, 89, 0.4);
+  --t-border-gold: rgba(201,160,100, 0.4);
 
   /* --- SOMBRAS --- */
   --t-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.30);
   --t-shadow-lg: 0 10px 28px -10px rgba(0, 0, 0, 0.45);
   --t-glow-crimson: 0 0 18px -6px rgba(47, 90, 71, 0.3);
-  --t-glow-gold: 0 0 18px -6px rgba(179, 148, 89, 0.3);
+  --t-glow-gold: 0 0 18px -6px rgba(201,160,100, 0.3);
   --t-glow-emerald: 0 0 16px -6px rgba(16, 185, 129, 0.3);
 
   /* --- RADIOS --- */
