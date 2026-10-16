@@ -1,0 +1,356 @@
+/* Portada — minimalista y animada: láminas flash que vuelan a su sitio, frases que se encienden al bajar,
+   paneles que se apilan y un cierre a lo grande. Mantiene la paleta y la serif de la web. */
+
+.page {
+  --cream: #f4e7d0;
+  --cream2: #e9d6b6;
+  --gold: #d9b886;
+  --muted: #c8b394;
+  --line: rgba(214, 178, 122, 0.28);
+  --cardW: clamp(130px, 12.5vw, 200px);
+  font-family: var(--font-landing), Georgia, 'Times New Roman', serif;
+  color: var(--cream);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* ---------- Texto partido en palabras (para las animaciones) ---------- */
+.word { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.1em; margin-bottom: -0.1em; }
+.wordIn { display: inline-block; will-change: transform; }
+
+/* ---------- Títulos y piezas comunes ---------- */
+.title {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.06;
+  font-size: clamp(2.4rem, 6.4vw, 5.6rem);
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.55));
+}
+.title > span { display: block; }
+.title .wordIn,
+.bigTitle .wordIn {
+  text-shadow: none;
+  background: linear-gradient(180deg, #fff7e8 0%, #f1dcb7 55%, #d4ac74 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.title .gold .wordIn,
+.bigTitle .gold .wordIn {
+  background: linear-gradient(180deg, #fbe9c9 0%, #e8c995 50%, #c99961 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin: 1.2rem 0 1.1rem;
+  color: var(--gold);
+  font-size: clamp(0.85rem, 1.4vw, 1.1rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.rule { height: 1.5px; width: clamp(2rem, 6vw, 5.5rem); background: linear-gradient(90deg, transparent, var(--gold)); }
+.rule:last-child { background: linear-gradient(90deg, var(--gold), transparent); }
+.star { width: 1.1em; height: 1.1em; flex: none; color: var(--gold); }
+
+.lead {
+  margin: 0;
+  max-width: 40rem;
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--cream);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1.8rem; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3.5rem;
+  padding: 0.7rem 2.1rem;
+  border-radius: 7px;
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
+.btn svg { width: 1.2em; height: 1.2em; transition: transform 0.2s ease; }
+.btn:hover svg { transform: translateX(3px); }
+.btnPrimary {
+  color: #f6e8cd;
+  background: linear-gradient(180deg, #275f45 0%, #1f4c37 45%, #163a2a 100%);
+  border: 1.5px solid #cfac72;
+  box-shadow: inset 0 0 0 2px rgba(8, 22, 15, 0.85), inset 0 0 0 3px rgba(215, 182, 128, 0.5), 0 12px 26px -10px rgba(0, 0, 0, 0.8);
+}
+.btnGhost {
+  color: #efdcbc;
+  background: linear-gradient(180deg, rgba(70, 53, 42, 0.88), rgba(43, 31, 24, 0.9));
+  border: 1.5px solid #a68763;
+  box-shadow: inset 0 0 0 2px rgba(20, 13, 9, 0.8), inset 0 0 0 3px rgba(190, 158, 118, 0.4), 0 12px 26px -10px rgba(0, 0, 0, 0.8);
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.h2 {
+  margin: 0.6rem 0 0;
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--cream);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+.h2 em { font-style: italic; font-weight: 500; color: var(--gold); }
+
+/* ---------- Texto vertical que corre por los bordes ---------- */
+.edge { position: fixed; top: 0; bottom: 0; width: 22px; z-index: 5; overflow: hidden; pointer-events: none; display: none; }
+@media (min-width: 1100px) { .edge { display: block; } }
+.edgeLeft { left: 12px; }
+.edgeRight { right: 12px; }
+.edgeTrack {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(214, 178, 122, 0.45);
+  animation: edgeScroll 46s linear infinite;
+}
+.edgeLeft .edgeTrack { transform: rotate(180deg); animation-direction: reverse; }
+@keyframes edgeScroll { from { translate: 0 0; } to { translate: 0 -50%; } }
+
+/* ---------- 1. Portada con láminas flash ---------- */
+.stage {
+  position: relative;
+  min-height: calc(100svh - 72px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5rem;
+  padding: 3rem 1rem 4rem;
+  text-align: center;
+}
+.heroText { display: flex; flex-direction: column; align-items: center; }
+
+.micro {
+  position: absolute;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: none;
+}
+@media (min-width: 900px) { .micro { display: block; } }
+.microBL { bottom: 2rem; left: 3rem; display: none; }
+.microBR { bottom: 2rem; right: 3rem; }
+.scrollHint { display: inline-flex; align-items: center; gap: 0.6rem; }
+.stage:not([data-scene='on']) .scrollHint { display: none; }
+.scrollHint i { width: 1px; height: 2.2rem; background: linear-gradient(var(--gold), transparent); animation: hint 1.8s ease-in-out infinite; transform-origin: top; }
+@keyframes hint { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+.slots { display: flex; flex-direction: column; align-items: center; gap: 1.8rem; width: 100%; max-width: 76rem; }
+.slotsHead { margin: 0; font-size: clamp(1.4rem, 2.6vw, 2.2rem); font-weight: 600; color: var(--cream); }
+.slotsHead em { font-style: italic; font-weight: 500; color: var(--gold); }
+.slotGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 3rem); width: 100%; }
+@media (max-width: 899px) {
+  .page { --cardW: min(40vw, 170px); }
+  .slotGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 2.2rem; }
+}
+.slot { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.slotFrame { position: relative; width: var(--cardW); aspect-ratio: 3 / 4; }
+.slotOutline { position: absolute; inset: -8px; border: 1px dashed rgba(214, 178, 122, 0.4); border-radius: 9px; }
+.slotNum { position: absolute; top: -1.9rem; left: -8px; font-size: 0.85rem; letter-spacing: 0.12em; color: var(--gold); }
+.slotLabel { max-width: 15rem; }
+.slotLabel h3 { margin: 0; font-size: clamp(1.2rem, 1.7vw, 1.5rem); font-weight: 600; color: var(--cream); }
+.slotLabel p { margin: 0.35rem 0 0; font-size: 1rem; line-height: 1.4; color: var(--cream2); }
+
+/* Lámina flash: la tarjeta (GSAP la mueve), su inclinación con el ratón y su flotación suave */
+.card { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; z-index: 2; }
+.tilt { width: 100%; height: 100%; transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.35s ease-out; }
+.float { width: 100%; height: 100%; animation: bob 6s ease-in-out infinite; animation-delay: var(--delay, 0s); }
+@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+.face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #140d09;
+  border: 1.5px solid #c99d62;
+  box-shadow: inset 0 0 0 4px #140d09, inset 0 0 0 5px rgba(214, 178, 122, 0.5), 0 24px 40px -14px rgba(0, 0, 0, 0.85);
+}
+.faceArt {
+  position: absolute;
+  inset: 9px 9px 32px;
+  border-radius: 3px;
+  background-image: url('/tattoo-flash-bg.jpg');
+  background-repeat: no-repeat;
+  filter: brightness(3.8) contrast(1.35) sepia(0.6) saturate(1.05);
+}
+.faceArt::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 22px rgba(10, 6, 4, 0.75); }
+.faceCap { position: absolute; left: 0; right: 0; bottom: 9px; text-align: center; font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: #e9cf9e; }
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 232, 190, 0.16) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+}
+.slot:hover .face::after { transform: translateX(120%); }
+
+/* Modo escena (solo ordenador y con animaciones): todo superpuesto en una pantalla fija */
+.stage[data-scene='on'] { height: 100vh; min-height: 0; padding: 0; gap: 0; overflow: visible; }
+.stage[data-scene='on'] .heroText { position: absolute; inset: 0; justify-content: center; padding: 0 1rem; z-index: 1; }
+.stage[data-scene='on'] .slots { position: absolute; left: 50%; top: 53%; transform: translate(-50%, -50%); width: min(76rem, calc(100% - 6rem)); }
+.stage[data-scene='on'] .microBL { display: block; }
+
+/* ---------- 2. Frases que se encienden + foto que se abre ---------- */
+.statement {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  width: 100%;
+  max-width: 88rem;
+  margin: 0 auto;
+  padding: clamp(4rem, 12vh, 9rem) clamp(1.25rem, 5vw, 5rem);
+}
+@media (max-width: 899px) { .statement { grid-template-columns: minmax(0, 1fr); } }
+.pains { list-style: none; margin: clamp(1.8rem, 4vh, 2.6rem) 0 0; padding: 0; display: grid; }
+.painRow { display: flex; flex-direction: column; gap: 0.45rem; padding: 1.15rem 0; border-top: 1px solid rgba(214, 178, 122, 0.18); }
+.painRow:last-child { border-bottom: 1px solid rgba(214, 178, 122, 0.18); }
+.pain { position: relative; align-self: flex-start; }
+.painText { font-size: clamp(1.35rem, 2.2vw, 1.8rem); font-weight: 600; color: #a08a6c; }
+.strike {
+  position: absolute;
+  left: -0.15em;
+  right: -0.15em;
+  top: 55%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #b98d57, #ecd29c);
+  box-shadow: 0 0 8px rgba(236, 210, 156, 0.45);
+  transform-origin: left center;
+}
+.fix { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 1.06rem; line-height: 1.45; color: var(--cream); }
+.fix .star { width: 0.95em; height: 0.95em; margin-top: 0.25em; }
+.stPhoto {
+  position: relative;
+  height: min(78vh, 44rem);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(214, 178, 122, 0.4);
+  box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.85);
+}
+@media (max-width: 899px) { .stPhoto { height: 62vh; } }
+.stImg { position: absolute; inset: 0; background: url('/tattoo-studio-bg.jpg') 50% 40% / cover no-repeat; will-change: transform; }
+.stTag {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(20, 13, 9, 0.75);
+  border: 1px solid rgba(214, 178, 122, 0.4);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- 3. Cómo funciona: pasos con línea dorada ---------- */
+.howSteps { --m: 104px; padding: clamp(4rem, 12vh, 8rem) clamp(1rem, 4vw, 3rem); }
+.howHead { max-width: 46rem; margin: 0 auto clamp(3rem, 8vh, 5rem); text-align: center; }
+.track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2.5rem);
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.trackLine { position: absolute; top: calc(var(--m) / 2); left: 12.5%; right: 12.5%; height: 1.5px; background: rgba(214, 178, 122, 0.18); }
+.trackFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #b98d57, #ecd29c);
+  box-shadow: 0 0 10px rgba(236, 210, 156, 0.5);
+  transform-origin: left center;
+  transform: scaleX(var(--p, 1));
+}
+.stepItem { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; }
+.stepBody { display: flex; flex-direction: column; align-items: center; }
+.medal {
+  position: relative;
+  z-index: 1;
+  width: var(--m);
+  height: var(--m);
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 30%, #3a281c, #1c130d 70%);
+  border: 1.5px solid #c99d62;
+  box-shadow: inset 0 0 0 5px #1c130d, inset 0 0 0 6px rgba(214, 178, 122, 0.45), 0 16px 30px -12px rgba(0, 0, 0, 0.8);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.medal svg { width: 60%; height: 60%; overflow: visible; }
+.medal path { fill: none; stroke: #ecd29c; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(236, 210, 156, 0.45)); }
+.stepItem:hover .medal {
+  transform: translateY(-4px);
+  box-shadow: inset 0 0 0 5px #1c130d, inset 0 0 0 6px rgba(214, 178, 122, 0.7), 0 22px 36px -14px rgba(0, 0, 0, 0.85), 0 0 28px rgba(236, 210, 156, 0.22);
+}
+.stepNum { font-size: 0.85rem; letter-spacing: 0.2em; color: var(--gold); }
+.stepTitle { margin: 0.35rem 0 0; font-size: clamp(1.3rem, 1.9vw, 1.6rem); font-weight: 600; color: var(--cream); }
+.stepText { margin: 0.5rem 0 0; max-width: 16rem; font-size: 1.02rem; line-height: 1.5; color: var(--cream2); }
+@media (max-width: 767px) {
+  .howSteps { --m: 84px; }
+  .track { grid-template-columns: minmax(0, 1fr); gap: 2.4rem; max-width: 30rem; }
+  .trackLine { top: calc(var(--m) / 2); bottom: calc(var(--m) / 2); left: calc(var(--m) / 2); right: auto; width: 1.5px; height: auto; }
+  .trackFill { transform-origin: center top; transform: scaleY(var(--p, 1)); }
+  .stepItem { flex-direction: row; align-items: flex-start; gap: 1.2rem; text-align: left; }
+  .stepBody { align-items: flex-start; padding-top: 0.4rem; }
+}
+
+/* ---------- 4. Cierre a lo grande ---------- */
+.final {
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 5rem 1rem 6rem;
+}
+.bigTitle {
+  margin: 0;
+  font-size: clamp(2.8rem, 9.5vw, 9rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
+}
+.bigTitle > span { display: block; }
+.bigTitle .gold { font-style: italic; font-weight: 500; }
+.finalSub { margin: 1.6rem 0 0; max-width: 38rem; font-size: 1.15rem; line-height: 1.55; color: var(--cream2); }

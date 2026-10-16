@@ -958,7 +958,7 @@ export default function StudioPortal({ user, profile }: { user: any; profile: an
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="font-display text-2xl font-bold text-white">Suscripción Estudio Tatoo Pro</h2>
+                    <h2 className="font-display text-2xl font-bold text-white">Suscripción Estudio Tatto Pro</h2>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       {['active', 'trialing'].includes(studio?.subscription_status || 'trialing') ? 'ACTIVA' : 'PENDIENTE'}
                     </span>

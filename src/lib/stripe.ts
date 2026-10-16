@@ -7,7 +7,7 @@ const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
 export const stripe = new Stripe(stripeSecretKey || 'sk_test_mock_tatoo_secret_key', {
   apiVersion: '2024-06-20' as any,
   appInfo: {
-    name: 'Tatoo AI Platform',
+    name: 'Tatto AI Platform',
     version: '1.0.0'
   }
 });
@@ -86,7 +86,7 @@ export async function createStudioCheckoutSession(params: CreateCheckoutParams):
             interval: 'month'
           },
           product_data: {
-            name: 'Suscripción Estudio Tatoo AI',
+            name: 'Suscripción Estudio Tatto AI',
             description: 'Acceso profesional ilimitado para el estudio, tatuadores residentes, asistente virtual y agenda online (50,00 € / mes).'
           }
         },

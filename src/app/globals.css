@@ -193,13 +193,13 @@ body {
 /* ==============================================================================
  * INTRO DE ENTRADA
  * ============================================================================== */
-.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; cursor: pointer; }
+.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #120b07; overflow: hidden; cursor: pointer; }
 .tatoo-intro.is-leaving { animation: tatooIntroOut .55s ease-in forwards; }
-.tatoo-intro-bg { position: absolute; inset: -4%; background: url('/tattoo-flash-bg.jpg') center/cover; filter: brightness(2.4) contrast(1.15) sepia(.4) saturate(.85); opacity: 0; transform: scale(1.1); animation: tatooIntroBg 4s cubic-bezier(.2,.7,.2,1) .1s forwards; }
-.tatoo-intro-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.8) 100%); }
+.tatoo-intro-bg { position: absolute; inset: -4%; background: url('/landing-studio-bg.jpg') center/cover; filter: brightness(.9); opacity: 0; transform: scale(1.1); animation: tatooIntroBg 4s cubic-bezier(.2,.7,.2,1) .1s forwards; }
+.tatoo-intro-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(14,9,6,.6) 0%, rgba(14,9,6,.3) 55%, rgba(8,5,3,.85) 100%); }
 .tatoo-intro-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 16px; }
 .tatoo-intro-stage.is-zoom { animation: tatooIntroZoom .6s cubic-bezier(.6,0,.9,.4) forwards; }
-.tatoo-intro-svg { width: min(760px, 92vw); height: auto; overflow: visible; }
+.tatoo-intro-svg { width: min(760px, 92vw); height: auto; overflow: visible; filter: drop-shadow(0 4px 16px rgba(0,0,0,.55)); }
 .tatoo-intro-rule { height: 1px; width: 0; margin-top: 4px; background: linear-gradient(90deg, transparent, #d6b27a, transparent); transition: width .9s cubic-bezier(.2,.7,.2,1); }
 .tatoo-intro-rule.is-on { width: min(460px, 70vw); }
 .tatoo-intro-tag { margin-top: 10px; font-size: 12.5px; letter-spacing: .5em; text-transform: uppercase; color: #e3d2b5; text-align: center; opacity: 0; transform: translateY(6px); transition: opacity .8s ease, transform .8s ease; }
