@@ -189,7 +189,7 @@
     },
     {
       "name": "get_app_faq",
-      "description": "Responde dudas y consultas de soporte sobre cómo funciona y cómo se usa la aplicación Tatto tanto para clientes como para tatuadores y estudios (cómo reservar citas, cómo firmar y descargar el consentimiento informado en PDF de 1 página con firma digital nítida, cómo ver estudios en el mapa interactivo CARTO, pautas higiénicas de cicatrización recomendadas sin venta de productos, gestión de agenda, suscripción mensual de 50€/mes con Stripe para estudios, etc.).",
+      "description": "Responde dudas y consultas de soporte sobre cómo funciona y cómo se usa la aplicación Tattoo tanto para clientes como para tatuadores y estudios (cómo reservar citas, cómo firmar y descargar el consentimiento informado en PDF de 1 página con firma digital nítida, cómo ver estudios en el mapa interactivo CARTO, pautas higiénicas de cicatrización recomendadas sin venta de productos, gestión de agenda, suscripción mensual de 50€/mes con Stripe para estudios, etc.).",
       "parameters": {
         "type": "object",
         "properties": {

@@ -72,7 +72,7 @@ export default function Navbar() {
     <header className={h.header}>
       <div className={h.inner}>
         <Link href="/" className={h.brand}>
-          <span className={h.logo}>Tatto AI</span>
+          <span className={h.logo}>Tattoo AI</span>
           <span className={h.tagline}>Agenda para estudios de tatuaje</span>
         </Link>
 

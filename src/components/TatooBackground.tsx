@@ -3,8 +3,7 @@
 import React from 'react';
 
 /**
- * Fondo "Estudio": foto cálida del estudio desenfocada, fija detrás de toda la web,
- * con el centro algo más oscuro y viñeta en los bordes para que todo se lea bien.
+ * Fondo de toda la web: un color liso, neutro y cálido (ver .studio-bg en globals.css).
  */
 export default function TatooBackground() {
   return <div className="studio-bg" aria-hidden="true" />;

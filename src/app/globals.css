@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #170f0b;
+  --background: #161311;
   --foreground: #f4e7d0;
   --card-bg: #2b1d15;
   --border-color: rgba(255, 244, 230, 0.12);
@@ -34,7 +34,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #170f0b;
+  background: #161311;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -193,10 +193,8 @@ body {
 /* ==============================================================================
  * INTRO DE ENTRADA
  * ============================================================================== */
-.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #120b07; overflow: hidden; cursor: pointer; }
+.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #161311; overflow: hidden; cursor: pointer; }
 .tatoo-intro.is-leaving { animation: tatooIntroOut .55s ease-in forwards; }
-.tatoo-intro-bg { position: absolute; inset: -4%; background: url('/landing-studio-bg.jpg') center/cover; filter: brightness(.9); opacity: 0; transform: scale(1.1); animation: tatooIntroBg 4s cubic-bezier(.2,.7,.2,1) .1s forwards; }
-.tatoo-intro-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(14,9,6,.6) 0%, rgba(14,9,6,.3) 55%, rgba(8,5,3,.85) 100%); }
 .tatoo-intro-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 16px; }
 .tatoo-intro-stage.is-zoom { animation: tatooIntroZoom .6s cubic-bezier(.6,0,.9,.4) forwards; }
 .tatoo-intro-svg { width: min(760px, 92vw); height: auto; overflow: visible; filter: drop-shadow(0 4px 16px rgba(0,0,0,.55)); }
@@ -204,7 +202,6 @@ body {
 .tatoo-intro-rule.is-on { width: min(460px, 70vw); }
 .tatoo-intro-tag { margin-top: 10px; font-size: 12.5px; letter-spacing: .5em; text-transform: uppercase; color: #e3d2b5; text-align: center; opacity: 0; transform: translateY(6px); transition: opacity .8s ease, transform .8s ease; }
 .tatoo-intro-tag.is-on { opacity: 1; transform: none; }
-@keyframes tatooIntroBg { to { opacity: .95; transform: scale(1); } }
 @keyframes tatooIntroZoom { to { transform: scale(5); opacity: 0; } }
 @keyframes tatooIntroOut { to { opacity: 0; visibility: hidden; } }
 @media (max-width: 640px) { .tatoo-intro-tag { font-size: 10px; letter-spacing: .3em; } }
@@ -322,9 +319,6 @@ main div.flex.flex-wrap.border-b.pb-3 > button { color: #c8b394 !important; }
 main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #f4e7d0 !important; }
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r::after,
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10::after { bottom: 0; }
-/* Cualquier texto que quede directamente sobre el fondo lleva una sombra suave que lo separa de los dibujos */
-main p, main span, main label, main h1, main h2, main h3 { text-shadow: 0 1px 10px rgba(0,0,0,.65); }
-.tattoo-card *, .glass-panel *, button *, input, select, textarea { text-shadow: none; }
 
 /* Legibilidad: las cajas oscuras semitransparentes de los paneles se vuelven casi sólidas */
 main [class^="bg-ink-950/"], main [class*=" bg-ink-950/"],
@@ -418,27 +412,13 @@ main.relative.z-0 { z-index: auto !important; }
 :root { --font-display: var(--font-landing); --font-sans: var(--font-landing); }
 body { font-family: var(--font-landing), Georgia, 'Times New Roman', serif; }
 
-/* Fondo de toda la web */
+/* Fondo de toda la web: un solo color neutro y cálido, a juego con el crema y el oro */
 .studio-bg {
   position: fixed;
   inset: 0;
   z-index: -10;
   pointer-events: none;
-  background: #1a110c url('/landing-studio-bg.jpg') center / cover no-repeat;
-}
-.studio-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 55% 45% at 50% 38%, rgba(18, 11, 7, 0.42), transparent 75%),
-    linear-gradient(180deg, rgba(14, 9, 6, 0.35) 0%, rgba(14, 9, 6, 0.05) 30%, rgba(14, 9, 6, 0.25) 70%, rgba(12, 8, 5, 0.8) 100%);
-}
-.studio-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(8, 5, 3, 0.65) 100%);
+  background: #161311;
 }
 
 /* Títulos: misma serif, un pelín más compacta */
@@ -448,9 +428,7 @@ body { font-family: var(--font-landing), Georgia, 'Times New Roman', serif; }
 .tattoo-card, .tattoo-card-gold,
 main .glass-panel:not(.bg-ink-950),
 main div.bg-ink-900\/60.rounded-3xl {
-  background:
-    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(255, 196, 132, 0.07), transparent 70%),
-    linear-gradient(180deg, rgba(43, 29, 21, 0.9) 0%, rgba(28, 19, 13, 0.92) 100%) !important;
+  background: #1e1a17 !important;
   border: 1px solid rgba(214, 178, 122, 0.3) !important;
   box-shadow: inset 0 1px 0 rgba(255, 236, 205, 0.06), 0 18px 40px -22px rgba(0, 0, 0, 0.85) !important;
 }
@@ -502,7 +480,7 @@ main textarea:focus, main select:focus {
 input[type='checkbox'], input[type='radio'] { accent-color: #c99a5e; }
 
 /* Pie de página */
-.site-footer { border-top: 1px solid rgba(214, 178, 122, 0.14); background: linear-gradient(180deg, transparent, rgba(14, 9, 6, 0.6)); }
+.site-footer { border-top: 1px solid rgba(214, 178, 122, 0.14); }
 .site-footer-logo {
   font-weight: 700;
   font-size: 1.15rem;
@@ -522,4 +500,58 @@ input[type='checkbox'], input[type='radio'] { accent-color: #c99a5e; }
   }
   main div.flex.flex-wrap.border-b.pb-3::-webkit-scrollbar { display: none; }
   main div.flex.flex-wrap.border-b.pb-3 > button { white-space: nowrap; flex-shrink: 0; }
+}
+
+/* ==============================================================================
+ * EFECTOS AL PASAR EL RATÓN (solo en dispositivos con ratón; en el móvil, pulso al tocar)
+ * ============================================================================== */
+/* Botón principal: un brillo dorado lo cruza y la flecha avanza */
+button.bg-crimson-600, a.bg-crimson-600 {
+  background-image:
+    linear-gradient(110deg, transparent 38%, rgba(255, 236, 200, 0.2) 50%, transparent 62%),
+    linear-gradient(180deg, #2b6549 0%, #1f4c37 50%, #163a2a 100%) !important;
+  background-size: 260% 100%, 100% 100% !important;
+  background-position: 130% 0, 0 0 !important;
+  background-repeat: no-repeat !important;
+  transition: filter 0.2s ease, transform 0.2s ease, background-position 0s !important;
+}
+button.bg-crimson-600 svg:last-child:not(:first-child), a.bg-crimson-600 svg:last-child:not(:first-child) { transition: transform 0.25s ease; }
+@media (hover: hover) {
+  button.bg-crimson-600:hover:not(:disabled), a.bg-crimson-600:hover {
+    background-position: -30% 0, 0 0 !important;
+    transition: filter 0.2s ease, transform 0.2s ease, background-position 0.75s ease !important;
+  }
+  button.bg-crimson-600:hover:not(:disabled) svg:last-child:not(:first-child),
+  a.bg-crimson-600:hover svg:last-child:not(:first-child) { transform: translateX(3px); }
+
+  /* Tarjetas: se elevan un poco, filo dorado más vivo y un halo cálido; las esquinas de lámina crecen */
+  .tattoo-card:hover, .tattoo-card-gold:hover {
+    border-color: rgba(222, 188, 136, 0.7) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 236, 205, 0.09),
+      0 0 0 1px rgba(214, 178, 122, 0.12),
+      0 26px 50px -24px rgba(0, 0, 0, 0.9),
+      0 0 38px -12px rgba(226, 168, 98, 0.28) !important;
+  }
+  .tattoo-card::before, .tattoo-card::after,
+  .tattoo-card-gold::before, .tattoo-card-gold::after { transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease; }
+  .tattoo-card:hover::before, .tattoo-card:hover::after,
+  .tattoo-card-gold:hover::before, .tattoo-card-gold:hover::after {
+    width: 26px !important;
+    height: 26px !important;
+    border-color: rgba(240, 210, 156, 0.95) !important;
+  }
+}
+/* En el móvil: al tocar, un pulso dorado breve */
+@media (hover: none) {
+  button.bg-crimson-600:active:not(:disabled), a.bg-crimson-600:active,
+  .tattoo-card:active, .tattoo-card-gold:active { animation: tatooTap 0.45s ease-out; }
+}
+@keyframes tatooTap {
+  from { outline: 2px solid rgba(236, 201, 141, 0.7); outline-offset: -2px; }
+  to   { outline: 2px solid rgba(236, 201, 141, 0); outline-offset: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tattoo-card:hover, .tattoo-card-gold:hover { transform: none !important; }
+  button.bg-crimson-600:hover, a.bg-crimson-600:hover { transition: none !important; }
 }

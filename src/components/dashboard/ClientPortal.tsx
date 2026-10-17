@@ -39,6 +39,7 @@ import { ensureDarkInkSignature } from '@/lib/signature';
 import ConsentDocumentModal from '@/components/dashboard/ConsentDocumentModal';
 import StudioMapView from '@/components/dashboard/StudioMapView';
 import BookingWizard from '@/components/dashboard/BookingWizard';
+import { DEMO_ARTISTS, DEMO_STUDIOS, isDemoMode } from '@/lib/demoData';
 
 export default function ClientPortal({ user, profile }: { user: any; profile: any }) {
   const [activeTab, setActiveTab] = useState<'appointments' | 'chat' | 'history'>('appointments');
@@ -192,6 +193,14 @@ export default function ClientPortal({ user, profile }: { user: any; profile: an
 
   const loadData = async () => {
     setLoading(true);
+    // Modo demo en desarrollo (sin sesión): datos de ejemplo al momento, sin esperar a la base de datos
+    if (isDemoMode(user?.id)) {
+      setStudios(DEMO_STUDIOS);
+      setArtists(DEMO_ARTISTS);
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1. Get client ID from clients table if available
       const { data: clientRec } = await supabase

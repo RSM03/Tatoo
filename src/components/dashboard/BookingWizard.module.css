@@ -179,3 +179,42 @@
 .cta:disabled { background: var(--s2); border-color: var(--line2); color: var(--mut) !important; cursor: not-allowed; }
 .cta svg { width: 18px; height: 18px; transition: transform 0.25s; }
 .cta:not(:disabled):hover svg { transform: translateX(3px); }
+
+/* Efectos al pasar el ratón: tarjetas con halo dorado, chips y días con el filo dorado que se "dibuja" */
+.chip, .day { position: relative; }
+.chip::after, .day::after {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  border: 1.5px solid var(--gold);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+.chip.sel::after, .day.sel::after { clip-path: inset(0 0 0 0); }
+.cta { position: relative; overflow: hidden; }
+.cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 236, 200, 0.18) 50%, transparent 65%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+.card { transition: border-color 0.25s, background 0.25s, transform 0.15s, translate 0.25s, box-shadow 0.25s; }
+@media (hover: hover) {
+  .chip:not(:disabled):hover::after, .day:not(:disabled):hover::after { clip-path: inset(0 0 0 0); }
+  .chip:not(:disabled):hover, .day:not(:disabled):hover { color: var(--tx); }
+  .card:hover { translate: 0 -2px; border-color: rgba(201, 187, 146, 0.55); box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.8), 0 0 26px -10px rgba(226, 168, 98, 0.25); }
+  .cta:not(:disabled):hover::after { transform: translateX(110%); transition: transform 0.75s ease; }
+}
+/* En el móvil: al tocar, un pulso dorado breve */
+@media (hover: none) {
+  .card:active, .chip:not(:disabled):active, .day:not(:disabled):active, .cta:not(:disabled):active { animation: tap 0.45s ease-out; }
+}
+@keyframes tap { from { box-shadow: 0 0 0 0 rgba(201, 187, 146, 0.5); } to { box-shadow: 0 0 0 10px rgba(201, 187, 146, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .card:hover { translate: none; }
+  .chip::after, .day::after, .cta::after { transition: none !important; }
+}

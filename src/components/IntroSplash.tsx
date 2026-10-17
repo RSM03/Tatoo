@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { INTRO_GLYPHS as GLYPHS } from './introGlyphs';
 
 /**
- * Intro de entrada "Tatto AI"
+ * Intro de entrada "Tattoo AI"
  * Una chispa dorada traza cada letra (como la punta de la aguja), la letra se
  * rellena de tinta y la pantalla hace zoom hacia la app. Sale una vez por sesión.
  * Es solo una capa por encima: no cambia nada de la app.
@@ -120,8 +120,6 @@ export default function IntroSplash() {
       role="presentation"
       aria-hidden="true"
     >
-      <div className="tatoo-intro-bg" />
-      <div className="tatoo-intro-vig" />
       <div className={`tatoo-intro-stage ${zoom ? 'is-zoom' : ''}`}>
         <svg className="tatoo-intro-svg" viewBox="0 0 760 190">
           <defs>

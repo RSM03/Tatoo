@@ -156,7 +156,8 @@ export default function BookingWizard({ user, studios, artists, initial, onClose
   // Citas ya ocupadas de los tatuadores del estudio (solo horas, sin datos de otros clientes).
   useEffect(() => {
     const ids = studioArtists.map(a => a.id);
-    if (!ids.length) {
+    // Modo demo (solo desarrollo): tatuadores de ejemplo, agenda libre sin consultar la base de datos
+    if (!ids.length || ids.every(id => String(id).startsWith('demo-'))) {
       setBusy([]);
       return;
     }
@@ -270,6 +271,27 @@ export default function BookingWizard({ user, studios, artists, initial, onClose
     if (!artist || !day || !slot) return;
     setSubmitting(true);
     setError('');
+    // Modo demo (solo desarrollo): se simula la cita para poder ver el final del recorrido
+    if (String(artist.id).startsWith('demo-')) {
+      const start = new Date(`${day}T${slot}:00`);
+      const demoAppointment = {
+        id: `demo-${start.getTime()}`,
+        studio_id: artist.studio_id,
+        artist_id: artist.id,
+        appointment_type: type,
+        title: consult ? 'Consulta de Diseño' : 'Sesión de Tatuaje',
+        description: [size ? `Tamaño: ${size.name} (${size.cm})` : '', zone ? `Zona: ${zone}` : ''].filter(Boolean).join(' · '),
+        start_time: start.toISOString(),
+        end_time: new Date(start.getTime() + hours * 3600000).toISOString(),
+        status: 'pending',
+        artists: { id: artist.id, display_name: artist.display_name },
+      };
+      setCreated(demoAppointment);
+      onCreated(demoAppointment);
+      setSubmitting(false);
+      go(4);
+      return;
+    }
     try {
       const { data: clientRec } = await supabase.from('clients').select('id').eq('profile_id', user.id).maybeSingle();
       let clientId = clientRec?.id;

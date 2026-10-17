@@ -16,8 +16,10 @@
 }
 
 /* ---------- Texto partido en palabras (para las animaciones) ---------- */
-.word { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.1em; margin-bottom: -0.1em; }
-.wordIn { display: inline-block; will-change: transform; }
+/* La caja de cada palabra deja sitio a las colas (g, j) y a la cursiva (M) para que no se corten,
+   y lo compensa con margen negativo para que el texto no se mueva */
+.word { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.08em 0.14em 0.26em; margin: -0.08em -0.14em -0.26em; }
+.wordIn { display: inline-block; will-change: transform; padding: 0.06em 0.12em 0.22em; margin: -0.06em -0.12em -0.22em; }
 
 /* ---------- Títulos y piezas comunes ---------- */
 .title {
@@ -26,7 +28,6 @@
   letter-spacing: -0.015em;
   line-height: 1.06;
   font-size: clamp(2.4rem, 6.4vw, 5.6rem);
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.55));
 }
 .title > span { display: block; }
 .title .wordIn,
@@ -65,7 +66,6 @@
   font-size: clamp(1.05rem, 1.7vw, 1.35rem);
   line-height: 1.5;
   color: var(--cream);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1.8rem; }
@@ -82,7 +82,17 @@
   text-decoration: none;
   transition: transform 0.2s ease, filter 0.2s ease;
 }
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 236, 200, 0.2) 50%, transparent 65%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
 .btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
+.btn:hover::after { transform: translateX(110%); transition: transform 0.75s ease; }
 .btn svg { width: 1.2em; height: 1.2em; transition: transform 0.2s ease; }
 .btn:hover svg { transform: translateX(3px); }
 .btnPrimary {
@@ -113,7 +123,6 @@
   font-weight: 700;
   line-height: 1.1;
   color: var(--cream);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
 }
 .h2 em { font-style: italic; font-weight: 500; color: var(--gold); }
 
@@ -191,19 +200,27 @@
   height: 100%;
   border-radius: 6px;
   overflow: hidden;
-  background: #140d09;
+  background: radial-gradient(ellipse 80% 60% at 50% 38%, rgba(236, 196, 140, 0.12), transparent 70%), #160f0a;
   border: 1.5px solid #c99d62;
   box-shadow: inset 0 0 0 4px #140d09, inset 0 0 0 5px rgba(214, 178, 122, 0.5), 0 24px 40px -14px rgba(0, 0, 0, 0.85);
 }
 .faceArt {
   position: absolute;
-  inset: 9px 9px 32px;
-  border-radius: 3px;
-  background-image: url('/tattoo-flash-bg.jpg');
-  background-repeat: no-repeat;
-  filter: brightness(3.8) contrast(1.35) sepia(0.6) saturate(1.05);
+  inset: 16% 12% 22%;
+  width: 76%;
+  height: 62%;
+  overflow: visible;
 }
-.faceArt::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 22px rgba(10, 6, 4, 0.75); }
+.faceArt path {
+  fill: none;
+  stroke: #ecd29c;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 5px rgba(236, 210, 156, 0.45));
+  transition: stroke 0.35s ease, filter 0.35s ease;
+}
+.faceRing { fill: none; stroke: rgba(214, 178, 122, 0.35); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
 .faceCap { position: absolute; left: 0; right: 0; bottom: 9px; text-align: center; font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: #e9cf9e; }
 .face::after {
   content: '';
@@ -252,30 +269,30 @@
 }
 .fix { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 1.06rem; line-height: 1.45; color: var(--cream); }
 .fix .star { width: 0.95em; height: 0.95em; margin-top: 0.25em; }
-.stPhoto {
-  position: relative;
-  height: min(78vh, 44rem);
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(214, 178, 122, 0.4);
-  box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.85);
+
+/* El móvil del tatuador con los avisos */
+.phone {
+  justify-self: center;
+  width: min(100%, 22rem);
+  padding: 12px 14px 22px;
+  border-radius: 40px;
+  background: #1e1a17;
+  border: 1px solid rgba(214, 178, 122, 0.3);
+  box-shadow: inset 0 0 0 6px #161311, inset 0 0 0 7px rgba(214, 178, 122, 0.1), 0 30px 60px -32px rgba(0, 0, 0, 0.9);
 }
-@media (max-width: 899px) { .stPhoto { height: 62vh; } }
-.stImg { position: absolute; inset: 0; background: url('/tattoo-studio-bg.jpg') 50% 40% / cover no-repeat; will-change: transform; }
-.stTag {
-  position: absolute;
-  left: 1rem;
-  bottom: 1rem;
-  padding: 0.45rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(20, 13, 9, 0.75);
-  border: 1px solid rgba(214, 178, 122, 0.4);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold);
-  backdrop-filter: blur(4px);
-}
+.phoneNotch { display: block; width: 86px; height: 22px; margin: 6px auto 20px; border-radius: 12px; background: #161311; }
+.phoneHead { display: flex; align-items: baseline; justify-content: space-between; padding: 0 8px 14px; }
+.phoneDay { font-size: 1.7rem; font-weight: 700; color: var(--cream); }
+.phoneApp { font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+.notifs { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.notif { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 18px; background: rgba(255, 244, 230, 0.035); border: 1px solid rgba(214, 178, 122, 0.16); }
+.notifIcon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(214, 178, 122, 0.45); color: var(--gold); }
+.notifIcon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.notifBody { flex: 1; min-width: 0; }
+.notifTitle { display: block; font-size: 0.98rem; font-weight: 600; line-height: 1.3; color: var(--cream); }
+.notifMeta { display: block; margin-top: 2px; font-size: 0.84rem; line-height: 1.35; color: var(--muted); }
+.notifTime { flex: none; font-size: 0.74rem; color: var(--muted); }
+.phoneFoot { margin: 18px 8px 0; text-align: center; font-size: 0.86rem; color: var(--muted); }
 
 /* ---------- 3. Cómo funciona: pasos con línea dorada ---------- */
 .howSteps { --m: 104px; padding: clamp(4rem, 12vh, 8rem) clamp(1rem, 4vw, 3rem); }
@@ -349,8 +366,49 @@
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.025em;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
 }
 .bigTitle > span { display: block; }
 .bigTitle .gold { font-style: italic; font-weight: 500; }
 .finalSub { margin: 1.6rem 0 0; max-width: 38rem; font-size: 1.15rem; line-height: 1.55; color: var(--cream2); }
+
+/* ---------- Lienzo 3D fijo detrás de la portada ---------- */
+.scene3d {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ---------- 2. Servicios: texto a la izquierda, la pieza 3D a la derecha ---------- */
+.services { position: relative; padding: clamp(4rem, 12vh, 8rem) clamp(1.25rem, 5vw, 5rem); }
+.svcInner { width: 100%; max-width: 80rem; margin: 0 auto; }
+.svcText { max-width: 32rem; }
+.svcPanels { display: flex; flex-direction: column; gap: 3rem; margin-top: 1.4rem; }
+.svcNum { display: block; font-size: 0.9rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+.svcNum i { font-style: normal; opacity: 0.6; }
+.svcHead { margin: 0.7rem 0 0; font-size: clamp(2rem, 3.8vw, 3.3rem); font-weight: 700; line-height: 1.08; color: var(--cream); }
+.svcLead { margin: 1rem 0 0; font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.5; color: var(--cream2); }
+.svcList { list-style: none; margin: 1.4rem 0 0; padding: 0; display: grid; gap: 0.7rem; }
+.svcList li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 1.05rem; line-height: 1.4; color: var(--cream); }
+.svcList .star { width: 0.9em; height: 0.9em; margin-top: 0.28em; }
+.svcBars { display: none; gap: 0.5rem; margin-top: 2.2rem; }
+.svcBars span { position: relative; width: 2.6rem; height: 2px; border-radius: 2px; background: rgba(214, 178, 122, 0.22); overflow: hidden; }
+.svcBars span::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #b98d57, #ecd29c); transform: scaleX(var(--p, 0)); transform-origin: left center; }
+
+/* Con animaciones: pantalla fija y un texto cada vez */
+.services[data-scene='on'] { height: 100vh; padding-top: 0; padding-bottom: 0; display: flex; align-items: center; }
+.services[data-scene='on'] .svcPanels { display: grid; }
+.services[data-scene='on'] .svcPanel { grid-area: 1 / 1; }
+.services[data-scene='on'] .svcBars { display: flex; }
+/* Móvil: la pieza arriba y el texto abajo */
+@media (max-width: 899px) {
+  .services[data-scene='on'] { align-items: flex-end; padding-bottom: clamp(1.5rem, 5vh, 3rem); }
+  .services[data-scene='on'] .svcHead { font-size: clamp(1.7rem, 7vw, 2.3rem); }
+  .services[data-scene='on'] .svcLead { font-size: 1rem; margin-top: 0.6rem; }
+  .services[data-scene='on'] .svcList { margin-top: 0.9rem; gap: 0.45rem; }
+  .services[data-scene='on'] .svcList li { font-size: 0.95rem; }
+  .services[data-scene='on'] .svcBars { margin-top: 1.2rem; }
+}

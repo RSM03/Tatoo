@@ -1,6 +1,6 @@
 // Dibujos de línea que la máquina "tatúa" en la escena (viewBox 0 0 200 200, un solo trazo por dibujo).
 
-export type InkArt = 'calendar' | 'scales' | 'rose' | 'scroll';
+export type InkArt = 'calendar' | 'scales' | 'rose' | 'scroll' | 'camera';
 
 export const INK_ART: Record<InkArt, string> = {
   // Calendario con anillas y casillas
@@ -15,6 +15,10 @@ export const INK_ART: Record<InkArt, string> = {
   rose:
     'M100 95c8-6 16 2 10 10c-6 9-22 6-24-6c-2-14 14-24 28-18c16 7 18 28 6 40c-14 14-40 10-48-8c-8-18 4-40 26-44 ' +
     'M100 135C98 150 96 162 92 178 M95 152c-14-8-26-4-32 6c10 6 22 6 32-6 M97 162c12-10 24-10 32-2c-10 8-22 8-32 2',
+  // Cámara de fotos (el cliente manda fotos de la curación)
+  camera:
+    'M44 70H156Q168 70 168 82V146Q168 158 156 158H44Q32 158 32 146V82Q32 70 44 70Z M76 70L86 52H114L124 70 ' +
+    'M128 114A28 28 0 1 0 72 114A28 28 0 1 0 128 114 M114 114A14 14 0 1 0 86 114A14 14 0 1 0 114 114 M142 86H154 M46 86H58',
   // Pergamino con texto y firma
   scroll:
     'M56 42H144V150H56Z M48 36H152 M48 156H152 M70 64H130 M70 80H130 M70 96H116 ' +

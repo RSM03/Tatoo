@@ -129,20 +129,44 @@ export function useLandingMotion(rootRef: RefObject<HTMLElement>) {
       mm.add('(prefers-reduced-motion: no-preference)', () => {
         const q = gsap.utils.selector(root);
 
-        // Lo que dejas atrás: cada problema se tacha al llegar y aparece la solución
-        (q('[data-pain]') as HTMLElement[]).forEach((row) => {
+        // Servicios: la sección se queda fija 3 pantallas; el texto cambia a mitad de camino entre pieza y pieza
+        // (la cámara 3D lee el progreso de este mismo ScrollTrigger, id 'services')
+        const svc = q('[data-services]')[0] as HTMLElement | undefined;
+        if (svc) {
+          svc.dataset.scene = 'on';
+          const panels = q('[data-svc-panel]') as HTMLElement[];
+          const bars = q('[data-svc-bar]') as HTMLElement[];
+          gsap.set(panels.slice(1), { autoAlpha: 0, y: 30 });
+          gsap.set(bars, { '--p': 0 });
+          gsap.set(bars[0], { '--p': 1 });
+          const tl = gsap.timeline({
+            defaults: { duration: 0.3 },
+            scrollTrigger: { id: 'services', trigger: svc, start: 'top top', end: '+=300%', scrub: 0.6, pin: true, pinSpacing: true, anticipatePin: 1 },
+          });
+          tl.to({}, { duration: 3 }, 0);
+          for (let k = 1; k < panels.length; k++) {
+            tl.to(panels[k - 1], { autoAlpha: 0, y: -30, ease: 'power2.in' }, k - 0.8)
+              .fromTo(panels[k], { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, ease: 'power2.out' }, k - 0.5)
+              .to(bars[k], { '--p': 1, ease: 'none' }, k - 0.5);
+          }
+          // Entrada del primer texto al llegar
+          gsap.from(panels[0].children, { autoAlpha: 0, y: 24, duration: 0.8, ease: 'power3.out', stagger: 0.08, scrollTrigger: { trigger: svc, start: 'top 70%' } });
+        }
+
+        // Lo que dejas atrás: cada problema se tacha al llegar, aparece la solución y al móvil le llega su aviso
+        // (en ordenador el aviso sale a la vez que su frase; en móvil, al llegar al propio móvil)
+        const wide = window.matchMedia('(min-width: 900px)').matches;
+        const notifs = q('[data-notif]') as HTMLElement[];
+        (q('[data-pain]') as HTMLElement[]).forEach((row, i) => {
+          if (notifs[i]) {
+            gsap.from(notifs[i], { autoAlpha: 0, y: 18, scale: 0.97, duration: 0.6, ease: 'power3.out', delay: wide ? 0.6 : 0.1 * i, scrollTrigger: { trigger: wide ? row : notifs[i], start: wide ? 'top 82%' : 'top 92%' } });
+          }
           gsap
             .timeline({ scrollTrigger: { trigger: row, start: 'top 82%' } })
             .fromTo(row.querySelector('[data-pain-text]'), { color: '#f4e7d0' }, { color: '#a08a6c', duration: 0.5 }, 0.55)
             .from(row.querySelector('[data-strike]'), { scaleX: 0, duration: 0.6, ease: 'power2.inOut' }, 0.35)
             .from(row.querySelector('[data-fix]'), { autoAlpha: 0, y: 10, duration: 0.6, ease: 'power3.out' }, 0.75);
         });
-        // La foto se abre y se acerca
-        const photo = q('[data-st-photo]')[0];
-        if (photo) {
-          gsap.fromTo(photo, { clipPath: 'inset(16% 12% 16% 12% round 8px)' }, { clipPath: 'inset(0% 0% 0% 0% round 8px)', ease: 'none', scrollTrigger: { trigger: photo, start: 'top 88%', end: 'center 55%', scrub: true } });
-          gsap.fromTo(q('[data-st-img]'), { scale: 1.3 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: photo, start: 'top bottom', end: 'bottom top', scrub: true } });
-        }
 
         // Títulos que suben palabra a palabra al llegar
         (q('[data-reveal-words]') as HTMLElement[]).forEach((el) => {
@@ -171,6 +195,10 @@ export function useLandingMotion(rootRef: RefObject<HTMLElement>) {
           start: 'top 88%',
           onEnter: (els) => gsap.fromTo(els, { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, overwrite: true }),
         });
+
+        return () => {
+          if (svc) delete svc.dataset.scene;
+        };
       });
     }, root);
 

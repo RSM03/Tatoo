@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Edges, Final, HeroCards, HowSteps, Statement, pageClass } from '@/components/landing/Sections';
+import { Edges, Final, HeroCards, HowSteps, Services, Statement, pageClass } from '@/components/landing/Sections';
+import Landing3D from '@/components/landing/Landing3D';
 import { useLandingMotion } from '@/components/landing/useLandingMotion';
 
 export default function HomePage() {
@@ -10,8 +11,10 @@ export default function HomePage() {
 
   return (
     <div ref={root} className={pageClass}>
+      <Landing3D />
       <Edges />
       <HeroCards />
+      <Services />
       <Statement />
       <HowSteps />
       <Final />
