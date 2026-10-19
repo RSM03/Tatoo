@@ -20,7 +20,7 @@ interface CopilotMessage {
 const buildWelcomeMessage = (artistName?: string): CopilotMessage => ({
   id: 'welcome',
   sender: 'ai',
-  text: `¡Hola, **${artistName || 'Tatuador'}**! 👋 Soy tu Copilot personal de Tatoo.\n\nPuedo ayudarte a gestionar tu trabajo diario sin rodeos:\n\n• 📅 **Consultar tu agenda:** Pregúntame qué citas tienes hoy, mañana o esta semana.\n• ➕ **Crear citas:** Pídeme que agende una cita (ej: *"crea una cita para mañana a las 11 con Laura"*).\n• 🔒 **Bloquear descansos:** Pídeme que bloquee huecos para comidas o descansos (ej: *"bloquea mañana de 14:00 a 15:30 para comer"*).\n• 📋 **Consentimientos legales:** Pregúntame quién no ha firmado su consentimiento informado.\n• ❓ **Dudas sobre la app:** Pregúntame cómo configurar tarifas, cómo descargar PDF de consentimientos o cómo funciona la suscripción de 50€/mes con Stripe.\n\n¿En qué te ayudo ahora?`,
+  text: `¡Hola, **${artistName || 'Tatuador'}**! 👋 Soy tu Copilot personal de Tattoo.\n\nPuedo ayudarte a gestionar tu trabajo diario sin rodeos:\n\n• 📅 **Consultar tu agenda:** Pregúntame qué citas tienes hoy, mañana o esta semana.\n• ➕ **Crear citas:** Pídeme que agende una cita (ej: *"crea una cita para mañana a las 11 con Laura"*).\n• 🔒 **Bloquear descansos:** Pídeme que bloquee huecos para comidas o descansos (ej: *"bloquea mañana de 14:00 a 15:30 para comer"*).\n• 📋 **Consentimientos legales:** Pregúntame quién no ha firmado su consentimiento informado.\n• ❓ **Dudas sobre la app:** Pregúntame cómo configurar tarifas, cómo descargar PDF de consentimientos o cómo funciona la suscripción de 50€/mes con Stripe.\n\n¿En qué te ayudo ahora?`,
   createdAt: new Date().toISOString()
 });
 

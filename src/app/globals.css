@@ -5,9 +5,9 @@
 @tailwind utilities;
 
 :root {
-  --background: #141311;
-  --foreground: #efeae2;
-  --card-bg: #211f1c;
+  --background: #161311;
+  --foreground: #f4e7d0;
+  --card-bg: #2b1d15;
   --border-color: rgba(255, 244, 230, 0.12);
   --primary-accent: #2f5a47;
   --primary-accent-hover: #4f7a64;
@@ -34,11 +34,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #141311;
+  background: #161311;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3a3632;
+  background: #4a3626;
   border-radius: 9999px;
 }
 
@@ -64,7 +64,7 @@ body {
 }
 
 .glass-panel {
-  background: rgba(33, 31, 28, 0.88);
+  background: rgba(45,31,23, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 244, 230, 0.12);
@@ -72,7 +72,7 @@ body {
 }
 
 .tattoo-gold-glow {
-  box-shadow: 0 0 16px -6px rgba(179, 148, 89, 0.3);
+  box-shadow: 0 0 16px -6px rgba(201,160,100, 0.3);
 }
 
 .tattoo-crimson-glow {
@@ -145,92 +145,35 @@ body {
   letter-spacing: 0.06em !important;
 }
 
-/* 2. Menú de arriba sin gritar: mayúscula solo al principio */
-header nav a {
-  text-transform: none !important;
-  letter-spacing: 0.01em !important;
-  font-size: 0.8125rem !important;
-  font-weight: 600 !important;
-}
-
 /* 3. Iconos de las tarjetas sin cuadradito de color */
 .tattoo-card > .w-10.h-10,
 .tattoo-card > .w-12.h-12 {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  color: #c9bb92 !important;
+  color: #d6b27a !important;
 }
 
 /* 5. Un solo blanco: crema cálido en todos los textos */
 .text-white:not(#consent-printable-document *) {
-  color: #efeae2;
+  color: #f4e7d0;
 }
 
 /* Logo: la T gótica de tatuaje */
 @font-face { font-family: 'Pirata One'; src: url('/fonts/pirata-one-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 .logo-t { font-family: 'Pirata One', Georgia, serif; line-height: 1; font-weight: 400; }
 
-/* Menú de arriba: enlaces limpios, sin cápsula; el activo con una línea dorada fina */
-header nav {
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-  gap: 2rem !important;
-}
-header nav a {
-  position: relative;
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  padding: 0.4rem 0 !important;
-  color: #b3aa9d !important;
-  transition: color .2s ease !important;
-}
-header nav a:hover { color: #efeae2 !important; }
-header nav a svg { display: none; }
-header nav a.bg-white\/10 { color: #efeae2 !important; }
-header nav a.bg-white\/10::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: -2px;
-  height: 1.5px;
-  background: #c9bb92;
-  border-radius: 2px;
-}
-
-/* Barra de arriba fundida con el fondo: sin franja ni línea de corte */
-header.glass-panel {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-header.glass-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 -28px 0;
-  z-index: -1;
-  background: rgba(19, 18, 16, 0.82);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-  pointer-events: none;
-}
-
 /* Tarjetas: cristal oscuro cálido, filo dorado fino y esquinas de lámina de flash */
 .tattoo-card, .tattoo-card-gold {
-  background: linear-gradient(180deg, rgba(30,28,25,.78) 0%, rgba(19,18,16,.82) 100%) !important;
+  background: linear-gradient(180deg, rgba(43,29,21,.78) 0%, rgba(24,16,11,.82) 100%) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(201,187,146,.16) !important;
+  border: 1px solid rgba(214,178,122,.16) !important;
   box-shadow: inset 0 1px 0 rgba(255,244,230,.05), 0 18px 40px -22px rgba(0,0,0,.8) !important;
   transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease !important;
 }
 .tattoo-card:hover, .tattoo-card-gold:hover {
-  border-color: rgba(201,187,146,.42) !important;
+  border-color: rgba(214,178,122,.42) !important;
   transform: translateY(-2px);
   box-shadow: inset 0 1px 0 rgba(255,244,230,.07), 0 24px 48px -22px rgba(0,0,0,.9) !important;
 }
@@ -239,7 +182,7 @@ header.glass-panel::before {
   content: '';
   position: absolute;
   width: 14px; height: 14px;
-  border-color: rgba(201,187,146,.55);
+  border-color: rgba(214,178,122,.55);
   border-style: solid;
   pointer-events: none;
 }
@@ -250,18 +193,15 @@ header.glass-panel::before {
 /* ==============================================================================
  * INTRO DE ENTRADA
  * ============================================================================== */
-.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; cursor: pointer; }
+.tatoo-intro { position: fixed; inset: 0; z-index: 9999; background: #161311; overflow: hidden; cursor: pointer; }
 .tatoo-intro.is-leaving { animation: tatooIntroOut .55s ease-in forwards; }
-.tatoo-intro-bg { position: absolute; inset: -4%; background: url('/tattoo-flash-bg.jpg') center/cover; filter: brightness(2.4) contrast(1.15) sepia(.4) saturate(.85); opacity: 0; transform: scale(1.1); animation: tatooIntroBg 4s cubic-bezier(.2,.7,.2,1) .1s forwards; }
-.tatoo-intro-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.8) 100%); }
 .tatoo-intro-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 16px; }
 .tatoo-intro-stage.is-zoom { animation: tatooIntroZoom .6s cubic-bezier(.6,0,.9,.4) forwards; }
-.tatoo-intro-svg { width: min(760px, 92vw); height: auto; overflow: visible; }
-.tatoo-intro-rule { height: 1px; width: 0; margin-top: 4px; background: linear-gradient(90deg, transparent, #c9bb92, transparent); transition: width .9s cubic-bezier(.2,.7,.2,1); }
+.tatoo-intro-svg { width: min(760px, 92vw); height: auto; overflow: visible; filter: drop-shadow(0 4px 16px rgba(0,0,0,.55)); }
+.tatoo-intro-rule { height: 1px; width: 0; margin-top: 4px; background: linear-gradient(90deg, transparent, #d6b27a, transparent); transition: width .9s cubic-bezier(.2,.7,.2,1); }
 .tatoo-intro-rule.is-on { width: min(460px, 70vw); }
-.tatoo-intro-tag { margin-top: 10px; font-size: 12.5px; letter-spacing: .5em; text-transform: uppercase; color: #cfc7bb; text-align: center; opacity: 0; transform: translateY(6px); transition: opacity .8s ease, transform .8s ease; }
+.tatoo-intro-tag { margin-top: 10px; font-size: 12.5px; letter-spacing: .5em; text-transform: uppercase; color: #e3d2b5; text-align: center; opacity: 0; transform: translateY(6px); transition: opacity .8s ease, transform .8s ease; }
 .tatoo-intro-tag.is-on { opacity: 1; transform: none; }
-@keyframes tatooIntroBg { to { opacity: .95; transform: scale(1); } }
 @keyframes tatooIntroZoom { to { transform: scale(5); opacity: 0; } }
 @keyframes tatooIntroOut { to { opacity: 0; visibility: hidden; } }
 @media (max-width: 640px) { .tatoo-intro-tag { font-size: 10px; letter-spacing: .3em; } }
@@ -271,10 +211,10 @@ main .glass-panel:not(.bg-ink-950),
 main div.bg-gradient-to-r.from-ink-900\/90,
 main div.bg-ink-950\/70.rounded-2xl {
   position: relative;
-  background: linear-gradient(180deg, rgba(30,28,25,.78) 0%, rgba(19,18,16,.82) 100%) !important;
+  background: linear-gradient(180deg, rgba(43,29,21,.78) 0%, rgba(24,16,11,.82) 100%) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(201,187,146,.16) !important;
+  border: 1px solid rgba(214,178,122,.16) !important;
   box-shadow: inset 0 1px 0 rgba(255,244,230,.05), 0 18px 40px -22px rgba(0,0,0,.8) !important;
 }
 main .glass-panel:not(.bg-ink-950)::before, main .glass-panel:not(.bg-ink-950)::after,
@@ -282,7 +222,7 @@ main div.bg-gradient-to-r.from-ink-900\/90::before, main div.bg-gradient-to-r.fr
   content: '';
   position: absolute;
   width: 14px; height: 14px;
-  border-color: rgba(201,187,146,.55);
+  border-color: rgba(214,178,122,.55);
   border-style: solid;
   pointer-events: none;
   z-index: 1;
@@ -293,8 +233,8 @@ main .glass-panel svg.text-ink-600 { color: #8f7745 !important; }
 
 /* Selector Estudio / Cliente (login y registro): pestañas elegantes con filo dorado */
 main div.grid.grid-cols-2.bg-ink-900\/90 {
-  background: rgba(19,18,16,.6) !important;
-  border: 1px solid rgba(201,187,146,.16) !important;
+  background: rgba(24,16,11,.6) !important;
+  border: 1px solid rgba(214,178,122,.16) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   padding: 6px !important;
@@ -305,23 +245,23 @@ main div.grid.grid-cols-2.bg-ink-900\/90 > button {
   border-radius: 10px !important;
   padding-top: 14px !important;
   padding-bottom: 14px !important;
-  color: #8e8579 !important;
+  color: #a08a6c !important;
   box-shadow: none !important;
   transition: color .2s ease, background .2s ease, border-color .2s ease !important;
 }
-main div.grid.grid-cols-2.bg-ink-900\/90 > button svg { color: #6b645b; transition: color .2s ease; }
-main div.grid.grid-cols-2.bg-ink-900\/90 > button:hover { color: #cfc7bb !important; background: rgba(255,244,230,.03) !important; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button svg { color: #786650; transition: color .2s ease; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button:hover { color: #e3d2b5 !important; background: rgba(255,244,230,.03) !important; }
 main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-amber-600\/20,
 main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 {
-  background: linear-gradient(180deg, rgba(201,187,146,.13), rgba(201,187,146,.04)) !important;
-  border-color: rgba(201,187,146,.45) !important;
-  color: #efeae2 !important;
+  background: linear-gradient(180deg, rgba(214,178,122,.13), rgba(214,178,122,.04)) !important;
+  border-color: rgba(214,178,122,.45) !important;
+  color: #f4e7d0 !important;
   box-shadow: inset 0 1px 0 rgba(255,244,230,.06) !important;
 }
 main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-amber-600\/20 svg,
-main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 svg { color: #c9bb92; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 svg { color: #d6b27a; }
 main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-amber-600\/20 span:last-child,
-main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 span:last-child { color: #b3aa9d !important; }
+main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 span:last-child { color: #c8b394 !important; }
 
 /* ==============================================================================
  * PANELES (estudio, tatuador y cliente): mismo estilo que la parte pública
@@ -329,7 +269,7 @@ main div.grid.grid-cols-2.bg-ink-900\/90 > button.bg-crimson-600\/20 span:last-c
 /* Pestañas: texto limpio, la activa con línea dorada fina (como el menú de arriba) */
 main div.flex.flex-wrap.border-b.pb-3 {
   gap: 1.75rem !important;
-  border-bottom-color: rgba(201,187,146,.14) !important;
+  border-bottom-color: rgba(214,178,122,.14) !important;
   padding-bottom: 0 !important;
 }
 main div.flex.flex-wrap.border-b.pb-3 > button {
@@ -343,54 +283,51 @@ main div.flex.flex-wrap.border-b.pb-3 > button {
   letter-spacing: .01em !important;
   font-size: .875rem !important;
   font-weight: 600 !important;
-  color: #8e8579 !important;
+  color: #a08a6c !important;
   transform: none !important;
 }
-main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #cfc7bb !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #e3d2b5 !important; }
 main div.flex.flex-wrap.border-b.pb-3 > button svg { color: currentColor !important; opacity: .8; }
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r,
-main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10 { color: #efeae2 !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10 { color: #f4e7d0 !important; }
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r svg,
-main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10 svg { color: #c9bb92 !important; opacity: 1; }
+main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10 svg { color: #d6b27a !important; opacity: 1; }
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r::after,
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px; background: #c9bb92; border-radius: 2px;
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px; background: #d6b27a; border-radius: 2px;
 }
 /* Cabecera del panel de estudio con el acabado de tarjeta */
 main div.bg-ink-900\/60.rounded-3xl {
   position: relative;
-  background: linear-gradient(180deg, rgba(30,28,25,.78) 0%, rgba(19,18,16,.82) 100%) !important;
+  background: linear-gradient(180deg, rgba(43,29,21,.78) 0%, rgba(24,16,11,.82) 100%) !important;
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(201,187,146,.16) !important;
+  border: 1px solid rgba(214,178,122,.16) !important;
   box-shadow: inset 0 1px 0 rgba(255,244,230,.05), 0 18px 40px -22px rgba(0,0,0,.8) !important;
 }
 /* Selectores y campos del panel en tono cálido */
-main select { background-color: rgba(19,18,16,.85) !important; border-color: rgba(201,187,146,.2) !important; }
+main select { background-color: rgba(24,16,11,.85) !important; border-color: rgba(214,178,122,.2) !important; }
 
 /* Legibilidad en paneles: las pestañas van sobre una franja de cristal oscuro */
 main div.flex.flex-wrap.border-b.pb-3 {
-  background: linear-gradient(180deg, rgba(24,23,21,.86), rgba(19,18,16,.86));
+  background: linear-gradient(180deg, rgba(33,23,16,.86), rgba(24,16,11,.86));
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(201,187,146,.14) !important;
+  border: 1px solid rgba(214,178,122,.14) !important;
   border-radius: 12px;
   padding: 0 1.25rem !important;
 }
-main div.flex.flex-wrap.border-b.pb-3 > button { color: #b3aa9d !important; }
-main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #efeae2 !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button { color: #c8b394 !important; }
+main div.flex.flex-wrap.border-b.pb-3 > button:hover { color: #f4e7d0 !important; }
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-gradient-to-r::after,
 main div.flex.flex-wrap.border-b.pb-3 > button.bg-white\/10::after { bottom: 0; }
-/* Cualquier texto que quede directamente sobre el fondo lleva una sombra suave que lo separa de los dibujos */
-main p, main span, main label, main h1, main h2, main h3 { text-shadow: 0 1px 10px rgba(0,0,0,.65); }
-.tattoo-card *, .glass-panel *, button *, input, select, textarea { text-shadow: none; }
 
 /* Legibilidad: las cajas oscuras semitransparentes de los paneles se vuelven casi sólidas */
 main [class^="bg-ink-950/"], main [class*=" bg-ink-950/"],
 main [class^="bg-ink-900/"], main [class*=" bg-ink-900/"] {
-  background-color: rgba(19,18,16,.88) !important;
+  background-color: rgba(24,16,11,.88) !important;
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
 main [class*=" bg-crimson-950/"], main [class^="bg-crimson-950/"] {
-  background: linear-gradient(rgba(47,90,71,.16), rgba(47,90,71,.16)), rgba(19,18,16,.9) !important;
+  background: linear-gradient(rgba(47,90,71,.16), rgba(47,90,71,.16)), rgba(24,16,11,.9) !important;
 }
 
 /* ==============================================================================
@@ -398,29 +335,6 @@ main [class*=" bg-crimson-950/"], main [class^="bg-crimson-950/"] {
  * ============================================================================== */
 @media (max-width: 767px) {
   html, body { overflow-x: hidden; }
-  /* Barra de arriba: logo, idioma y botones en una fila; el menú debajo, centrado */
-  header.glass-panel { padding: .6rem .9rem !important; }
-  header.glass-panel > div { flex-wrap: wrap; row-gap: .35rem; column-gap: .5rem; }
-  header.glass-panel > div > a:first-child { gap: .5rem !important; min-width: 0; }
-  header.glass-panel .logo-t { white-space: nowrap; }
-  header.glass-panel > div > a:first-child > div:first-child { width: 1.8rem !important; height: 2.4rem !important; }
-  header.glass-panel > div > a:first-child > div:first-child .logo-t { font-size: 40px !important; }
-  header.glass-panel > div > a:first-child .logo-t.text-\[30px\] { font-size: 24px !important; }
-  header.glass-panel > div > div:last-child { gap: .4rem !important; }
-  header.glass-panel > div > div:last-child a, header.glass-panel > div > div:last-child button { white-space: nowrap; font-size: .8rem !important; }
-  header.glass-panel > div > div:last-child a svg { display: none; }
-  header.glass-panel > div > div:last-child > button:first-child { padding: .3rem .5rem !important; }
-  header.glass-panel > div > div:last-child a[href="/login"] { padding: .3rem .35rem !important; }
-  header.glass-panel > div > div:last-child a[href="/register"] { padding: .4rem .75rem !important; }
-  header nav {
-    display: flex !important;
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    gap: 1.4rem !important;
-    padding: 0 !important;
-  }
-  header nav a { font-size: .8rem !important; }
 
   /* Pestañas de los paneles: una sola fila que se desliza con el dedo */
   main div.flex.flex-wrap.border-b.pb-3 {
@@ -440,22 +354,7 @@ main [class*=" bg-crimson-950/"], main [class^="bg-crimson-950/"] {
   main h1 { word-break: normal; overflow-wrap: anywhere; }
   footer { padding-left: 1rem !important; padding-right: 1rem !important; }
 }
-@media (max-width: 767px) {
-  header.glass-panel > div > div:last-child { margin-left: auto; }
-  header.glass-panel > div > div:last-child > button:first-child svg { display: none; }
-  header.glass-panel > div > div:last-child > button:first-child { padding: .25rem .45rem !important; font-size: .72rem !important; }
-  header.glass-panel > div > div:last-child a { font-size: .76rem !important; }
-  header.glass-panel > div > div:last-child a[href="/register"] { padding: .38rem .65rem !important; }
-}
-@media (max-width: 360px) {
-  header.glass-panel > div > div:last-child > button:first-child { display: none; }
-}
 
-/* Usuario conectado (arriba a la derecha): discreto; en el móvil solo la inicial */
-@media (max-width: 767px) {
-  header .user-chip > span { display: none; }
-  header .user-chip { padding: .25rem !important; border-color: transparent !important; }
-}
 
 /* Ventanas emergentes (pedir cita, consentimiento...): siempre por encima de la barra de arriba */
 main.relative.z-0 { z-index: auto !important; }
@@ -463,45 +362,196 @@ main.relative.z-0 { z-index: auto !important; }
 .fixed.inset-0.z-50 > .glass-panel { max-height: 90vh; overflow-y: auto; scrollbar-width: thin; }
 .fixed.inset-0.z-50 > .glass-panel::before, .fixed.inset-0.z-50 > .glass-panel::after { display: none !important; }
 .booking-modal select, .booking-modal input, .booking-modal textarea {
-  background: rgba(19,18,16,.9) !important; border-color: rgba(201,187,146,.18) !important; color-scheme: dark;
+  background: rgba(24,16,11,.9) !important; border-color: rgba(214,178,122,.18) !important; color-scheme: dark;
 }
-.booking-modal select:focus, .booking-modal input:focus, .booking-modal textarea:focus { border-color: rgba(201,187,146,.55) !important; }
+.booking-modal select:focus, .booking-modal input:focus, .booking-modal textarea:focus { border-color: rgba(214,178,122,.55) !important; }
 /* ==============================================================================
  * CHAT CON EL TATUADOR: oscuro como el resto, con la barra de escribir en blanco
  * ============================================================================== */
-.chat-light { background: rgba(19,18,16,.92); color: #efeae2; border-color: rgba(201,187,146,.18) !important; backdrop-filter: blur(8px); }
+.chat-light { background: rgba(24,16,11,.92); color: #f4e7d0; border-color: rgba(214,178,122,.18) !important; backdrop-filter: blur(8px); }
 .chat-light * { text-shadow: none !important; }
-.chat-light .chat-head { background: rgba(28,26,24,.95); border-bottom: 1px solid rgba(201,187,146,.14); }
-.chat-light .chat-title { color: #efeae2; }
-.chat-light .chat-head p { color: #8e8579 !important; }
-.chat-light .chat-status { color: #b3aa9d; }
-.chat-light .chat-head button { background: transparent !important; border: 1px solid rgba(201,187,146,.22) !important; color: #cfc7bb !important; }
-.chat-light .chat-head button svg { color: #c9bb92 !important; }
-.chat-light .chat-head button:hover { border-color: rgba(201,187,146,.5) !important; color: #fff !important; }
-.chat-light .chat-chips { background: rgba(24,23,21,.9); border-bottom: 1px solid rgba(201,187,146,.1); }
-.chat-light .chat-chip { background: transparent; border: 1px solid rgba(201,187,146,.22); color: #cfc7bb; }
-.chat-light .chat-chip:hover { border-color: #c9bb92; color: #fff; }
-.chat-light .chat-welcome { background: rgba(33,31,28,.8); border: 1px solid rgba(201,187,146,.16); color: #cfc7bb; }
-.chat-light .chat-welcome .font-display { color: #efeae2; }
-.chat-light .chat-welcome ul { color: #cfc7bb !important; }
-.chat-light .chat-welcome strong { color: #efeae2; }
-.chat-light .chat-note { color: #8e8579; border-top: 1px solid rgba(201,187,146,.12); }
+.chat-light .chat-head { background: rgba(38,26,19,.95); border-bottom: 1px solid rgba(214,178,122,.14); }
+.chat-light .chat-title { color: #f4e7d0; }
+.chat-light .chat-head p { color: #a08a6c !important; }
+.chat-light .chat-status { color: #c8b394; }
+.chat-light .chat-head button { background: transparent !important; border: 1px solid rgba(214,178,122,.22) !important; color: #e3d2b5 !important; }
+.chat-light .chat-head button svg { color: #d6b27a !important; }
+.chat-light .chat-head button:hover { border-color: rgba(214,178,122,.5) !important; color: #fff !important; }
+.chat-light .chat-chips { background: rgba(33,23,16,.9); border-bottom: 1px solid rgba(214,178,122,.1); }
+.chat-light .chat-chip { background: transparent; border: 1px solid rgba(214,178,122,.22); color: #e3d2b5; }
+.chat-light .chat-chip:hover { border-color: #d6b27a; color: #fff; }
+.chat-light .chat-welcome { background: rgba(45,31,23,.8); border: 1px solid rgba(214,178,122,.16); color: #e3d2b5; }
+.chat-light .chat-welcome .font-display { color: #f4e7d0; }
+.chat-light .chat-welcome ul { color: #e3d2b5 !important; }
+.chat-light .chat-welcome strong { color: #f4e7d0; }
+.chat-light .chat-note { color: #a08a6c; border-top: 1px solid rgba(214,178,122,.12); }
 .chat-light .bubble-me { background: #2f5a47; color: #fff; }
-.chat-light .bubble-them { background: #26231f; color: #efeae2; border: 1px solid rgba(201,187,146,.14); }
-.chat-light .bubble-artist { background: #3a3122; color: #f3ead8; border: 1px solid rgba(201,187,146,.35); }
+.chat-light .bubble-them { background: #26231f; color: #f4e7d0; border: 1px solid rgba(214,178,122,.14); }
+.chat-light .bubble-artist { background: #3a3122; color: #f3ead8; border: 1px solid rgba(214,178,122,.35); }
 .chat-light .bubble-them *, .chat-light .bubble-artist * { color: inherit !important; }
 .chat-light .bubble-them strong, .chat-light .bubble-artist strong { color: #e3cf9a !important; font-weight: 700; }
-.chat-light .chat-time { color: #8e8579; }
-.chat-light .chat-slots { background: rgba(19,18,16,.7); border: 1px solid rgba(201,187,146,.18); color: #efeae2; }
-.chat-light .chat-slots .tattoo-slot-btn { background: rgba(33,31,28,.9) !important; border: 1px solid rgba(201,187,146,.22) !important; color: #efeae2 !important; box-shadow: none !important; }
-.chat-light .chat-slots .tattoo-slot-btn:hover { border-color: #c9bb92 !important; }
+.chat-light .chat-time { color: #a08a6c; }
+.chat-light .chat-slots { background: rgba(24,16,11,.7); border: 1px solid rgba(214,178,122,.18); color: #f4e7d0; }
+.chat-light .chat-slots .tattoo-slot-btn { background: rgba(45,31,23,.9) !important; border: 1px solid rgba(214,178,122,.22) !important; color: #f4e7d0 !important; box-shadow: none !important; }
+.chat-light .chat-slots .tattoo-slot-btn:hover { border-color: #d6b27a !important; }
 .chat-light .chat-slots .tattoo-slot-btn > span:last-child { background: #2f5a47; color: #fff; }
 .chat-light .chat-slots .tattoo-slot-btn .capitalize { text-transform: none; }
 .chat-light .chat-slots .tattoo-slot-btn .capitalize::first-letter { text-transform: uppercase; }
 /* barra de escribir en blanco */
-.chat-light .chat-input { background: rgba(28,26,24,.95); border-top: 1px solid rgba(201,187,146,.14); }
+.chat-light .chat-input { background: rgba(38,26,19,.95); border-top: 1px solid rgba(214,178,122,.14); }
 .chat-light .chat-field { background: #fbf9f5; border: 1px solid #e3dbcd; color: #1c1a18; }
 .chat-light .chat-field::placeholder { color: #9a9086; }
 .chat-light .chat-field:focus { border-color: #2f5a47; box-shadow: 0 0 0 3px rgba(47,90,71,.25); }
 .chat-light .chat-cam { background: #fbf9f5; color: #5b544b; border: 1px solid #e3dbcd; }
 .chat-light .chat-cam:hover { background: #fff; color: #2f5a47; }
+
+/* ==============================================================================
+ * ESTILO "ESTUDIO" (el de la portada, aplicado a toda la web)
+ * Foto cálida de fondo, serif clásica, filos dorados y botón verde con doble marco.
+ * ============================================================================== */
+:root { --font-display: var(--font-landing); --font-sans: var(--font-landing); }
+body { font-family: var(--font-landing), Georgia, 'Times New Roman', serif; }
+
+/* Fondo de toda la web: un solo color neutro y cálido, a juego con el crema y el oro */
+.studio-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background: #161311;
+}
+
+/* Títulos: misma serif, un pelín más compacta */
+.font-display { letter-spacing: -0.01em; }
+
+/* Tarjetas y cajas: marrón cálido con brillo arriba, filo dorado y esquinas de lámina */
+.tattoo-card, .tattoo-card-gold,
+main .glass-panel:not(.bg-ink-950),
+main div.bg-ink-900\/60.rounded-3xl {
+  background: #1e1a17 !important;
+  border: 1px solid rgba(214, 178, 122, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 236, 205, 0.06), 0 18px 40px -22px rgba(0, 0, 0, 0.85) !important;
+}
+.tattoo-card:hover, .tattoo-card-gold:hover { border-color: rgba(214, 178, 122, 0.6) !important; }
+.tattoo-card::before, .tattoo-card::after,
+.tattoo-card-gold::before, .tattoo-card-gold::after,
+main .glass-panel:not(.bg-ink-950)::before, main .glass-panel:not(.bg-ink-950)::after {
+  width: 18px !important;
+  height: 18px !important;
+  border-color: rgba(228, 192, 136, 0.75) !important;
+}
+/* Segundo filo fino por dentro (solo tarjetas, que siempre tienen relleno) */
+.tattoo-card, .tattoo-card-gold { outline: 1px solid rgba(214, 178, 122, 0.14); outline-offset: -6px; }
+
+/* Ventanas emergentes con el mismo acabado */
+.fixed.inset-0.z-50 > .glass-panel {
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255, 196, 132, 0.07), transparent 70%),
+    linear-gradient(180deg, #2b1d15 0%, #1c130d 100%) !important;
+  border: 1px solid rgba(214, 178, 122, 0.4) !important;
+}
+
+/* Botón principal: verde botella con doble marco dorado (como "Empezar ahora") */
+button.bg-crimson-600, a.bg-crimson-600 {
+  background-image: linear-gradient(180deg, #2b6549 0%, #1f4c37 50%, #163a2a 100%) !important;
+  border: 1.5px solid #cfac72 !important;
+  box-shadow: inset 0 0 0 2px rgba(8, 22, 15, 0.85), inset 0 0 0 3px rgba(215, 182, 128, 0.45), 0 10px 22px -12px rgba(0, 0, 0, 0.85) !important;
+  color: #f6e8cd !important;
+  transition: filter 0.2s ease, transform 0.2s ease !important;
+}
+button.bg-crimson-600:hover:not(:disabled), a.bg-crimson-600:hover { filter: brightness(1.12); }
+button.bg-crimson-600:disabled { filter: saturate(0.4) brightness(0.8); }
+
+/* Botón dorado secundario (ámbar) con filo */
+button.bg-amber-500\/20, a.bg-amber-500\/20 { border-color: rgba(214, 178, 122, 0.55) !important; }
+
+/* Campos: filo dorado suave; al escribir, dorado más vivo */
+main input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+main textarea, main select {
+  border-color: rgba(214, 178, 122, 0.24) !important;
+  color-scheme: dark;
+}
+main input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):focus,
+main textarea:focus, main select:focus {
+  border-color: rgba(214, 178, 122, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(214, 178, 122, 0.14) !important;
+  outline: none;
+}
+input[type='checkbox'], input[type='radio'] { accent-color: #c99a5e; }
+
+/* Pie de página */
+.site-footer { border-top: 1px solid rgba(214, 178, 122, 0.14); }
+.site-footer-logo {
+  font-weight: 700;
+  font-size: 1.15rem;
+  background: linear-gradient(180deg, #f8e6c2 0%, #dcb67c 60%, #b88a52 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Pestañas de los paneles: con la serif ocupan más; hasta tablet van en una fila deslizable */
+@media (max-width: 1023px) {
+  main div.flex.flex-wrap.border-b.pb-3 {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  main div.flex.flex-wrap.border-b.pb-3::-webkit-scrollbar { display: none; }
+  main div.flex.flex-wrap.border-b.pb-3 > button { white-space: nowrap; flex-shrink: 0; }
+}
+
+/* ==============================================================================
+ * EFECTOS AL PASAR EL RATÓN (solo en dispositivos con ratón; en el móvil, pulso al tocar)
+ * ============================================================================== */
+/* Botón principal: un brillo dorado lo cruza y la flecha avanza */
+button.bg-crimson-600, a.bg-crimson-600 {
+  background-image:
+    linear-gradient(110deg, transparent 38%, rgba(255, 236, 200, 0.2) 50%, transparent 62%),
+    linear-gradient(180deg, #2b6549 0%, #1f4c37 50%, #163a2a 100%) !important;
+  background-size: 260% 100%, 100% 100% !important;
+  background-position: 130% 0, 0 0 !important;
+  background-repeat: no-repeat !important;
+  transition: filter 0.2s ease, transform 0.2s ease, background-position 0s !important;
+}
+button.bg-crimson-600 svg:last-child:not(:first-child), a.bg-crimson-600 svg:last-child:not(:first-child) { transition: transform 0.25s ease; }
+@media (hover: hover) {
+  button.bg-crimson-600:hover:not(:disabled), a.bg-crimson-600:hover {
+    background-position: -30% 0, 0 0 !important;
+    transition: filter 0.2s ease, transform 0.2s ease, background-position 0.75s ease !important;
+  }
+  button.bg-crimson-600:hover:not(:disabled) svg:last-child:not(:first-child),
+  a.bg-crimson-600:hover svg:last-child:not(:first-child) { transform: translateX(3px); }
+
+  /* Tarjetas: se elevan un poco, filo dorado más vivo y un halo cálido; las esquinas de lámina crecen */
+  .tattoo-card:hover, .tattoo-card-gold:hover {
+    border-color: rgba(222, 188, 136, 0.7) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 236, 205, 0.09),
+      0 0 0 1px rgba(214, 178, 122, 0.12),
+      0 26px 50px -24px rgba(0, 0, 0, 0.9),
+      0 0 38px -12px rgba(226, 168, 98, 0.28) !important;
+  }
+  .tattoo-card::before, .tattoo-card::after,
+  .tattoo-card-gold::before, .tattoo-card-gold::after { transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease; }
+  .tattoo-card:hover::before, .tattoo-card:hover::after,
+  .tattoo-card-gold:hover::before, .tattoo-card-gold:hover::after {
+    width: 26px !important;
+    height: 26px !important;
+    border-color: rgba(240, 210, 156, 0.95) !important;
+  }
+}
+/* En el móvil: al tocar, un pulso dorado breve */
+@media (hover: none) {
+  button.bg-crimson-600:active:not(:disabled), a.bg-crimson-600:active,
+  .tattoo-card:active, .tattoo-card-gold:active { animation: tatooTap 0.45s ease-out; }
+}
+@keyframes tatooTap {
+  from { outline: 2px solid rgba(236, 201, 141, 0.7); outline-offset: -2px; }
+  to   { outline: 2px solid rgba(236, 201, 141, 0); outline-offset: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tattoo-card:hover, .tattoo-card-gold:hover { transform: none !important; }
+  button.bg-crimson-600:hover, a.bg-crimson-600:hover { transition: none !important; }
+}

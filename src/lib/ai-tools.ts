@@ -710,7 +710,7 @@ export function detectToolIntent(content: string, imageUrl?: string): ToolCallDe
   }
 
   // 8. App Usage & FAQ Intent (How to use app, appointments, consent PDF, map, aftercare hygiene without sales, Stripe 50€/mo)
-  const isAppFaqIntent = /(?:c[oó]mo funciona|c[oó]mo usar|c[oó]mo firmo|c[oó]mo reservar|c[oó]mo cancelo|d[oó]nde est[aá] el mapa|c[oó]mo descargar el pdf|qu[eé] es tatoo|ayuda con la app|suscripci[oó]n|50€|50 euros|stripe|pasarela|crema|pomada|b[aá]lsamo|jab[oó]n|aftercare|cuidados?|qu[eé] me pongo|c[oó]mo curar|segunda piel|consentimiento|descargar pdf|imprimir)/i.test(text);
+  const isAppFaqIntent = /(?:c[oó]mo funciona|c[oó]mo usar|c[oó]mo firmo|c[oó]mo reservar|c[oó]mo cancelo|d[oó]nde est[aá] el mapa|c[oó]mo descargar el pdf|qu[eé] es tat+o+|ayuda con la app|suscripci[oó]n|50€|50 euros|stripe|pasarela|crema|pomada|b[aá]lsamo|jab[oó]n|aftercare|cuidados?|qu[eé] me pongo|c[oó]mo curar|segunda piel|consentimiento|descargar pdf|imprimir)/i.test(text);
   if (isAppFaqIntent) {
     let topic = 'general_help';
     if (/consentimiento|firm|pdf|imprimir|descargar|validez legal/i.test(text)) topic = 'consent_pdf';
@@ -1437,7 +1437,7 @@ export async function executeAiTool(
           break;
 
         default:
-          faqText = `ℹ️ **Guía y Soporte de Tatoo:**\n\n` +
+          faqText = `ℹ️ **Guía y Soporte de Tattoo:**\n\n` +
             `• **Para Clientes:** Consulta disponibilidad, calcula presupuestos en base a medidas en cm, reserva citas, firma consentimientos legales y revisa la curación por foto.\n` +
             `• **Para Tatuadores:** Dispones de tu propio asistente virtual para consultar tu agenda diaria, bloquear horas de descanso, revisar consentimientos de clientes y configurar tus tarifas.\n` +
             `• **Para Estudios:** Suscripción mensual de 50€/mes con Stripe para gestión integral de artistas, clientes y presencia en el mapa interactivo.\n\n` +

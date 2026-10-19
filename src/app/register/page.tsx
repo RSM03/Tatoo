@@ -248,7 +248,7 @@ function RegisterContent() {
             {selectedRole === 'studio' && (
               <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-ink-300 text-xs space-y-1">
                 <div className="font-bold text-amber-300 flex items-center justify-between">
-                  <span>Suscripción Estudio Tatoo Pro</span>
+                  <span>Suscripción Estudio Tattoo Pro</span>
                   <span className="text-white bg-amber-500/20 px-2 py-0.5 rounded font-mono">50,00 € / mes</span>
                 </div>
                 <p className="text-[11px] text-ink-400">

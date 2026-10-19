@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { translations, type Language } from '@/lib/i18n';
-import { Sparkles, Calendar, MessageSquare, Image, LogIn, User, LogOut, Globe } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
+import { FlagIcon } from '@/components/landing/LandingIcons';
+import h from './Navbar.module.css';
 
 export default function Navbar() {
   const [lang, setLang] = useState<Language>('es');
@@ -58,111 +60,53 @@ export default function Navbar() {
     router.push('/');
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'studio':
-      case 'artist':
-        return <span className="text-[11px] text-ink-400 font-medium">· Estudio</span>;
-      default:
-        return <span className="text-[11px] text-ink-400 font-medium">· Cliente</span>;
-    }
-  };
+  const roleLabel = (role: string) => (role === 'studio' || role === 'artist' ? 'Estudio' : 'Cliente');
+
+  const links = [
+    { href: '/', label: t.nav.home },
+    { href: '/shares', label: t.nav.shares },
+    { href: '/reviews', label: t.nav.reviews },
+  ];
 
   return (
-    <header className="sticky top-0 z-50 glass-panel border-b border-white/10 px-4 lg:px-8 py-3.5 transition-all shadow-2xl">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand Logo - Marked Tattoo Crest */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-10 h-11 flex items-center justify-center">
-            <span className="logo-t text-[52px] text-ink-50">T</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="logo-t text-[30px] text-ink-50">
-              Tatoo <span className="text-amber-400">AI</span>
-            </span>
-            <span className="text-[11px] text-ink-500 mt-1 hidden sm:block">
-              Agenda para estudios de tatuaje
-            </span>
-          </div>
+    <header className={h.header}>
+      <div className={h.inner}>
+        <Link href="/" className={h.brand}>
+          <span className={h.logo}>Tattoo AI</span>
+          <span className={h.tagline}>Agenda para estudios de tatuaje</span>
         </Link>
 
-        {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-ink-950/90 p-1.5 rounded-2xl border border-white/10 shadow-inner">
-          <Link
-            href="/"
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-              pathname === '/' ? 'bg-white/10 text-ink-50' : 'text-ink-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            {t.nav.home}
-          </Link>
-          <Link
-            href="/shares"
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-              pathname === '/shares' ? 'bg-white/10 text-ink-50' : 'text-ink-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Image className="w-3.5 h-3.5" />
-            {t.nav.shares}
-          </Link>
-          <Link
-            href="/reviews"
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-              pathname === '/reviews' ? 'bg-white/10 text-ink-50' : 'text-ink-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            {t.nav.reviews}
-          </Link>
-        </nav>
+        <div className={h.links} role="navigation" aria-label="Principal">
+          {links.map(l => (
+            <Link key={l.href} href={l.href} className={`${h.link} ${pathname === l.href ? h.active : ''}`}>
+              {l.label}
+            </Link>
+          ))}
+        </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-3">
-          {/* Language Switcher */}
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-ink-300 hover:text-white hover:bg-white/5 border border-white/5 transition-colors"
-            title="Cambiar idioma / Change language"
-          >
-            <Globe className="w-3.5 h-3.5 text-crimson-500" />
-            <span className="uppercase">{lang}</span>
+        <div className={h.actions}>
+          <button onClick={toggleLanguage} className={h.pill} title="Cambiar idioma / Change language">
+            <FlagIcon lang={lang} />
+            <span className={h.hideSm}>{lang.toUpperCase()}</span>
+            <ChevronDown className={h.chev} />
           </button>
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="user-chip flex items-center gap-2 bg-transparent hover:bg-white/5 border border-amber-500/20 px-3 py-1.5 rounded-xl text-sm font-medium text-white transition-colors hover:border-amber-500/40"
-              >
-                <div className="w-7 h-7 rounded-full bg-ink-950 border border-amber-500/40 text-amber-300 flex items-center justify-center text-sm logo-t">
-                  {profile?.full_name?.charAt(0) || 'U'}
-                </div>
-                <span>{profile?.full_name || t.nav.dashboard}</span>
-                {profile?.role && getRoleBadge(profile.role)}
+            <>
+              <Link href="/dashboard" className={`${h.pill} ${h.pillStrong}`}>
+                <span className={h.avatar}>{profile?.full_name?.charAt(0) || 'U'}</span>
+                <span className={h.hideSm}>{profile?.full_name || t.nav.dashboard}</span>
+                {profile?.role && <span className={`${h.role} ${h.hideSm}`}>· {roleLabel(profile.role)}</span>}
               </Link>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-ink-400 hover:text-crimson-500 hover:bg-crimson-500/10 rounded-lg transition-colors"
-                title={t.nav.logout}
-              >
-                <LogOut className="w-4 h-4" />
+              <button onClick={handleLogout} className={`${h.pill} ${h.iconBtn}`} title={t.nav.logout} aria-label={t.nav.logout}>
+                <LogOut />
               </button>
-            </div>
+            </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 text-ink-300 hover:text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
-              >
-                <LogIn className="w-4 h-4 text-crimson-500" />
-                <span>{t.nav.login}</span>
-              </Link>
-              <Link
-                href="/register"
-                className="flex items-center gap-1.5 bg-crimson-600 hover:bg-crimson-700 text-ink-50 text-sm font-semibold px-4 py-1.5 rounded-xl shadow-sm transition-colors"
-              >
-                <span>{t.nav.register}</span>
-              </Link>
-            </div>
+            <>
+              <Link href="/login" className={`${h.pill} ${h.hideXs}`}>{t.nav.login}</Link>
+              <Link href="/register" className={`${h.pill} ${h.pillStrong}`}>{t.nav.register}</Link>
+            </>
           )}
         </div>
       </div>
